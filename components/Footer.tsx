@@ -1,12 +1,15 @@
 import Link from 'next/link'
+import BrandMark from '@/components/BrandMark'
 
 export default function Footer() {
   return (
     <footer className="site-footer">
       <div className="footer-top">
-        <div>
-          <Link href="/" className="footer-wordmark">FYTHER</Link>
-          <p>Ropa y artículos deportivos para moverte con confianza.</p>
+        <div className="footer-brand">
+          <Link href="/" className="footer-wordmark" aria-label="Fyther Store, inicio">
+            <BrandMark decorative variant="alternate" />
+          </Link>
+          <p>Muévete a tu manera.</p>
         </div>
         <div className="footer-links" aria-label="Enlaces del pie de página">
           <div>
