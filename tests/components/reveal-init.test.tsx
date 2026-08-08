@@ -2,8 +2,10 @@ import { act, render } from '@testing-library/react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import RevealInit from '@/components/RevealInit'
 
+const navigation = vi.hoisted(() => ({ pathname: '/' }))
+
 vi.mock('next/navigation', () => ({
-  usePathname: () => '/',
+  usePathname: () => navigation.pathname,
 }))
 
 type ObserverHarness = {
@@ -27,25 +29,31 @@ function installMatchMedia(reduced: boolean) {
 }
 
 function installIntersectionObserver() {
-  let harness: ObserverHarness | undefined
+  const harnesses: ObserverHarness[] = []
   const constructor = vi.fn(function (
     this: IntersectionObserver,
     callback: IntersectionObserverCallback,
   ) {
-    harness = {
+    const harness = {
       callback,
       disconnect: vi.fn(),
       observe: vi.fn(),
       unobserve: vi.fn(),
     }
+    harnesses.push(harness)
     return harness
   })
   vi.stubGlobal('IntersectionObserver', constructor)
-  return { constructor, get harness() { return harness } }
+  return {
+    constructor,
+    harnesses,
+    get harness() { return harnesses.at(-1) },
+  }
 }
 
 describe('RevealInit', () => {
   beforeEach(() => {
+    navigation.pathname = '/'
     vi.stubGlobal('innerHeight', 1000)
     vi.spyOn(window, 'requestAnimationFrame').mockImplementation(() => 17)
     vi.spyOn(window, 'cancelAnimationFrame').mockImplementation(() => undefined)
@@ -72,6 +80,26 @@ describe('RevealInit', () => {
     expect(container.querySelector('[data-reveal]')).toHaveAttribute('data-reveal', 'on')
     expect(container.querySelector<HTMLElement>('[data-current]')?.style.getPropertyValue('--current-progress')).toBe('1')
     expect(observer.constructor).not.toHaveBeenCalled()
+    expect(window.requestAnimationFrame).not.toHaveBeenCalled()
+    expect(addEventListener).not.toHaveBeenCalledWith('scroll', expect.any(Function), expect.anything())
+    expect(addEventListener).not.toHaveBeenCalledWith('resize', expect.any(Function))
+  })
+
+  it('finishes reveals and currents when IntersectionObserver is unavailable without listeners', () => {
+    installMatchMedia(false)
+    vi.stubGlobal('IntersectionObserver', undefined)
+    const addEventListener = vi.spyOn(window, 'addEventListener')
+
+    const { container } = render(
+      <>
+        <RevealInit />
+        <div data-reveal>Reveal</div>
+        <section data-current>Current</section>
+      </>,
+    )
+
+    expect(container.querySelector('[data-reveal]')).toHaveAttribute('data-reveal', 'on')
+    expect(container.querySelector<HTMLElement>('[data-current]')?.style.getPropertyValue('--current-progress')).toBe('1')
     expect(window.requestAnimationFrame).not.toHaveBeenCalled()
     expect(addEventListener).not.toHaveBeenCalledWith('scroll', expect.any(Function), expect.anything())
     expect(addEventListener).not.toHaveBeenCalledWith('resize', expect.any(Function))
@@ -134,5 +162,38 @@ describe('RevealInit', () => {
     expect(window.cancelAnimationFrame).toHaveBeenCalledWith(17)
     expect(removeEventListener).toHaveBeenCalledWith('scroll', requestUpdate)
     expect(removeEventListener).toHaveBeenCalledWith('resize', resizeCall?.[1])
+  })
+
+  it('cleans the previous route lifecycle before observing the next pathname', () => {
+    installMatchMedia(false)
+    const observer = installIntersectionObserver()
+    const addEventListener = vi.spyOn(window, 'addEventListener')
+    const removeEventListener = vi.spyOn(window, 'removeEventListener')
+    const renderScene = () => (
+      <>
+        <RevealInit />
+        <div data-reveal>Reveal</div>
+        <section data-current>Current</section>
+      </>
+    )
+    const { container, rerender, unmount } = render(renderScene())
+    const reveal = container.querySelector<HTMLElement>('[data-reveal]')!
+    const firstObserver = observer.harness!
+    const firstScroll = addEventListener.mock.calls.find(([type]) => type === 'scroll')?.[1]
+    const firstResize = addEventListener.mock.calls.find(([type]) => type === 'resize')?.[1]
+
+    navigation.pathname = '/catalogo'
+    rerender(renderScene())
+
+    expect(firstObserver.disconnect).toHaveBeenCalledOnce()
+    expect(removeEventListener).toHaveBeenCalledWith('scroll', firstScroll)
+    expect(removeEventListener).toHaveBeenCalledWith('resize', firstResize)
+    expect(observer.constructor).toHaveBeenCalledTimes(2)
+    expect(observer.harness).not.toBe(firstObserver)
+    expect(observer.harness?.observe).toHaveBeenCalledWith(reveal)
+
+    const secondObserver = observer.harness!
+    unmount()
+    expect(secondObserver.disconnect).toHaveBeenCalledOnce()
   })
 })

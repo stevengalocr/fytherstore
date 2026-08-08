@@ -9,9 +9,9 @@ export default function RevealInit() {
   useEffect(() => {
     const reveals = [...document.querySelectorAll<HTMLElement>('[data-reveal]:not([data-reveal="on"])')]
     const currents = [...document.querySelectorAll<HTMLElement>('[data-current]')]
-    const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches
+    const reduced = window.matchMedia?.('(prefers-reduced-motion: reduce)').matches ?? false
 
-    if (reduced) {
+    if (reduced || typeof IntersectionObserver === 'undefined') {
       reveals.forEach((element) => element.setAttribute('data-reveal', 'on'))
       currents.forEach((element) => element.style.setProperty('--current-progress', '1'))
       return
