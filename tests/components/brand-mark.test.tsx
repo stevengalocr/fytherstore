@@ -4,13 +4,22 @@ import BrandMark from '@/components/BrandMark'
 
 describe('BrandMark', () => {
   it('renders the official primary logo without recreated brand text', () => {
-    render(<BrandMark />)
+    const { container } = render(<BrandMark />)
 
     expect(screen.getByRole('img', { name: 'Fyther Store' })).toHaveAttribute(
       'src',
       expect.stringContaining('logo1.png'),
     )
-    expect(screen.queryByText('FYTHER', { exact: true })).not.toBeInTheDocument()
+    expect(container.querySelector('.brand-mark')?.textContent).toBe('')
+  })
+
+  it('renders the alternate official logo', () => {
+    render(<BrandMark variant="alternate" />)
+
+    expect(screen.getByRole('img', { name: 'Fyther Store' })).toHaveAttribute(
+      'src',
+      expect.stringContaining('logo2.png'),
+    )
   })
 
   it('renders with empty alt text when decorative', () => {
