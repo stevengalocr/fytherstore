@@ -52,13 +52,11 @@ main { flex: 1; }
 .site-nav { display: flex; align-items: center; gap: clamp(1.25rem, 2.5vw, 2.75rem); font-size: 0.82rem; font-weight: 700; }
 .site-nav a { min-height: 44px; display: inline-flex; align-items: center; position: relative; color: var(--color-mist); transition: color 180ms var(--ease-out); }
 .site-nav a::after { content: ''; position: absolute; left: 0; right: 100%; bottom: 0.5rem; height: 1px; background: var(--color-cyan); transition: right 180ms var(--ease-out); }
-.header-actions { justify-self: end; display: flex; align-items: center; gap: 0.35rem; }
 .icon-button, .icon-link { width: 44px; height: 44px; border: 0; background: transparent; color: var(--color-ice); display: inline-grid; place-items: center; transition: background-color 180ms var(--ease-out), transform 140ms var(--ease-out); }
 .icon-button:active, .icon-link:active, .button:active { transform: scale(0.97); }
-.cart-link { position: relative; }
+.cart-link { position: relative; justify-self: end; }
 .cart-link span { position: absolute; top: 4px; right: 1px; min-width: 18px; height: 18px; display: grid; place-items: center; background: var(--color-pink); color: var(--color-night); border: 1px solid var(--color-night); font-size: 0.65rem; font-weight: 800; }
 .menu-button { display: none; }
-body[data-menu-open] { overflow: hidden; }
 
 .button { min-height: 48px; width: fit-content; border: 1px solid var(--color-cyan); border-radius: 4px; padding: 0.8rem 1.25rem; display: inline-flex; align-items: center; justify-content: center; gap: 0.55rem; background: var(--color-cyan); color: var(--color-night); font-weight: 800; font-size: 0.82rem; line-height: 1; white-space: nowrap; transition: background-color 180ms var(--ease-out), color 180ms var(--ease-out), transform 140ms var(--ease-out); }
 .button-accent { background: var(--color-pink); color: var(--color-night); border-color: var(--color-pink); }
@@ -283,7 +281,7 @@ body[data-menu-open] { overflow: hidden; }
 .footer-links { display: grid; grid-template-columns: repeat(3, 1fr); gap: 2rem; }
 .footer-links div { display: flex; flex-direction: column; align-items: flex-start; gap: 0.7rem; }
 .footer-links strong { margin-bottom: 0.35rem; font-family: var(--font-display), sans-serif; font-size: 0.78rem; }
-.footer-links a { color: var(--color-mist); font-size: 0.85rem; }
+.footer-links a { min-height: 44px; display: inline-flex; align-items: center; color: var(--color-mist); font-size: 0.85rem; }
 .footer-bottom { margin-top: 4rem; padding-top: 1.1rem; border-top: 1px solid rgba(234, 251, 251, 0.2); display: flex; justify-content: space-between; gap: 1rem; color: var(--color-mist); font-size: 0.75rem; }
 
 @media (hover: hover) and (pointer: fine) {
@@ -300,9 +298,9 @@ body[data-menu-open] { overflow: hidden; }
 }
 
 @media (max-width: 767px) {
+  body[data-menu-open] { overflow: hidden; }
   .header-inner { grid-template-columns: 44px minmax(0, 1fr) 44px; gap: 4px; }
   .wordmark { grid-column: 2; grid-row: 1; min-width: 0; justify-self: center; }
-  .header-actions { display: contents; }
   .menu-button { grid-column: 1; grid-row: 1; display: inline-grid; }
   .cart-link { grid-column: 3; grid-row: 1; }
   .site-nav { position: absolute; top: calc(100% + 8px); left: 0; right: 0; display: none; align-items: stretch; gap: 0; padding: 8px 12px 12px; border: 1px solid rgba(234, 251, 251, 0.16); border-radius: 8px; background: rgba(5, 6, 8, 0.96); backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px); }
@@ -310,6 +308,12 @@ body[data-menu-open] { overflow: hidden; }
   .site-nav a { min-height: 48px; padding-inline: 8px; border-bottom: 1px solid rgba(234, 251, 251, 0.16); color: var(--color-ice); font-size: 1rem; }
   .site-nav a:last-child { border-bottom: 0; }
   .site-nav a::after { display: none; }
+  .catalog-hero,
+  .detail-page,
+  .cart-page,
+  .checkout-page,
+  .order-page,
+  .policy-page { padding-top: 92px; }
   .footer-top { grid-template-columns: 1fr; gap: 3rem; }
   .footer-links { grid-template-columns: 1fr 1fr; }
   .hero-section, .hero-content { min-height: calc(100dvh - 68px); }

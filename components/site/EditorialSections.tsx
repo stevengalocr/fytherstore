@@ -5,7 +5,7 @@ import { ArrowUpRight } from 'lucide-react'
 export default function EditorialSections() {
   return (
     <>
-      <section className="manifesto-section dark-surface" id="movimiento">
+      <section className="manifesto-section dark-surface" id="fyther">
         <div className="container manifesto-grid">
           <p className="manifesto-lead display">El movimiento no pide permiso.</p>
           <div>

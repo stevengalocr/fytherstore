@@ -20,13 +20,19 @@ export default function Header() {
     const closeOnEscape = (event: KeyboardEvent) => {
       if (event.key === 'Escape') setOpen(false)
     }
+    const desktopMedia = window.matchMedia('(min-width: 768px)')
+    const closeOnDesktop = (event: MediaQueryListEvent) => {
+      if (event.matches) setOpen(false)
+    }
 
     document.body.dataset.menuOpen = 'true'
     window.addEventListener('keydown', closeOnEscape)
+    desktopMedia.addEventListener('change', closeOnDesktop)
 
     return () => {
       delete document.body.dataset.menuOpen
       window.removeEventListener('keydown', closeOnEscape)
+      desktopMedia.removeEventListener('change', closeOnDesktop)
     }
   }, [open])
 
@@ -36,6 +42,17 @@ export default function Header() {
         <Link href="/" className="wordmark" aria-label="Fyther Store, inicio">
           <BrandMark decorative priority />
         </Link>
+
+        <button
+          type="button"
+          className="icon-button menu-button"
+          aria-label={open ? 'Cerrar menú' : 'Abrir menú'}
+          aria-controls="primary-navigation"
+          aria-expanded={open}
+          onClick={() => setOpen((value) => !value)}
+        >
+          {open ? <X aria-hidden="true" size={21} /> : <Menu aria-hidden="true" size={21} />}
+        </button>
 
         <nav
           id="primary-navigation"
@@ -47,26 +64,14 @@ export default function Header() {
           <Link href="/#fyther" onClick={() => setOpen(false)}>Nosotras</Link>
         </nav>
 
-        <div className="header-actions">
-          <Link
-            href="/carrito"
-            className="icon-link cart-link"
-            aria-label={`Carrito, ${countLabel}`}
-          >
-            <ShoppingBag aria-hidden="true" size={20} strokeWidth={1.7} />
-            <span>{count}</span>
-          </Link>
-          <button
-            type="button"
-            className="icon-button menu-button"
-            aria-label={open ? 'Cerrar menú' : 'Abrir menú'}
-            aria-controls="primary-navigation"
-            aria-expanded={open}
-            onClick={() => setOpen((value) => !value)}
-          >
-            {open ? <X aria-hidden="true" size={21} /> : <Menu aria-hidden="true" size={21} />}
-          </button>
-        </div>
+        <Link
+          href="/carrito"
+          className="icon-link cart-link"
+          aria-label={`Carrito, ${countLabel}`}
+        >
+          <ShoppingBag aria-hidden="true" size={20} strokeWidth={1.7} />
+          <span>{count}</span>
+        </Link>
       </div>
     </header>
   )

@@ -27,7 +27,7 @@ export default function HeroMedia() {
   }, [playVideo])
 
   return (
-    <section className="hero-section dark-surface" aria-labelledby="hero-title">
+    <section id="descubrir" className="hero-section dark-surface" aria-labelledby="hero-title">
       <div className="hero-media">
         <Image src="/home.jpeg" alt="Campaña de Fyther Store" fill priority sizes="100vw" className="hero-poster" />
         {playVideo && (
