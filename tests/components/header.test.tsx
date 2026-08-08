@@ -1,3 +1,5 @@
+import { readFileSync } from 'node:fs'
+import { resolve } from 'node:path'
 import { render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { describe, expect, it, vi } from 'vitest'
@@ -8,6 +10,15 @@ vi.mock('@/context/CartContext', () => ({
 }))
 
 describe('Header', () => {
+  it('keeps the capsule at its stable 52px height', () => {
+    const globalsCss = readFileSync(resolve(process.cwd(), 'app/globals.css'), 'utf8')
+    const headerInnerCss = globalsCss.match(/\.header-inner\s*\{([^}]*)\}/)?.[1] ?? ''
+
+    expect(headerInnerCss).toContain('min-height: 52px')
+    expect(headerInnerCss).toMatch(/padding:\s*0 12px|padding-inline:\s*12px/)
+    expect(headerInnerCss).not.toMatch(/padding:\s*12px(?:;|$)/)
+  })
+
   it('renders the official mark and primary store navigation', () => {
     render(<Header />)
 
