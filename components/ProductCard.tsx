@@ -4,7 +4,12 @@ import { ArrowUpRight } from 'lucide-react'
 import { formatMoney } from '@/lib/format'
 import type { CommerceProduct } from '@/lib/commerce/types'
 
-export default function ProductCard({ product }: { product: CommerceProduct }) {
+interface ProductCardProps {
+  product: CommerceProduct
+  imageSizes?: string
+}
+
+export default function ProductCard({ product, imageSizes = '100vw' }: ProductCardProps) {
   const image = product.images[0]
   const soldOut = product.availability !== 'in_stock'
 
@@ -16,7 +21,7 @@ export default function ProductCard({ product }: { product: CommerceProduct }) {
             src={image.src}
             alt={image.alt}
             fill
-            sizes="(max-width: 560px) calc(100vw - 32px), (max-width: 1100px) calc(50vw - 32px), 380px"
+            sizes={imageSizes}
             className="product-image"
           />
         ) : (

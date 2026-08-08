@@ -1,18 +1,27 @@
 'use client'
 
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { ArrowDownUp, Search } from 'lucide-react'
 import ProductCard from '@/components/ProductCard'
 import type { CommerceProduct } from '@/lib/commerce/types'
+
+const CATALOG_PRODUCT_IMAGE_SIZES = '(max-width: 560px) calc(100vw - 32px), (max-width: 1100px) calc(50vw - 32px), 380px'
 
 export default function CatalogClient({ products, initialCategory }: {
   products: CommerceProduct[]
   initialCategory: string
 }) {
-  const categories = ['Todos', ...new Set(products.map((product) => product.category).filter((value): value is string => Boolean(value)))]
+  const categories = useMemo(
+    () => ['Todos', ...new Set(products.map((product) => product.category).filter((value): value is string => Boolean(value)))],
+    [products],
+  )
   const [category, setCategory] = useState(categories.includes(initialCategory) ? initialCategory : 'Todos')
   const [query, setQuery] = useState('')
   const [sort, setSort] = useState('featured')
+
+  useEffect(() => {
+    if (!categories.includes(category)) setCategory('Todos')
+  }, [categories, category])
 
   function clearFilters() {
     setCategory('Todos')
@@ -72,7 +81,7 @@ export default function CatalogClient({ products, initialCategory }: {
           <div className="catalog-grid" role="list" aria-label="Productos">
             {visible.map((product) => (
               <div key={product.id} className="catalog-grid-item" role="listitem">
-                <ProductCard product={product} />
+                <ProductCard product={product} imageSizes={CATALOG_PRODUCT_IMAGE_SIZES} />
               </div>
             ))}
           </div>

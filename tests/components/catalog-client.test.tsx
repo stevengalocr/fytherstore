@@ -1,4 +1,4 @@
-import { render, screen, within } from '@testing-library/react'
+import { render, screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { describe, expect, it } from 'vitest'
 import CatalogClient from '@/app/catalogo/CatalogClient'
@@ -13,7 +13,7 @@ const products: CommerceProduct[] = [
     description: null,
     price: { amount: 28900, currency: 'CRC' },
     compareAtPrice: null,
-    images: [],
+    images: [{ src: '/legging-flujo.jpg', alt: 'Legging Flujo' }],
     availability: 'in_stock',
     stockQuantity: 8,
     variants: [],
@@ -52,6 +52,10 @@ describe('CatalogClient', () => {
     expect(screen.getByRole('button', { name: 'Todos' })).toHaveAttribute('aria-pressed', 'true')
     expect(within(productList()).getByText('Legging Flujo')).toBeInTheDocument()
     expect(within(productList()).getByText('Top Brisa')).toBeInTheDocument()
+    expect(within(productList()).getByRole('img', { name: 'Legging Flujo' })).toHaveAttribute(
+      'sizes',
+      '(max-width: 560px) calc(100vw - 32px), (max-width: 1100px) calc(50vw - 32px), 380px',
+    )
     expect(screen.getByText('2 resultados')).toHaveAttribute('aria-live', 'polite')
   })
 
@@ -110,5 +114,24 @@ describe('CatalogClient', () => {
     expect(screen.getByRole('combobox', { name: 'Ordenar productos' })).toHaveValue('featured')
     expect(within(productList()).getByText('Legging Flujo')).toBeInTheDocument()
     expect(within(productList()).getByText('Top Brisa')).toBeInTheDocument()
+  })
+
+  it('resets a removed category to Todos when live products change', async () => {
+    const user = userEvent.setup()
+    const { rerender } = render(<CatalogClient products={products} initialCategory="Todos" />)
+
+    await user.click(screen.getByRole('button', { name: 'Tops' }))
+    expect(screen.getByRole('button', { name: 'Tops' })).toHaveAttribute('aria-pressed', 'true')
+
+    rerender(<CatalogClient products={[products[0]]} initialCategory="Todos" />)
+
+    await waitFor(() => expect(screen.getByRole('button', { name: 'Todos' })).toHaveAttribute('aria-pressed', 'true'))
+    expect(screen.queryByRole('button', { name: 'Tops' })).not.toBeInTheDocument()
+    expect(within(productList()).getByText('Legging Flujo')).toBeInTheDocument()
+
+    rerender(<CatalogClient products={products} initialCategory="Todos" />)
+
+    expect(screen.getByRole('button', { name: 'Todos' })).toHaveAttribute('aria-pressed', 'true')
+    expect(screen.getByRole('button', { name: 'Tops' })).toHaveAttribute('aria-pressed', 'false')
   })
 })

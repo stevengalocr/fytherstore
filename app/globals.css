@@ -454,7 +454,7 @@ main { flex: 1; }
   .catalog-grid { grid-template-columns: 1fr; }
   .catalog-hero { min-height: 430px; }
   .catalog-hero h1 { font-size: 3.1rem; }
-  .catalog-tools { top: 64px; }
+  .catalog-tools { top: 68px; }
   .catalog-results { padding-top: 24px; padding-bottom: 80px; }
   .catalog-no-results { min-height: 360px; }
   .catalog-no-results h2 { font-size: 2.85rem; }
