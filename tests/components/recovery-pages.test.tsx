@@ -1,10 +1,14 @@
 import { render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
-import { describe, expect, it, vi } from 'vitest'
+import { afterEach, describe, expect, it, vi } from 'vitest'
 import ErrorPage from '@/app/error'
 import NotFound from '@/app/not-found'
 
 describe('recovery pages', () => {
+  afterEach(() => {
+    vi.restoreAllMocks()
+  })
+
   it('offers a safe retry without rendering internal error details', async () => {
     const user = userEvent.setup()
     const reset = vi.fn()

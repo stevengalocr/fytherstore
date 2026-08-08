@@ -21,7 +21,13 @@ export function normalizeCheckoutEmail(value: string): string | null {
 
   const [local, domain, ...rest] = email.split('@')
   if (!local || !domain || rest.length > 0 || local.length > 64) return null
-  if (/\s/.test(email) || !domain.includes('.') || domain.startsWith('.') || domain.endsWith('.')) return null
+  if (!/^[a-z0-9!#$%&'*+/=?^_`{|}~.-]+$/.test(local)) return null
+  if (local.startsWith('.') || local.endsWith('.') || local.includes('..')) return null
+
+  const labels = domain.split('.')
+  if (labels.length < 2) return null
+  if (labels.some((label) => !/^[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?$/.test(label))) return null
+  if (!/^[a-z]{2,63}$/.test(labels.at(-1)!)) return null
 
   return email
 }

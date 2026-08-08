@@ -122,6 +122,20 @@ describe('CheckoutClient', () => {
     }))
   })
 
+  it('rejects a malformed dot-atom email through the shared validator', async () => {
+    const user = userEvent.setup()
+    render(<CheckoutClient methods={methods} />)
+
+    await user.type(screen.getByRole('textbox', { name: 'Nombre completo' }), 'Steven')
+    const email = screen.getByRole('textbox', { name: 'Correo electrónico' })
+    await user.type(email, 'user..name@example.com')
+    await user.type(screen.getByRole('textbox', { name: 'Dirección exacta' }), 'San José')
+    await user.click(screen.getByRole('button', { name: /confirmar pedido/i }))
+
+    expect(email).toHaveAccessibleDescription('Ingresa un correo electrónico válido.')
+    expect(createOrder).not.toHaveBeenCalled()
+  })
+
   it('keeps customer data and announces a server failure', async () => {
     const user = userEvent.setup()
     vi.mocked(createOrder).mockResolvedValue({ ok: false, mode: 'live', error: 'No pudimos validar el inventario.' })

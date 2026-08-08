@@ -24,15 +24,38 @@ describe('live checkout configuration', () => {
 })
 
 describe('checkout email validation', () => {
-  it.each(['', '   ', 'correo@', '@example.com', `${'a'.repeat(245)}@example.com`])(
+  it.each([
+    '',
+    '   ',
+    'correo@',
+    '@example.com',
+    '.user@example.com',
+    'user.@example.com',
+    'user..name@example.com',
+    'user()@example.com',
+    'user@@example.com',
+    'user@example..com',
+    'user@exam_ple.com',
+    'user@exam!ple.com',
+    'user@-example.com',
+    'user@example-.com',
+    'user@example.c',
+    'user@example.123',
+    `${'a'.repeat(65)}@example.com`,
+    `${'a'.repeat(245)}@example.com`,
+  ])(
     'rejects malformed or overlong email %j',
     (email) => {
       expect(normalizeCheckoutEmail(email)).toBeNull()
     },
   )
 
-  it('trims and lowercases a valid email', () => {
-    expect(normalizeCheckoutEmail('  Steven@Example.COM  ')).toBe('steven@example.com')
+  it.each([
+    ['  Steven@Example.COM  ', 'steven@example.com'],
+    ['FYTHER+MOVE@Example.co.cr', 'fyther+move@example.co.cr'],
+    ["friend.o'hara@example.com", "friend.o'hara@example.com"],
+  ])('normalizes the valid email %j', (email, normalized) => {
+    expect(normalizeCheckoutEmail(email)).toBe(normalized)
   })
 })
 

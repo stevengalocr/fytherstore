@@ -43,6 +43,38 @@ describe('OrderPresentation', () => {
     expect(screen.getByRole('heading', { level: 1, name: 'Tu pedido sigue su camino.' })).toBeInTheDocument()
     expect(screen.getByText('En camino')).toBeInTheDocument()
     expect(screen.getByText('Salió para entrega')).toBeInTheDocument()
-    expect(screen.getByText(/San José/)).toBeInTheDocument()
+    expect(screen.getByText((content) => content.includes('San José'))).toHaveTextContent(
+      new Date(order.tracking[0].createdAt).toLocaleString('es-CR', { dateStyle: 'medium', timeStyle: 'short' }),
+    )
+  })
+
+  it.each([
+    ['sinpe', 'SINPE Móvil'],
+    ['link', 'Link de pago'],
+    ['cash', 'Efectivo'],
+  ] as const)('maps payment method %s to its customer-facing label', (paymentMethod, label) => {
+    render(<OrderPresentation order={{ ...order, paymentMethod }} view="confirmation" />)
+
+    expect(screen.getByText(label)).toBeInTheDocument()
+  })
+
+  it('falls back to factual raw values for unknown live status and payment data', () => {
+    const unexpectedOrder = {
+      ...order,
+      status: 'awaiting_pickup',
+      paymentMethod: 'bank_transfer',
+    } as unknown as CommerceOrder
+
+    render(<OrderPresentation order={unexpectedOrder} view="tracking" />)
+
+    expect(screen.getByText('awaiting_pickup')).toBeInTheDocument()
+    expect(screen.getByText('bank_transfer')).toBeInTheDocument()
+  })
+
+  it('shows an honest empty state when tracking history has not started', () => {
+    render(<OrderPresentation order={{ ...order, tracking: [] }} view="tracking" />)
+
+    expect(screen.getByText('Aún no hay eventos de seguimiento.')).toBeInTheDocument()
+    expect(screen.queryByRole('list')).not.toBeInTheDocument()
   })
 })
