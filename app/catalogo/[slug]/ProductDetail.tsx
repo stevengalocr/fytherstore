@@ -10,37 +10,70 @@ import type { CommerceProduct, CommerceVariant } from '@/lib/commerce/types'
 
 export default function ProductDetail({ product }: { product: CommerceProduct }) {
   const { addProduct } = useCart()
-  const initialVariant = product.variants.find((item) => item.stockQuantity > 0) ?? product.variants[0] ?? null
-  const [variant, setVariant] = useState<CommerceVariant | null>(initialVariant)
+  const firstAvailableVariant = product.variants.find((item) => item.stockQuantity > 0) ?? null
+  const [selectedVariantId, setSelectedVariantId] = useState<string | null>(firstAvailableVariant?.id ?? null)
   const [quantity, setQuantity] = useState(1)
   const [added, setAdded] = useState(false)
   const addedTimer = useRef<number | null>(null)
+  const previousProductId = useRef(product.id)
+  const variant = product.variants.find((item) => item.id === selectedVariantId && item.stockQuantity > 0)
+    ?? firstAvailableVariant
+  const resolvedVariantId = variant?.id ?? null
+  const selectionNeedsReset = previousProductId.current !== product.id || selectedVariantId !== resolvedVariantId
   const image = variant?.images[0] ?? product.images[0]
   const maxQuantity = Math.max(0, variant?.stockQuantity ?? product.stockQuantity)
   const hasAvailableSelection = product.variants.length === 0 || variant !== null
   const available = product.availability === 'in_stock' && hasAvailableSelection && maxQuantity > 0
+  const selectedQuantity = selectionNeedsReset ? 1 : Math.min(quantity, Math.max(1, maxQuantity))
   const price = variant?.price ?? product.price
   const description = product.description?.trim()
     || product.shortDescription?.trim()
     || 'Información del producto disponible próximamente.'
 
   useEffect(() => () => {
-    if (addedTimer.current) window.clearTimeout(addedTimer.current)
+    if (addedTimer.current !== null) {
+      window.clearTimeout(addedTimer.current)
+      addedTimer.current = null
+    }
   }, [])
+
+  useEffect(() => {
+    previousProductId.current = product.id
+
+    if (selectionNeedsReset) {
+      setSelectedVariantId(resolvedVariantId)
+      setQuantity(1)
+      setAdded(false)
+      if (addedTimer.current !== null) {
+        window.clearTimeout(addedTimer.current)
+        addedTimer.current = null
+      }
+      return
+    }
+
+    setQuantity((value) => Math.min(value, Math.max(1, maxQuantity)))
+  }, [maxQuantity, product.id, resolvedVariantId, selectionNeedsReset])
 
   const add = () => {
     if (!available) return
-    addProduct(product, variant, quantity)
+    addProduct(product, variant, selectedQuantity)
     setAdded(true)
-    if (addedTimer.current) window.clearTimeout(addedTimer.current)
-    addedTimer.current = window.setTimeout(() => setAdded(false), 1800)
+    if (addedTimer.current !== null) window.clearTimeout(addedTimer.current)
+    addedTimer.current = window.setTimeout(() => {
+      addedTimer.current = null
+      setAdded(false)
+    }, 1800)
   }
 
   const selectVariant = (item: CommerceVariant) => {
     if (item.stockQuantity <= 0) return
-    setVariant(item)
+    setSelectedVariantId(item.id)
     setQuantity(1)
     setAdded(false)
+    if (addedTimer.current !== null) {
+      window.clearTimeout(addedTimer.current)
+      addedTimer.current = null
+    }
   }
 
   return (
@@ -65,7 +98,7 @@ export default function ProductDetail({ product }: { product: CommerceProduct })
                 <button
                   key={item.id}
                   type="button"
-                  aria-pressed={variant?.id === item.id}
+                  aria-pressed={resolvedVariantId === item.id}
                   disabled={item.stockQuantity <= 0}
                   onClick={() => selectVariant(item)}
                 >
@@ -77,14 +110,15 @@ export default function ProductDetail({ product }: { product: CommerceProduct })
 
           <div className="purchase-row">
             <div className="quantity-control" aria-label="Cantidad">
-              <button type="button" aria-label="Reducir cantidad" disabled={!available || quantity <= 1} onClick={() => setQuantity((value) => Math.max(1, value - 1))}><Minus aria-hidden="true" size={17} /></button>
-              <output aria-label="Cantidad seleccionada">{quantity}</output>
-              <button type="button" aria-label="Aumentar cantidad" disabled={!available || quantity >= maxQuantity} onClick={() => setQuantity((value) => Math.min(maxQuantity, value + 1))}><Plus aria-hidden="true" size={17} /></button>
+              <button type="button" aria-label="Reducir cantidad" disabled={!available || selectedQuantity <= 1} onClick={() => setQuantity((value) => Math.max(1, value - 1))}><Minus aria-hidden="true" size={17} /></button>
+              <span className="quantity-value" aria-label="Cantidad seleccionada">{selectedQuantity}</span>
+              <button type="button" aria-label="Aumentar cantidad" disabled={!available || selectedQuantity >= maxQuantity} onClick={() => setQuantity((value) => Math.min(maxQuantity, value + 1))}><Plus aria-hidden="true" size={17} /></button>
             </div>
             <button type="button" className="button button-accent add-button" disabled={!available} onClick={add}>
-              {added ? <><Check aria-hidden="true" size={18} /> <span aria-live="polite">Agregado al carrito</span></> : available ? <><ShoppingBag aria-hidden="true" size={18} /> <span aria-live="polite">Agregar al carrito</span></> : <span aria-live="polite">Agotado</span>}
+              {added ? <><Check aria-hidden="true" size={18} /> Agregado al carrito</> : available ? <><ShoppingBag aria-hidden="true" size={18} /> Agregar al carrito</> : 'Agotado'}
             </button>
           </div>
+          <p className="purchase-status" role="status" aria-live="polite" aria-atomic="true">{added ? 'Agregado al carrito' : ''}</p>
           <p className="stock-note">{available ? `${maxQuantity} disponibles` : 'Sin existencias disponibles'}</p>
         </div>
       </div>

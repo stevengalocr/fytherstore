@@ -225,10 +225,10 @@ main { flex: 1; }
 .quantity-control { min-height: 48px; border: 1px solid rgba(234, 251, 251, 0.2); border-radius: 4px; display: inline-grid; grid-template-columns: 44px 42px 44px; align-items: center; }
 .quantity-control button { width: 44px; height: 46px; border: 0; background: transparent; color: var(--color-ice); display: grid; place-items: center; transition: background-color 160ms var(--ease-out), color 160ms var(--ease-out), transform 160ms var(--ease-out); }
 .quantity-control button:disabled { opacity: 0.35; cursor: not-allowed; }
-.quantity-control output { text-align: center; font-variant-numeric: tabular-nums; }
+.quantity-value { text-align: center; font-variant-numeric: tabular-nums; }
 .add-button { flex: 1; min-width: 0; transition: background-color 160ms var(--ease-out), border-color 160ms var(--ease-out), color 160ms var(--ease-out), transform 160ms var(--ease-out); }
-.add-button span { display: inline-flex; align-items: center; }
-.stock-note { margin: 0.8rem 0 0; color: var(--color-mist); font-size: 0.75rem; font-variant-numeric: tabular-nums; }
+.purchase-status { min-height: 1.2em; margin: 0.75rem 0 0; color: var(--color-cyan); font-size: 0.75rem; }
+.stock-note { margin: 0.25rem 0 0; color: var(--color-mist); font-size: 0.75rem; font-variant-numeric: tabular-nums; }
 
 .cart-page { padding-top: clamp(3.5rem, 8vw, 7rem); padding-bottom: clamp(5rem, 10vw, 9rem); }
 .cart-page > header h1 { margin: 0.7rem 0 clamp(3rem, 7vw, 6rem); font-size: clamp(3.4rem, 8vw, 7rem); }
@@ -372,6 +372,9 @@ main { flex: 1; }
   .catalog-tools { align-items: stretch; flex-direction: column; }
   .catalog-controls { display: grid; grid-template-columns: minmax(0, 1fr) minmax(210px, 0.55fr); }
   .search-control, .sort-control { width: 100%; }
+  .purchase-row { flex-direction: column; }
+  .quantity-control { width: 100%; grid-template-columns: 1fr 48px 1fr; }
+  .add-button { flex: 0 0 auto; width: 100%; }
 }
 
 @media (max-width: 767px) {
@@ -463,8 +466,6 @@ main { flex: 1; }
   .catalog-results { padding-top: 24px; padding-bottom: 80px; }
   .catalog-no-results { min-height: 360px; }
   .catalog-no-results h2 { font-size: 2.85rem; }
-  .purchase-row { flex-direction: column; }
-  .quantity-control { width: 100%; grid-template-columns: 1fr 48px 1fr; }
   .cart-line { grid-template-columns: 72px 1fr; gap: 0.85rem; }
   .cart-line-image { width: 72px; }
   .form-grid { grid-template-columns: 1fr; }

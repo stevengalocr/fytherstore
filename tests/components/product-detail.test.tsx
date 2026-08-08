@@ -1,10 +1,13 @@
-import { render, screen } from '@testing-library/react'
+import { readFileSync } from 'node:fs'
+import { resolve } from 'node:path'
+import { fireEvent, render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
-import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import ProductDetail from '@/app/catalogo/[slug]/ProductDetail'
 import type { CommerceProduct } from '@/lib/commerce/types'
 
 const addProduct = vi.fn()
+const globalsCss = readFileSync(resolve(process.cwd(), 'app/globals.css'), 'utf8')
 
 vi.mock('@/context/CartContext', () => ({
   useCart: () => ({ addProduct }),
@@ -49,6 +52,10 @@ const product: CommerceProduct = {
 describe('ProductDetail', () => {
   beforeEach(() => {
     addProduct.mockReset()
+  })
+
+  afterEach(() => {
+    vi.restoreAllMocks()
   })
 
   it('uses the approved product-selection language and live content', () => {
@@ -109,16 +116,103 @@ describe('ProductDetail', () => {
     expect(addProduct).toHaveBeenCalledWith(expect.any(Object), firstAvailableVariant, 1)
   })
 
+  it('derives the selected variant from the latest product data', async () => {
+    const user = userEvent.setup()
+    const { rerender } = render(<ProductDetail product={product} />)
+
+    await user.click(screen.getByRole('button', { name: 'Aumentar cantidad' }))
+    const updatedVariant = {
+      ...product.variants[0],
+      price: { amount: 31900, currency: 'CRC' as const },
+      stockQuantity: 4,
+    }
+    const updatedProduct = { ...product, variants: [updatedVariant, product.variants[1]] }
+    rerender(<ProductDetail product={updatedProduct} />)
+
+    expect(screen.getByText(/31[.,\s]900/)).toBeInTheDocument()
+    expect(screen.getByText('4 disponibles')).toBeInTheDocument()
+    await user.click(screen.getByRole('button', { name: 'Agregar al carrito' }))
+    expect(addProduct).toHaveBeenCalledWith(updatedProduct, updatedVariant, 2)
+  })
+
+  it('recovers when the selected variant is removed from live product data', async () => {
+    const user = userEvent.setup()
+    const availableMedium = { ...product.variants[1], stockQuantity: 4 }
+    const { rerender } = render(<ProductDetail product={{
+      ...product,
+      variants: [product.variants[0], availableMedium],
+    }} />)
+
+    await user.click(screen.getByRole('button', { name: 'M' }))
+    await user.click(screen.getByRole('button', { name: 'Aumentar cantidad' }))
+    const currentSmall = { ...product.variants[0], stockQuantity: 3 }
+    const updatedProduct = { ...product, variants: [currentSmall] }
+    rerender(<ProductDetail product={updatedProduct} />)
+
+    expect(screen.getByRole('button', { name: 'S' })).toHaveAttribute('aria-pressed', 'true')
+    expect(screen.getByLabelText('Cantidad seleccionada')).toHaveTextContent('1')
+    await user.click(screen.getByRole('button', { name: 'Agregar al carrito' }))
+    expect(addProduct).toHaveBeenCalledWith(updatedProduct, currentSmall, 1)
+  })
+
+  it('does not press a disabled option when every variant is sold out', () => {
+    render(<ProductDetail product={{
+      ...product,
+      availability: 'out_of_stock',
+      variants: product.variants.map((variant) => ({ ...variant, stockQuantity: 0 })),
+    }} />)
+
+    expect(screen.getAllByRole('button', { pressed: false })).toHaveLength(2)
+    expect(screen.getByRole('button', { name: 'Agotado' })).toBeDisabled()
+  })
+
   it('adds the selected product, variant, and real quantity then announces success', async () => {
     const user = userEvent.setup()
     render(<ProductDetail product={product} />)
+
+    const status = screen.getByRole('status')
+    expect(status).toBeEmptyDOMElement()
 
     await user.click(screen.getByRole('button', { name: 'Aumentar cantidad' }))
     await user.click(screen.getByRole('button', { name: 'Agregar al carrito' }))
 
     expect(addProduct).toHaveBeenCalledWith(product, product.variants[0], 2)
     expect(screen.getByRole('button', { name: 'Agregado al carrito' })).toBeInTheDocument()
-    expect(screen.getByText('Agregado al carrito')).toHaveAttribute('aria-live', 'polite')
+    expect(screen.getByRole('status')).toBe(status)
+    expect(status).toHaveAttribute('aria-live', 'polite')
+    expect(status).toHaveTextContent('Agregado al carrito')
+  })
+
+  it('clears pending feedback when another selection action supersedes it', () => {
+    const clearTimeout = vi.spyOn(window, 'clearTimeout')
+    const setTimeout = vi.spyOn(window, 'setTimeout')
+    const availableMedium = { ...product.variants[1], stockQuantity: 4 }
+    const { unmount } = render(<ProductDetail product={{
+      ...product,
+      variants: [product.variants[0], availableMedium],
+    }} />)
+
+    fireEvent.click(screen.getByRole('button', { name: 'Agregar al carrito' }))
+    const feedbackTimerIndex = setTimeout.mock.calls.findIndex(([, delay]) => delay === 1800)
+    const feedbackTimer = setTimeout.mock.results[feedbackTimerIndex]?.value
+    fireEvent.click(screen.getByRole('button', { name: 'M' }))
+
+    expect(clearTimeout).toHaveBeenCalledWith(feedbackTimer)
+    unmount()
+    expect(clearTimeout.mock.calls.filter(([timer]) => timer === feedbackTimer)).toHaveLength(1)
+  })
+
+  it('clears pending feedback when the product detail unmounts', () => {
+    const clearTimeout = vi.spyOn(window, 'clearTimeout')
+    const setTimeout = vi.spyOn(window, 'setTimeout')
+    const { unmount } = render(<ProductDetail product={product} />)
+
+    fireEvent.click(screen.getByRole('button', { name: 'Agregar al carrito' }))
+    const feedbackTimerIndex = setTimeout.mock.calls.findIndex(([, delay]) => delay === 1800)
+    const feedbackTimer = setTimeout.mock.results[feedbackTimerIndex]?.value
+    unmount()
+
+    expect(clearTimeout).toHaveBeenCalledWith(feedbackTimer)
   })
 
   it('uses the truthful description fallback only when both descriptions are absent', () => {
@@ -171,5 +265,16 @@ describe('ProductDetail', () => {
     expect(button).toBeDisabled()
     await user.click(button)
     expect(addProduct).not.toHaveBeenCalled()
+  })
+
+  it('stacks purchase controls throughout the narrow tablet range', () => {
+    const tabletStart = globalsCss.indexOf('@media (max-width: 900px)')
+    const mobileStart = globalsCss.indexOf('@media (max-width: 767px)')
+    const tabletCss = globalsCss.slice(tabletStart, mobileStart)
+
+    expect(tabletStart).toBeGreaterThan(-1)
+    expect(mobileStart).toBeGreaterThan(tabletStart)
+    expect(tabletCss).toMatch(/\.purchase-row\s*\{[^}]*flex-direction:\s*column/)
+    expect(tabletCss).toMatch(/\.quantity-control\s*\{[^}]*width:\s*100%/)
   })
 })
