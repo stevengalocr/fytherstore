@@ -1,7 +1,7 @@
 'use client'
 
 import { useMemo, useState } from 'react'
-import { Search } from 'lucide-react'
+import { ArrowDownUp, Search } from 'lucide-react'
 import ProductCard from '@/components/ProductCard'
 import type { CommerceProduct } from '@/lib/commerce/types'
 
@@ -13,6 +13,12 @@ export default function CatalogClient({ products, initialCategory }: {
   const [category, setCategory] = useState(categories.includes(initialCategory) ? initialCategory : 'Todos')
   const [query, setQuery] = useState('')
   const [sort, setSort] = useState('featured')
+
+  function clearFilters() {
+    setCategory('Todos')
+    setQuery('')
+    setSort('featured')
+  }
 
   const visible = useMemo(() => {
     const normalized = query.trim().toLocaleLowerCase('es')
@@ -30,12 +36,12 @@ export default function CatalogClient({ products, initialCategory }: {
   return (
     <div className="catalog-page">
       <header className="catalog-hero container">
-        <p className="section-label">FYTHER / COLLECTION</p>
-        <h1 className="display">Active essentials.</h1>
-        <p>Encuentra piezas para tu siguiente movimiento.</p>
+        <p className="section-label">FYTHER / COLECCIÓN</p>
+        <h1 className="display">Encuentra algo para ti.</h1>
+        <p>Ropa activa para entrenar, caminar y compartir tu ritmo.</p>
       </header>
       <div className="catalog-tools container">
-        <div className="category-filters" aria-label="Filtrar por categoría">
+        <div className="category-filters" role="group" aria-label="Filtrar por categoría">
           {categories.map((item) => (
             <button key={item} type="button" aria-pressed={category === item} onClick={() => setCategory(item)}>{item}</button>
           ))}
@@ -44,10 +50,11 @@ export default function CatalogClient({ products, initialCategory }: {
           <label className="search-control">
             <span className="sr-only">Buscar productos</span>
             <Search aria-hidden="true" size={18} />
-            <input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Buscar" />
+            <input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Buscar productos" />
           </label>
           <label className="sort-control">
             <span className="sr-only">Ordenar productos</span>
+            <ArrowDownUp aria-hidden="true" size={17} />
             <select value={sort} onChange={(event) => setSort(event.target.value)}>
               <option value="featured">Destacados</option>
               <option value="price-asc">Precio: menor a mayor</option>
@@ -57,12 +64,25 @@ export default function CatalogClient({ products, initialCategory }: {
           </label>
         </div>
       </div>
-      <section className="catalog-results container" aria-live="polite">
-        <p>{visible.length} {visible.length === 1 ? 'resultado' : 'resultados'}</p>
+      <section className="catalog-results container" aria-label="Resultados del catálogo">
+        <p className="catalog-result-count" aria-live="polite" aria-atomic="true">
+          {visible.length} {visible.length === 1 ? 'resultado' : 'resultados'}
+        </p>
         {visible.length > 0 ? (
-          <div className="catalog-grid">{visible.map((product) => <ProductCard key={product.id} product={product} />)}</div>
+          <div className="catalog-grid" role="list" aria-label="Productos">
+            {visible.map((product) => (
+              <div key={product.id} className="catalog-grid-item" role="listitem">
+                <ProductCard product={product} />
+              </div>
+            ))}
+          </div>
         ) : (
-          <div className="catalog-no-results"><h2 className="display">Sin coincidencias.</h2><p>Prueba otra categoría o búsqueda.</p></div>
+          <div className="catalog-no-results">
+            <p className="section-label">BUSQUEMOS DE NUEVO</p>
+            <h2 className="display">No encontramos esa combinación.</h2>
+            <p>Prueba con otra palabra o vuelve a ver toda la colección.</p>
+            <button type="button" className="button button-ghost" onClick={clearFilters}>Limpiar filtros</button>
+          </div>
         )}
       </section>
     </div>

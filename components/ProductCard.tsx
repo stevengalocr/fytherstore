@@ -16,13 +16,13 @@ export default function ProductCard({ product }: { product: CommerceProduct }) {
             src={image.src}
             alt={image.alt}
             fill
-            sizes="(max-width: 767px) 86vw, (max-width: 1100px) 45vw, 31vw"
+            sizes="(max-width: 560px) calc(100vw - 32px), (max-width: 1100px) calc(50vw - 32px), 380px"
             className="product-image"
           />
         ) : (
           <div className="product-fallback" aria-label={`${product.name}, imagen no disponible`}>
             <span>Imagen no disponible</span>
-            <strong>FYTHER</strong>
+            <strong>Producto en catálogo</strong>
           </div>
         )}
       </div>
@@ -34,10 +34,10 @@ export default function ProductCard({ product }: { product: CommerceProduct }) {
         <p>{formatMoney(product.price)}</p>
       </div>
       {soldOut ? (
-        <button type="button" className="product-action" disabled>Agotado</button>
+        <button type="button" className="product-action product-action-disabled" disabled>Agotado</button>
       ) : (
         <Link href={`/catalogo/${product.slug}`} className="product-action" aria-label={`Ver producto ${product.name}`}>
-          Ver producto <ArrowUpRight aria-hidden="true" size={17} strokeWidth={1.7} />
+          <span>Ver producto</span><ArrowUpRight aria-hidden="true" size={17} strokeWidth={1.7} />
         </Link>
       )}
     </article>

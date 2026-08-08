@@ -11,9 +11,27 @@ const product: CommerceProduct = {
 }
 
 describe('ProductCard', () => {
+  it('keeps live product details and navigation visible when available', () => {
+    render(<ProductCard product={{
+      ...product,
+      slug: 'legging-flujo',
+      name: 'Legging Flujo',
+      category: 'Leggings',
+      price: { amount: 28900, currency: 'CRC' },
+      availability: 'in_stock',
+      stockQuantity: 4,
+    }} />)
+
+    expect(screen.getByText('Leggings')).toBeInTheDocument()
+    expect(screen.getByRole('heading', { name: 'Legging Flujo' })).toBeInTheDocument()
+    expect(screen.getByText(/28[.,\s]900/)).toBeInTheDocument()
+    expect(screen.getByRole('link', { name: 'Ver producto Legging Flujo' })).toHaveAttribute('href', '/catalogo/legging-flujo')
+  })
+
   it('disables purchase navigation for an out-of-stock product', () => {
     render(<ProductCard product={product} />)
     expect(screen.getByRole('button', { name: /agotado/i })).toBeDisabled()
+    expect(screen.queryByRole('link', { name: /ver producto/i })).not.toBeInTheDocument()
   })
 
   it('uses a meaningful fallback when no image exists', () => {

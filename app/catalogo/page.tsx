@@ -22,5 +22,11 @@ export default async function CatalogPage({ searchParams }: { searchParams: Prom
 }
 
 function CatalogHeader() {
-  return <header className="catalog-hero container"><p className="section-label">FYTHER / COLLECTION</p><h1 className="display">Active essentials.</h1><p>Encuentra piezas para tu siguiente movimiento.</p></header>
+  return (
+    <header className="catalog-hero container">
+      <p className="section-label">FYTHER / COLECCIÓN</p>
+      <h1 className="display">Encuentra algo para ti.</h1>
+      <p>Ropa activa para entrenar, caminar y compartir tu ritmo.</p>
+    </header>
+  )
 }
