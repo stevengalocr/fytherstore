@@ -11,15 +11,15 @@ export default function CartPage() {
 
   return (
     <div className="cart-page container">
-      <header><p className="section-label">FYTHER / BAG</p><h1 className="display">Tu selección.</h1></header>
+      <header><p className="section-label">FYTHER / BAG</p><h1 className="display">Lo que elegiste.</h1></header>
       {items.length === 0 ? (
-        <div className="cart-empty"><h2 className="display">Todavía hay espacio.</h2><p>Agrega una pieza para comenzar.</p><Link className="button" href="/catalogo">Explorar colección</Link></div>
+        <div className="cart-empty"><h2 className="display">Tu selección empieza aquí.</h2><p>Explora la colección y encuentra algo para acompañar tu ritmo.</p><Link className="button" href="/catalogo">Explorar colección</Link></div>
       ) : (
         <div className="cart-layout">
           <div className="cart-lines">
             {items.map((line) => (
               <article key={line.key} className="cart-line">
-                <div className="cart-line-image">{line.image ? <Image src={line.image} alt="" fill sizes="120px" /> : <span>FYTHER</span>}</div>
+                <div className="cart-line-image">{line.image ? <Image src={line.image} alt="" fill sizes="112px" /> : <span>Imagen no disponible</span>}</div>
                 <div className="cart-line-copy">
                   <Link href={`/catalogo/${line.slug}`}><h2>{line.name}</h2></Link>
                   {line.variantName && <p>{line.variantName}</p>}

@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useRef, useState } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { ArrowLeft, LoaderCircle } from 'lucide-react'
@@ -11,27 +11,68 @@ import type { CheckoutInput, PaymentMethod } from '@/lib/commerce/types'
 
 export interface PaymentOption { id: PaymentMethod; label: string; description: string }
 
+type FormState = {
+  name: string
+  email: string
+  phone: string
+  address: string
+  city: string
+  notes: string
+}
+
+type RequiredField = 'name' | 'email' | 'address'
+type FieldErrors = Partial<Record<RequiredField, string>>
+
+const fieldErrorIds: Record<RequiredField, string> = {
+  name: 'checkout-name-error',
+  email: 'checkout-email-error',
+  address: 'checkout-address-error',
+}
+
 export default function CheckoutClient({ methods }: { methods: PaymentOption[] }) {
   const { items, subtotal, clear } = useCart()
   const router = useRouter()
-  const [form, setForm] = useState({ name: '', email: '', phone: '', address: '', city: '', notes: '' })
+  const [form, setForm] = useState<FormState>({ name: '', email: '', phone: '', address: '', city: '', notes: '' })
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>(methods[0]?.id ?? 'sinpe')
-  const [error, setError] = useState('')
+  const [fieldErrors, setFieldErrors] = useState<FieldErrors>({})
+  const [serverError, setServerError] = useState('')
   const [sending, setSending] = useState(false)
+  const nameRef = useRef<HTMLInputElement>(null)
+  const emailRef = useRef<HTMLInputElement>(null)
+  const addressRef = useRef<HTMLInputElement>(null)
 
   const change = (field: keyof typeof form) => (event: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     setForm((current) => ({ ...current, [field]: event.target.value }))
+    setServerError('')
+    if (field === 'name' || field === 'email' || field === 'address') {
+      setFieldErrors((current) => {
+        if (!current[field]) return current
+        const next = { ...current }
+        delete next[field]
+        return next
+      })
+    }
   }
 
   const submit = async (event: React.FormEvent) => {
     event.preventDefault()
-    setError('')
-    if (!form.name.trim() || !form.email.trim() || !form.address.trim()) {
-      setError('Completa nombre, correo y dirección para continuar.')
+    if (sending) return
+    setServerError('')
+
+    const nextFieldErrors: FieldErrors = {}
+    if (!form.name.trim()) nextFieldErrors.name = 'Ingresa tu nombre completo.'
+    if (!form.email.trim()) nextFieldErrors.email = 'Ingresa tu correo electrónico.'
+    if (!form.address.trim()) nextFieldErrors.address = 'Ingresa tu dirección exacta.'
+    setFieldErrors(nextFieldErrors)
+
+    const firstInvalidField = (['name', 'email', 'address'] as const).find((field) => nextFieldErrors[field])
+    if (firstInvalidField) {
+      const refs = { name: nameRef, email: emailRef, address: addressRef }
+      refs[firstInvalidField].current?.focus()
       return
     }
-    if (!items.length) { setError('Tu carrito está vacío.'); return }
-    if (!methods.length) { setError('No hay métodos de pago configurados. Contacta a Fyther.'); return }
+    if (!items.length) { setServerError('Tu carrito está vacío.'); return }
+    if (!methods.length) { setServerError('No hay métodos de pago configurados. Contacta a Fyther.'); return }
     setSending(true)
 
     const input: CheckoutInput = {
@@ -42,7 +83,7 @@ export default function CheckoutClient({ methods }: { methods: PaymentOption[] }
     }
 
     const result = await createOrder(input)
-    if (!result.ok || !result.orderId) { setError(result.error ?? 'No pudimos crear el pedido.'); setSending(false); return }
+    if (!result.ok || !result.orderId) { setServerError(result.error ?? 'No pudimos crear el pedido.'); setSending(false); return }
     clear()
     router.push(`/confirmacion/${result.orderId}`)
   }
@@ -50,7 +91,7 @@ export default function CheckoutClient({ methods }: { methods: PaymentOption[] }
   return (
     <div className="checkout-page container">
       <Link href="/carrito" className="back-link"><ArrowLeft aria-hidden="true" size={18} /> Volver al carrito</Link>
-      <header><p className="section-label">FYTHER / CHECKOUT</p><h1 className="display">Cierra el movimiento.</h1></header>
+      <header><p className="section-label">FYTHER / CHECKOUT</p><h1 className="display">Terminemos juntas.</h1></header>
       {items.length === 0 ? (
         <div className="cart-empty"><h2 className="display">Tu carrito está vacío.</h2><Link className="button" href="/catalogo">Explorar colección</Link></div>
       ) : (
@@ -58,10 +99,10 @@ export default function CheckoutClient({ methods }: { methods: PaymentOption[] }
           <form className="checkout-form" onSubmit={submit} noValidate>
             <fieldset><legend>Contacto y entrega</legend>
               <div className="form-grid">
-                <label className="field-block span-2">Nombre completo<input autoComplete="name" value={form.name} onChange={change('name')} required /></label>
-                <label className="field-block">Correo electrónico<input type="email" autoComplete="email" value={form.email} onChange={change('email')} required /></label>
+                <label className="field-block span-2">Nombre completo<input ref={nameRef} autoComplete="name" value={form.name} onChange={change('name')} required aria-invalid={Boolean(fieldErrors.name)} aria-describedby={fieldErrors.name ? fieldErrorIds.name : undefined} />{fieldErrors.name && <span className="field-error" id={fieldErrorIds.name}>{fieldErrors.name}</span>}</label>
+                <label className="field-block">Correo electrónico<input ref={emailRef} type="email" autoComplete="email" value={form.email} onChange={change('email')} required aria-invalid={Boolean(fieldErrors.email)} aria-describedby={fieldErrors.email ? fieldErrorIds.email : undefined} />{fieldErrors.email && <span className="field-error" id={fieldErrorIds.email}>{fieldErrors.email}</span>}</label>
                 <label className="field-block">Teléfono<input type="tel" autoComplete="tel" value={form.phone} onChange={change('phone')} /></label>
-                <label className="field-block span-2">Dirección exacta<input autoComplete="street-address" value={form.address} onChange={change('address')} required /></label>
+                <label className="field-block span-2">Dirección exacta<input ref={addressRef} autoComplete="street-address" value={form.address} onChange={change('address')} required aria-invalid={Boolean(fieldErrors.address)} aria-describedby={fieldErrors.address ? fieldErrorIds.address : undefined} />{fieldErrors.address && <span className="field-error" id={fieldErrorIds.address}>{fieldErrors.address}</span>}</label>
                 <label className="field-block">Provincia o cantón<input autoComplete="address-level1" value={form.city} onChange={change('city')} /></label>
                 <label className="field-block">Notas<textarea value={form.notes} onChange={change('notes')} rows={3} /></label>
               </div>
@@ -73,9 +114,10 @@ export default function CheckoutClient({ methods }: { methods: PaymentOption[] }
               ))}</div> : <p className="payment-missing">No hay métodos de pago configurados. Contacta a Fyther antes de continuar.</p>}
             </fieldset>
 
-            {error && <p className="form-error" role="alert">{error}</p>}
+            {Object.keys(fieldErrors).length > 0 && <p className="form-error" role="alert">Revisa los campos marcados para continuar.</p>}
+            {serverError && <p className="form-error" role="alert">{serverError}</p>}
             <button className="button button-accent checkout-submit" type="submit" disabled={sending || methods.length === 0}>
-              {sending ? <><LoaderCircle className="spinner" aria-hidden="true" size={18} /> Procesando</> : `Confirmar pedido - ${formatMoney(subtotal)}`}
+              {sending ? <><LoaderCircle className="spinner" aria-hidden="true" size={18} /> Confirmando tu pedido</> : `Confirmar pedido - ${formatMoney(subtotal)}`}
             </button>
           </form>
 
