@@ -1,130 +1,47 @@
----
-name: Fyther Store
-description: A high-performance editorial storefront built around movement and precise commerce.
-colors:
-  obsidian: "#0b0d0e"
-  bone: "#f4f3ef"
-  volt: "#b8ff3d"
-  graphite: "#232628"
-  titanium: "#73797d"
-  pure: "#ffffff"
-  error: "#a62c2c"
-typography:
-  display:
-    fontFamily: "Archivo, sans-serif"
-    fontSize: "clamp(3.2rem, 8vw, 7.5rem)"
-    fontWeight: 800
-    lineHeight: 0.94
-    letterSpacing: "0"
-  body:
-    fontFamily: "Manrope, sans-serif"
-    fontSize: "16px"
-    fontWeight: 400
-    lineHeight: 1.55
-    letterSpacing: "0"
-  label:
-    fontFamily: "Manrope, sans-serif"
-    fontSize: "0.7rem"
-    fontWeight: 800
-    lineHeight: 1.2
-    letterSpacing: "0"
-rounded:
-  control: "4px"
-spacing:
-  xs: "4px"
-  sm: "8px"
-  md: "16px"
-  lg: "32px"
-  xl: "64px"
-components:
-  button-primary:
-    backgroundColor: "{colors.obsidian}"
-    textColor: "{colors.pure}"
-    rounded: "{rounded.control}"
-    padding: "13px 20px"
-    height: "48px"
-  button-accent:
-    backgroundColor: "{colors.volt}"
-    textColor: "{colors.obsidian}"
-    rounded: "{rounded.control}"
-    padding: "13px 20px"
-    height: "48px"
-  input:
-    backgroundColor: "{colors.pure}"
-    textColor: "{colors.obsidian}"
-    rounded: "{rounded.control}"
-    padding: "12px"
-    height: "48px"
----
+# Fyther Store V0.2 Neon Door
 
-# Design System: Fyther Store
+## North Star
 
-## Overview
+Fyther is a warm, modern and curated nocturnal sports boutique: energetic without feeling aggressive, cyberpunk, gamer-like or nightclub-like. Night carries the experience while Neon Cyan and Neon Pink create a restrained directional current. V0.1 Bone, Obsidian, Volt, green `#B8FF3D` and the `MOVE DIFFERENT.` direction are retired. Use the supplied official logo assets; the Fyther wordmark is never recreated as text.
 
-**Creative North Star: "The Performance Editorial"**
+## Audience
 
-Fyther feels like a calm sports magazine that can complete a purchase. Large, decisive type and real campaign media create energy; disciplined grids, honest labels and restrained controls keep the commercial path precise. The visual world rejects generic ecommerce cards, decorative gradients and unsupported claims.
+The store serves primarily women and the friends, relatives and acquaintances who exercise or want active clothing for everyday movement. It is mobile first and designed for shoppers arriving through trusted personal recommendations. Spanish copy is inviting, concise and centered on movement, feeling well, sharing and personal rhythm rather than commands or elite-performance language.
 
-**Key Characteristics:** editorial scale, flat surfaces, sharp contrast, one electric accent, functional motion and visible product truth.
+## Palette
 
-## Colors
+- Night `#050608`: dominant page and media surface, approximately 65-75% of the experience.
+- Night Raised `#0B0D10`: solid elevated surfaces and operational panels.
+- Neon Cyan `#6EEFF2`: identity, focus, primary actions and directional current.
+- Neon Pink `#F06CCB`: small signs, endpoints, selected accents and emotional punctuation.
+- Ice `#EAFBFB`: primary text on Night.
+- Mist `#A8B4B8`: secondary text and restrained metadata.
+- Warm Stone `#B69C79`: rare contextual warmth where it harmonizes with photography.
 
-Bone and Obsidian carry almost the entire interface. Volt is a rare action and momentum signal.
-
-- **Obsidian** (`#0b0d0e`): primary text, dark sections and structural controls.
-- **Bone** (`#f4f3ef`): main page surface.
-- **Volt** (`#b8ff3d`): primary action, active status and editorial emphasis.
-- **Graphite** (`#232628`): secondary dark band and fallback media.
-- **Titanium** (`#73797d`): secondary metadata.
-- **Pure** (`#ffffff`): input and high-contrast text surface.
-- **Error** (`#a62c2c`): validation and failure state.
-
-**The Volt Rule.** Use Volt for the next meaningful action or one decisive phrase, never as a general background theme.
+Use solid and translucent approved colors, never gradients. Glow belongs only to the real logo, focus feedback and one or two signature moments per viewport; paragraph text never glows.
 
 ## Typography
 
-**Display Font:** Archivo, sans-serif
-**Body Font:** Manrope, sans-serif
+Display typography is Barlow Semi Condensed at weights `500`, `600` or `700`. Body and UI typography is Manrope. Letter spacing is always `0`. Hero headings may use fluid sizing; operational routes use a smaller fixed hierarchy. Keep body lines near `65-75ch`.
 
-Archivo makes short statements feel athletic without becoming aggressive. Manrope keeps catalog, checkout and policy content compact and legible. Letter spacing remains zero throughout.
+## Shape
 
-- **Display** (800, responsive clamp, 0.94): hero and section statements only.
-- **Title** (700-800, `1rem` to `2rem`): product and operational headings.
-- **Body** (400, `16px`, 1.55): copy with a preferred measure below 64 characters.
-- **Label** (800, `0.7rem`): concise uppercase locators and metadata.
+Build scenes, rails and image-led unframed product presentation instead of generic card grids. Large curved masks are reserved for photography and editorial media. Operational cards and panels use at most `8px` radius; pills are reserved for actions, filters and compact trust chips. Never nest cards. Use stable aspect ratios, grid tracks and responsive bounds to prevent layout shift.
 
-## Layout
+## Motion
 
-The maximum content width is `1440px`; horizontal gutters grow from `16px` on mobile to `64px` on wide screens. Desktop compositions use asymmetric two-column editorial grids and three-column product grids. Below `767px`, sections stack, product highlights become a horizontal rail and task flows become single-column. Fixed-format media uses explicit aspect ratios or stable minimum heights.
+Fyther Current has four layers: a logo Neon Wake from about `0.7` opacity over `500-700ms`; a cyan Current Line ending in a pink point; Soft Drift reveals traveling `12-20px` with `40-60ms` stagger; and responsive control feedback lasting about `120-220ms`. Hover scale never exceeds `1.02`.
 
-## Elevation & Depth
+Prefer CSS transforms and opacity plus `IntersectionObserver` for one-time reveals. Do not animate layout dimensions or block interaction. Gate hover effects behind hover-capable pointers. Under `prefers-reduced-motion`, remove current, drift and camera movement while retaining opacity or color feedback under `150ms`.
 
-The system is flat by design and uses no shadows. Depth comes from photographic media, dark tonal bands, borders and sticky operational summaries. Hover feedback uses color and transform only.
+## Commerce Truth
 
-## Shapes
+BilBildin is the sole source of truth for products, categories, variants, prices, availability, payment methods, checkout, orders and tracking. Never invent demo inventory, prices, stock, reviews, shipping promises or order states. Fyther owns only brand, narrative, interface and presentation, and customer-facing errors never expose BilBildin configuration details.
 
-Controls use a restrained `4px` radius. Product media, editorial sections and information bands remain square. Borders are thin and low contrast; pills are reserved for compact category filters where the shape communicates selection.
+## Responsive Rules
 
-## Components
+Design mobile first with touch targets of at least `44px`, no horizontal page overflow and no overlap between text, controls, media or adjacent sections. Preserve explicit aspect ratios and responsive constraints. Visually verify at `390px` mobile, `768px` tablet and `1440px` desktop; inspect media crops, wrapping, navigation, forms, loading and empty states at each target.
 
-- **Buttons:** 48px minimum height, compact bold labels, Obsidian default or Volt primary action, visible focus ring and short press scale.
-- **Inputs:** white field, 4px radius, dark 1px border, persistent visible label and stronger border on focus.
-- **Product cards:** unframed vertical composition, 4:5 media, factual category/name/price row and a separate action row.
-- **Navigation:** centered desktop links, 44px targets and a stacked mobile menu opened by a Lucide icon button.
-- **Commerce states:** concise editorial bands for unconfigured, empty and error states without impersonating live inventory.
+## Quality Gates
 
-## Do's and Don'ts
-
-### Do
-
-- **Do** preserve the Bone, Obsidian and Volt hierarchy.
-- **Do** keep product data, payment methods and stock sourced from BilBildin in live mode.
-- **Do** use real media and Lucide icons with descriptive accessible labels.
-- **Do** maintain 44px minimum interaction targets and reduced-motion behavior.
-
-### Don't
-
-- **Don't** add gradients, decorative blobs, nested cards or floating section containers.
-- **Don't** use Volt as a dominant page color or introduce another dominant hue family.
-- **Don't** invent products, reviews, shipping promises, payment methods or availability.
-- **Don't** use negative letter spacing, emoji icons or layout-changing hover animation.
+Maintain WCAG AA contrast, visible Cyan focus against Night, keyboard operation, accurate Spanish image alternatives and hidden decorative media. Use `next/image` with accurate sizes, eagerly load only the hero poster, lazy-load later imagery, avoid new animation dependencies and keep runtime/hydration consoles clean. Unit, type, lint and route checks must preserve honest empty/error commerce states and all existing customer flows; visual checks must cover responsive and reduced-motion modes.
