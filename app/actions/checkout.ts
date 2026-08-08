@@ -2,7 +2,8 @@
 
 import { randomBytes } from 'node:crypto'
 import { createServiceClient, getServerBusinessId } from '@/lib/supabase-server'
-import type { CheckoutInput, CheckoutResult, PaymentMethod } from '@/lib/commerce/types'
+import { getEnabledPaymentMethods, normalizeCheckoutEmail } from '@/lib/commerce/checkout'
+import type { CheckoutInput, CheckoutResult, PaymentMethod, ThemeConfig } from '@/lib/commerce/types'
 
 const PAYMENT_LABELS: Record<PaymentMethod, string> = {
   sinpe: 'SINPE Móvil',
@@ -17,16 +18,21 @@ function orderNumber(): string {
 export async function createOrder(input: CheckoutInput): Promise<CheckoutResult> {
   try {
     if (!input.items.length) throw new Error('Tu carrito está vacío.')
-    if (!input.customer.name.trim() || !input.customer.email.trim() || !input.address.address.trim()) {
+    const email = normalizeCheckoutEmail(input.customer.email)
+    if (!input.customer.name.trim() || !email || !input.address.address.trim()) {
       throw new Error('Completa nombre, correo y dirección para continuar.')
     }
 
     const supabase = createServiceClient()
     const businessId = getServerBusinessId()
     const { data: business, error: businessError } = await supabase
-      .from('businesses').select('account_status').eq('id', businessId).single()
+      .from('businesses').select('account_status,theme_config').eq('id', businessId).single()
     if (businessError || business?.account_status !== 'active') {
       throw new Error('Esta tienda no está aceptando pedidos en este momento.')
+    }
+    const enabledPaymentMethods = getEnabledPaymentMethods((business.theme_config ?? {}) as ThemeConfig)
+    if (!enabledPaymentMethods.includes(input.paymentMethod)) {
+      throw new Error('El método de pago seleccionado ya no está disponible.')
     }
 
     const productIds = [...new Set(input.items.map((item) => item.productId))]
@@ -68,7 +74,6 @@ export async function createOrder(input: CheckoutInput): Promise<CheckoutResult>
 
     const subtotal = orderItems.reduce((sum, item) => sum + item.subtotal, 0)
     const totalCost = orderItems.reduce((sum, item) => sum + item.unit_cost * item.quantity, 0)
-    const email = input.customer.email.trim().toLowerCase()
     const { data: customer, error: customerError } = await supabase.from('store_customers').upsert({
       business_id: businessId,
       name: input.customer.name.trim(),

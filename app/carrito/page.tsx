@@ -26,8 +26,8 @@ export default function CartPage() {
                   <span>{formatMoney(line.unitPrice)}</span>
                 </div>
                 <div className="cart-line-actions">
-                  <div className="quantity-control" aria-label={`Cantidad de ${line.name}`}>
-                    <button type="button" aria-label={`Reducir ${line.name}`} onClick={() => setQuantity(line.key, line.quantity - 1)}><Minus aria-hidden="true" size={16} /></button>
+                  <div className="quantity-control" role="group" aria-label={`Cantidad de ${line.name}`}>
+                    <button type="button" aria-label={`Reducir ${line.name}`} disabled={line.quantity <= 1} onClick={() => setQuantity(line.key, line.quantity - 1)}><Minus aria-hidden="true" size={16} /></button>
                     <output>{line.quantity}</output>
                     <button type="button" aria-label={`Aumentar ${line.name}`} disabled={line.quantity >= line.maxQuantity} onClick={() => setQuantity(line.key, line.quantity + 1)}><Plus aria-hidden="true" size={16} /></button>
                   </div>

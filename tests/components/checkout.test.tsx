@@ -1,4 +1,4 @@
-import { render, screen, waitFor } from '@testing-library/react'
+import { fireEvent, render, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { createOrder } from '@/app/actions/checkout'
@@ -99,6 +99,29 @@ describe('CheckoutClient', () => {
     expect(createOrder).not.toHaveBeenCalled()
   })
 
+  it('rejects malformed email and submits the normalized value', async () => {
+    const user = userEvent.setup()
+    vi.mocked(createOrder).mockResolvedValue({ ok: false, mode: 'live', error: 'Detener aquí.' })
+    render(<CheckoutClient methods={methods} />)
+
+    const email = screen.getByRole('textbox', { name: 'Correo electrónico' })
+    await user.type(screen.getByRole('textbox', { name: 'Nombre completo' }), 'Steven')
+    await user.type(email, 'correo@')
+    await user.type(screen.getByRole('textbox', { name: 'Dirección exacta' }), 'San José')
+    await user.click(screen.getByRole('button', { name: /confirmar pedido/i }))
+
+    expect(email).toHaveAccessibleDescription('Ingresa un correo electrónico válido.')
+    expect(createOrder).not.toHaveBeenCalled()
+
+    await user.clear(email)
+    await user.type(email, '  Steven@Example.COM  ')
+    await user.click(screen.getByRole('button', { name: /confirmar pedido/i }))
+
+    expect(createOrder).toHaveBeenCalledWith(expect.objectContaining({
+      customer: expect.objectContaining({ email: 'steven@example.com' }),
+    }))
+  })
+
   it('keeps customer data and announces a server failure', async () => {
     const user = userEvent.setup()
     vi.mocked(createOrder).mockResolvedValue({ ok: false, mode: 'live', error: 'No pudimos validar el inventario.' })
@@ -109,6 +132,21 @@ describe('CheckoutClient', () => {
 
     expect(await screen.findByRole('alert')).toHaveTextContent('No pudimos validar el inventario.')
     expect(screen.getByRole('textbox', { name: 'Nombre completo' })).toHaveValue('Steven')
+    expect(clear).not.toHaveBeenCalled()
+    expect(push).not.toHaveBeenCalled()
+  })
+
+  it('recovers from a rejected order request without clearing the form', async () => {
+    const user = userEvent.setup()
+    vi.mocked(createOrder).mockRejectedValue(new Error('network details'))
+    render(<CheckoutClient methods={methods} />)
+
+    await completeRequiredFields(user)
+    await user.click(screen.getByRole('button', { name: /confirmar pedido/i }))
+
+    expect(await screen.findByRole('alert')).toHaveTextContent('No pudimos conectar para confirmar tu pedido. Intenta de nuevo.')
+    expect(screen.getByRole('textbox', { name: 'Nombre completo' })).toHaveValue('Steven')
+    expect(screen.getByRole('button', { name: /confirmar pedido/i })).toBeEnabled()
     expect(clear).not.toHaveBeenCalled()
     expect(push).not.toHaveBeenCalled()
   })
@@ -138,22 +176,35 @@ describe('CheckoutClient', () => {
     expect(clear).toHaveBeenCalledOnce()
   })
 
-  it('disables submission and prevents double submit while the order is pending', async () => {
+  it('prevents reentrant submit events before React can render the pending state', async () => {
     const user = userEvent.setup()
     let resolveOrder!: (value: { ok: false; mode: 'live'; error: string }) => void
     vi.mocked(createOrder).mockImplementation(() => new Promise((resolve) => { resolveOrder = resolve }))
     render(<CheckoutClient methods={methods} />)
 
     await completeRequiredFields(user)
-    const submit = screen.getByRole('button', { name: /confirmar pedido/i })
-    await user.click(submit)
+    const form = screen.getByRole('button', { name: /confirmar pedido/i }).closest('form')!
+    fireEvent.submit(form)
+    fireEvent.submit(form)
 
     expect(screen.getByRole('button', { name: 'Confirmando tu pedido' })).toBeDisabled()
-    await user.click(screen.getByRole('button', { name: 'Confirmando tu pedido' }))
     expect(createOrder).toHaveBeenCalledTimes(1)
 
     resolveOrder({ ok: false, mode: 'live', error: 'Intenta de nuevo.' })
     await waitFor(() => expect(screen.getByRole('button', { name: /confirmar pedido/i })).toBeEnabled())
+  })
+
+  it('synchronizes payment selection when live methods change', async () => {
+    const user = userEvent.setup()
+    vi.mocked(createOrder).mockResolvedValue({ ok: false, mode: 'live', error: 'Detener aquí.' })
+    const { rerender } = render(<CheckoutClient methods={methods} />)
+
+    rerender(<CheckoutClient methods={[{ id: 'cash', label: 'Efectivo', description: 'Al recibir' }]} />)
+    expect(screen.getByRole('radio', { name: /efectivo/i })).toBeChecked()
+
+    await completeRequiredFields(user)
+    await user.click(screen.getByRole('button', { name: /confirmar pedido/i }))
+    expect(createOrder).toHaveBeenCalledWith(expect.objectContaining({ paymentMethod: 'cash' }))
   })
 
   it('keeps the empty-cart recovery truthful', () => {

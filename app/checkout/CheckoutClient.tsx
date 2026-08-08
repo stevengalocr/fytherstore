@@ -1,11 +1,12 @@
 'use client'
 
-import { useRef, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { ArrowLeft, LoaderCircle } from 'lucide-react'
 import { createOrder } from '@/app/actions/checkout'
 import { formatMoney } from '@/lib/format'
+import { normalizeCheckoutEmail } from '@/lib/commerce/checkout'
 import { useCart } from '@/context/CartContext'
 import type { CheckoutInput, PaymentMethod } from '@/lib/commerce/types'
 
@@ -33,13 +34,18 @@ export default function CheckoutClient({ methods }: { methods: PaymentOption[] }
   const { items, subtotal, clear } = useCart()
   const router = useRouter()
   const [form, setForm] = useState<FormState>({ name: '', email: '', phone: '', address: '', city: '', notes: '' })
-  const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>(methods[0]?.id ?? 'sinpe')
+  const [paymentMethod, setPaymentMethod] = useState<PaymentMethod | null>(methods[0]?.id ?? null)
   const [fieldErrors, setFieldErrors] = useState<FieldErrors>({})
   const [serverError, setServerError] = useState('')
   const [sending, setSending] = useState(false)
   const nameRef = useRef<HTMLInputElement>(null)
   const emailRef = useRef<HTMLInputElement>(null)
   const addressRef = useRef<HTMLInputElement>(null)
+  const inFlightRef = useRef(false)
+
+  useEffect(() => {
+    setPaymentMethod((current) => methods.some((method) => method.id === current) ? current : (methods[0]?.id ?? null))
+  }, [methods])
 
   const change = (field: keyof typeof form) => (event: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     setForm((current) => ({ ...current, [field]: event.target.value }))
@@ -56,12 +62,13 @@ export default function CheckoutClient({ methods }: { methods: PaymentOption[] }
 
   const submit = async (event: React.FormEvent) => {
     event.preventDefault()
-    if (sending) return
+    if (inFlightRef.current) return
     setServerError('')
 
     const nextFieldErrors: FieldErrors = {}
     if (!form.name.trim()) nextFieldErrors.name = 'Ingresa tu nombre completo.'
-    if (!form.email.trim()) nextFieldErrors.email = 'Ingresa tu correo electrónico.'
+    const normalizedEmail = normalizeCheckoutEmail(form.email)
+    if (!normalizedEmail) nextFieldErrors.email = form.email.trim() ? 'Ingresa un correo electrónico válido.' : 'Ingresa tu correo electrónico.'
     if (!form.address.trim()) nextFieldErrors.address = 'Ingresa tu dirección exacta.'
     setFieldErrors(nextFieldErrors)
 
@@ -71,21 +78,36 @@ export default function CheckoutClient({ methods }: { methods: PaymentOption[] }
       refs[firstInvalidField].current?.focus()
       return
     }
+    if (!normalizedEmail) return
     if (!items.length) { setServerError('Tu carrito está vacío.'); return }
-    if (!methods.length) { setServerError('No hay métodos de pago configurados. Contacta a Fyther.'); return }
+    if (!paymentMethod || !methods.some((method) => method.id === paymentMethod)) {
+      setServerError('No hay métodos de pago configurados. Contacta a Fyther.')
+      return
+    }
+    inFlightRef.current = true
     setSending(true)
 
     const input: CheckoutInput = {
       items: items.map((line) => ({ productId: line.productId, variantId: line.variantId, name: line.name, variantName: line.variantName, image: line.image, quantity: line.quantity })),
-      customer: { name: form.name, email: form.email, phone: form.phone },
+      customer: { name: form.name, email: normalizedEmail, phone: form.phone },
       address: { address: form.address, city: form.city, country: 'Costa Rica', notes: form.notes },
       paymentMethod,
     }
 
-    const result = await createOrder(input)
-    if (!result.ok || !result.orderId) { setServerError(result.error ?? 'No pudimos crear el pedido.'); setSending(false); return }
-    clear()
-    router.push(`/confirmacion/${result.orderId}`)
+    try {
+      const result = await createOrder(input)
+      if (!result.ok || !result.orderId) {
+        setServerError(result.error ?? 'No pudimos crear el pedido.')
+        return
+      }
+      clear()
+      router.push(`/confirmacion/${result.orderId}`)
+    } catch {
+      setServerError('No pudimos conectar para confirmar tu pedido. Intenta de nuevo.')
+    } finally {
+      inFlightRef.current = false
+      setSending(false)
+    }
   }
 
   return (
@@ -116,7 +138,7 @@ export default function CheckoutClient({ methods }: { methods: PaymentOption[] }
 
             {Object.keys(fieldErrors).length > 0 && <p className="form-error" role="alert">Revisa los campos marcados para continuar.</p>}
             {serverError && <p className="form-error" role="alert">{serverError}</p>}
-            <button className="button button-accent checkout-submit" type="submit" disabled={sending || methods.length === 0}>
+            <button className="button button-accent checkout-submit" type="submit" disabled={sending || !paymentMethod || methods.length === 0}>
               {sending ? <><LoaderCircle className="spinner" aria-hidden="true" size={18} /> Confirmando tu pedido</> : `Confirmar pedido - ${formatMoney(subtotal)}`}
             </button>
           </form>

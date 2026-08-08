@@ -50,12 +50,18 @@ describe('CartPage', () => {
     render(<CartPage />)
 
     await user.click(screen.getByRole('button', { name: 'Aumentar Legging Flujo' }))
-    await user.click(screen.getByRole('button', { name: 'Reducir Legging Flujo' }))
     await user.click(screen.getByRole('button', { name: 'Eliminar Legging Flujo' }))
 
     expect(setQuantity).toHaveBeenNthCalledWith(1, item.key, 2)
-    expect(setQuantity).toHaveBeenNthCalledWith(2, item.key, 0)
     expect(removeItem).toHaveBeenCalledWith(item.key)
+  })
+
+  it('exposes quantity as a group and does not decrement below one', () => {
+    render(<CartPage />)
+
+    expect(screen.getByRole('group', { name: 'Cantidad de Legging Flujo' })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Reducir Legging Flujo' })).toBeDisabled()
+    expect(setQuantity).not.toHaveBeenCalled()
   })
 
   it('disables quantity increases at live stock capacity', () => {
