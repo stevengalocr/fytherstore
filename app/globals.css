@@ -145,6 +145,7 @@ main { flex: 1; }
 .category-filters button[aria-pressed='true'] { background: var(--color-cyan); color: var(--color-night); border-color: var(--color-cyan); }
 .catalog-controls { display: flex; gap: 0.6rem; }
 .search-control, .sort-control { min-height: 44px; border: 1px solid rgba(234, 251, 251, 0.16); display: flex; align-items: center; gap: 0.5rem; padding-inline: 0.75rem; }
+.search-control:focus-within, .sort-control:focus-within { border-color: var(--color-cyan); box-shadow: 0 0 0 1px var(--color-cyan); }
 .search-control input, .sort-control select { min-width: 0; border: 0; outline: 0; background: transparent; color: var(--color-ice); }
 .catalog-results { padding-top: 2rem; padding-bottom: clamp(5rem, 10vw, 9rem); }
 .catalog-results > p { margin: 0 0 1.5rem; color: var(--color-mist); font-size: 0.8rem; }
@@ -347,5 +348,23 @@ main { flex: 1; }
 
 @media (prefers-reduced-motion: reduce) {
   html { scroll-behavior: auto; }
-  *, *::before, *::after { animation-duration: 0.01ms !important; animation-iteration-count: 1 !important; transition-duration: 0.01ms !important; scroll-behavior: auto !important; }
+  .motion-track > div,
+  .spinner,
+  .catalog-loading span { animation: none !important; transform: none !important; }
+  .product-image,
+  .product-action,
+  .category-rail a,
+  .icon-button,
+  .icon-link,
+  .button { transform: none !important; }
+  .product-image,
+  .site-nav a::after { transition: none; }
+  .icon-button,
+  .icon-link,
+  .button,
+  .product-action,
+  .category-rail a {
+    transition-property: background-color, border-color, color, opacity;
+    transition-duration: 120ms;
+  }
 }
