@@ -1,13 +1,19 @@
 import { act, renderHook } from '@testing-library/react'
 import { beforeEach, describe, expect, it } from 'vitest'
 import { CartProvider, useCart } from '@/context/CartContext'
-import { demoProducts } from '@/lib/commerce/demo'
+import type { CommerceProduct } from '@/lib/commerce/types'
+
+const product: CommerceProduct = {
+  id: 'product-1', slug: 'motion-tee', name: 'Motion Tee', shortDescription: null,
+  description: null, price: { amount: 18900, currency: 'CRC' }, compareAtPrice: null,
+  images: [], availability: 'in_stock', stockQuantity: 5, category: 'Ropa', tags: [], featured: true,
+  variants: [{ id: 'variant-1', name: 'Talla M', sku: null, price: { amount: 18900, currency: 'CRC' }, stockQuantity: 2, attributes: {}, images: [] }],
+}
 
 describe('CartProvider', () => {
   beforeEach(() => localStorage.clear())
 
   it('merges identical lines and clamps quantity to stock', () => {
-    const product = demoProducts[0]
     const variant = product.variants[0]
     const { result } = renderHook(() => useCart(), { wrapper: CartProvider })
 
@@ -19,7 +25,6 @@ describe('CartProvider', () => {
   })
 
   it('removes a line when requested', () => {
-    const product = demoProducts[1]
     const { result } = renderHook(() => useCart(), { wrapper: CartProvider })
     act(() => result.current.addProduct(product, null, 1))
     act(() => result.current.removeItem(result.current.items[0].key))

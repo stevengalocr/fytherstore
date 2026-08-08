@@ -1,4 +1,4 @@
-export type CommerceMode = 'demo' | 'live'
+export type CommerceMode = 'unconfigured' | 'live'
 export type CurrencyCode = 'CRC'
 export type Availability = 'in_stock' | 'out_of_stock' | 'unavailable'
 
@@ -37,10 +37,9 @@ export interface CommerceProduct {
   category: string | null
   tags: string[]
   featured: boolean
-  demo: boolean
 }
 
-export type PaymentMethod = 'sinpe' | 'link' | 'cash' | 'demo'
+export type PaymentMethod = 'sinpe' | 'link' | 'cash'
 
 export interface CheckoutLine {
   productId: string
@@ -101,7 +100,6 @@ export interface CommerceOrder {
   paymentMethod: PaymentMethod
   lines: CommerceOrderLine[]
   tracking: CommerceTrackingEvent[]
-  demo: boolean
 }
 
 export interface ThemeConfig {

@@ -41,7 +41,6 @@ main { flex: 1; }
 .site-nav { display: flex; align-items: center; gap: clamp(1.25rem, 2.5vw, 2.75rem); font-size: 0.82rem; font-weight: 700; }
 .site-nav a { min-height: 44px; display: inline-flex; align-items: center; position: relative; }
 .site-nav a::after { content: ''; position: absolute; left: 0; right: 100%; bottom: 0.6rem; height: 1px; background: var(--obsidian); transition: right 180ms var(--ease-out); }
-.demo-label { border: 1px solid var(--obsidian); padding: 0.28rem 0.5rem; font-size: 0.68rem; font-weight: 800; text-transform: uppercase; }
 .header-actions { justify-self: end; display: flex; align-items: center; gap: 0.35rem; }
 .icon-button, .icon-link { width: 44px; height: 44px; border: 0; background: transparent; color: var(--obsidian); display: inline-grid; place-items: center; transition: background-color 180ms var(--ease-out), transform 140ms var(--ease-out); }
 .icon-button:active, .icon-link:active, .button:active { transform: scale(0.97); }
@@ -55,8 +54,6 @@ main { flex: 1; }
 .button:disabled { cursor: not-allowed; opacity: 0.52; }
 .dark-surface .button-ghost { color: var(--bone); border-color: var(--bone); }
 
-.commerce-notice { width: min(100%, var(--max-width)); margin: 1rem auto 0; padding: 0.85rem var(--page-pad); display: flex; align-items: center; gap: 0.75rem; color: var(--obsidian); font-size: 0.82rem; }
-.commerce-notice p { margin: 0; }
 .commerce-empty { min-height: 360px; padding: clamp(3rem, 9vw, 8rem) var(--page-pad); display: flex; flex-direction: column; align-items: flex-start; justify-content: center; background: var(--bone); border-top: 1px solid var(--line); }
 .commerce-empty h2 { max-width: 10ch; margin: 0.5rem 0 1rem; font-size: clamp(2.8rem, 7vw, 6rem); }
 .commerce-empty p:not(.section-label) { max-width: 48ch; margin: 0 0 1.5rem; color: #565c5f; }
@@ -150,7 +147,6 @@ main { flex: 1; }
 
 .detail-page { padding-top: 2rem; padding-bottom: clamp(5rem, 10vw, 9rem); }
 .back-link { min-height: 44px; display: inline-flex; align-items: center; gap: 0.35rem; font-size: 0.8rem; font-weight: 800; }
-.inline-demo { margin: 1rem 0 0; padding: 0.7rem 0; border-block: 1px solid var(--line); font-size: 0.78rem; }
 .detail-layout { margin-top: 2rem; display: grid; grid-template-columns: 1.35fr 0.65fr; gap: clamp(2rem, 6vw, 6rem); align-items: start; }
 .detail-media { position: relative; min-height: 720px; background: #e5e5df; overflow: hidden; }
 .detail-media > img { object-fit: cover; }
@@ -196,7 +192,6 @@ main { flex: 1; }
 .checkout-page { padding-top: 2rem; padding-bottom: clamp(5rem, 10vw, 9rem); }
 .checkout-page > header { padding-top: clamp(2.5rem, 6vw, 5rem); }
 .checkout-page > header h1 { max-width: 10ch; margin: 0.7rem 0 clamp(2rem, 5vw, 4rem); font-size: clamp(3.2rem, 8vw, 7rem); }
-.checkout-demo { margin-bottom: 2rem; padding: 0.8rem 0; border-block: 1px solid var(--line); display: flex; align-items: center; gap: 0.6rem; font-size: 0.8rem; }
 .checkout-layout { display: grid; grid-template-columns: 1.25fr 0.75fr; gap: clamp(2rem, 7vw, 7rem); align-items: start; }
 .checkout-form fieldset { margin: 0 0 2.5rem; padding: 0; border: 0; }
 .checkout-form legend { margin-bottom: 1.25rem; font-family: var(--font-display), sans-serif; font-size: 1.35rem; font-weight: 800; }
@@ -226,7 +221,6 @@ main { flex: 1; }
 .confirmation-icon { width: 58px; height: 58px; margin-bottom: 1.5rem; display: grid; place-items: center; background: var(--volt); border: 1px solid var(--obsidian); }
 .confirmation-lead h1 { max-width: 10ch; margin: 0.7rem 0 1.25rem; font-size: clamp(3.5rem, 8vw, 7rem); }
 .confirmation-lead > p:not(.section-label) { max-width: 55ch; }
-.demo-order-note { margin: 1rem 0 1.5rem; padding: 0.8rem 0; border-block: 1px solid var(--line); color: #42484a; }
 .order-summary { width: min(100%, 760px); margin-left: auto; padding: 1.5rem; background: var(--obsidian); color: var(--bone); }
 .order-summary h2 { margin: 0 0 1.5rem; font-family: var(--font-display), sans-serif; }
 .order-summary > div, .order-summary > p { margin: 0; padding: 1rem 0; border-bottom: 1px solid var(--line-dark); display: flex; justify-content: space-between; gap: 1rem; font-size: 0.85rem; }
@@ -296,7 +290,6 @@ main { flex: 1; }
   .site-nav.is-open { display: flex; flex-direction: column; }
   .site-nav a { border-bottom: 1px solid var(--line); font-size: 1rem; }
   .site-nav a::after { display: none; }
-  .demo-label { width: fit-content; margin-top: 0.85rem; }
   .footer-top { grid-template-columns: 1fr; gap: 3rem; }
   .footer-links { grid-template-columns: 1fr 1fr; }
   .hero-section, .hero-content { min-height: calc(100dvh - 68px); }

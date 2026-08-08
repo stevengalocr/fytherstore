@@ -16,7 +16,7 @@ vi.mock('@/context/CartContext', () => ({
 describe('CheckoutClient', () => {
   it('announces validation errors and keeps entered customer data', async () => {
     const user = userEvent.setup()
-    render(<CheckoutClient mode="demo" methods={[{ id: 'demo', label: 'Simulación', description: 'Sin cobro real' }]} />)
+    render(<CheckoutClient methods={[{ id: 'sinpe', label: 'SINPE Móvil', description: 'Método configurado' }]} />)
     const name = screen.getByLabelText(/nombre completo/i)
     await user.type(name, 'Steven')
     await user.click(screen.getByRole('button', { name: /confirmar pedido/i }))

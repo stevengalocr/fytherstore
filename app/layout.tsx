@@ -1,7 +1,6 @@
 import type { Metadata } from 'next'
 import { Archivo, Manrope } from 'next/font/google'
 import { CartProvider } from '@/context/CartContext'
-import { commerceMode } from '@/lib/commerce'
 import Header from '@/components/Header'
 import Footer from '@/components/Footer'
 import './globals.css'
@@ -35,7 +34,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         />
         <CartProvider>
           <div className="page-shell">
-            <Header mode={commerceMode} />
+            <Header />
             <main>{children}</main>
             <Footer />
           </div>

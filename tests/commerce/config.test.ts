@@ -8,20 +8,27 @@ const livePublicEnv = {
 }
 
 describe('commerce configuration', () => {
-  it('uses demo mode when public credentials are missing', () => {
-    expect(resolveCommerceMode({})).toBe('demo')
+  it('uses an unconfigured state when public credentials are missing', () => {
+    expect(resolveCommerceMode({})).toBe('unconfigured')
   })
 
   it('uses live mode when public credentials are structurally valid', () => {
     expect(resolveCommerceMode(livePublicEnv)).toBe('live')
   })
 
-  it('keeps placeholder values in demo mode', () => {
+  it('accepts an existing BilBildin UUID with a non-RFC version nibble', () => {
+    expect(resolveCommerceMode({
+      ...livePublicEnv,
+      NEXT_PUBLIC_BUSINESS_ID: '11111111-1111-0111-8111-111111111111',
+    })).toBe('live')
+  })
+
+  it('keeps placeholder values unconfigured', () => {
     expect(resolveCommerceMode({
       NEXT_PUBLIC_SUPABASE_URL: 'https://example.supabase.co',
       NEXT_PUBLIC_SUPABASE_ANON_KEY: '<anon key>',
       NEXT_PUBLIC_BUSINESS_ID: '<business id>',
-    })).toBe('demo')
+    })).toBe('unconfigured')
   })
 
   it('requires the private key before enabling live checkout', () => {

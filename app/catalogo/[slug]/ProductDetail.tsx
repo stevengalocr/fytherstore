@@ -6,9 +6,9 @@ import Link from 'next/link'
 import { Check, ChevronLeft, Minus, Plus, ShoppingBag } from 'lucide-react'
 import { formatMoney } from '@/lib/format'
 import { useCart } from '@/context/CartContext'
-import type { CommerceMode, CommerceProduct, CommerceVariant } from '@/lib/commerce/types'
+import type { CommerceProduct, CommerceVariant } from '@/lib/commerce/types'
 
-export default function ProductDetail({ product, mode }: { product: CommerceProduct; mode: CommerceMode }) {
+export default function ProductDetail({ product }: { product: CommerceProduct }) {
   const { addProduct } = useCart()
   const [variant, setVariant] = useState<CommerceVariant | null>(product.variants[0] ?? null)
   const [quantity, setQuantity] = useState(1)
@@ -28,7 +28,6 @@ export default function ProductDetail({ product, mode }: { product: CommerceProd
   return (
     <div className="detail-page container">
       <Link href="/catalogo" className="back-link"><ChevronLeft aria-hidden="true" size={18} /> Volver a la colección</Link>
-      {mode === 'demo' && <p className="inline-demo">Producto de demostración. No representa una oferta activa.</p>}
       <div className="detail-layout">
         <div className="detail-media">
           {image ? <Image src={image.src} alt={image.alt} fill priority sizes="(max-width: 767px) 100vw, 58vw" /> : (

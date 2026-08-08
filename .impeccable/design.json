@@ -55,11 +55,11 @@
       "css": ".ds-filter { min-height: 44px; padding: 0 14px; border: 1px solid rgba(11,13,14,.16); border-radius: 999px; background: transparent; color: #0b0d0e; font: 800 12px Manrope, sans-serif; } .ds-filter[aria-pressed=true] { border-color: #0b0d0e; background: #0b0d0e; color: #ffffff; } .ds-filter:focus-visible { outline: 2px solid #0b0d0e; outline-offset: 3px; }"
     },
     {
-      "name": "Demo Notice",
+      "name": "Commerce State",
       "kind": "custom",
-      "description": "Transparent separation between simulated and live commerce.",
-      "html": "<aside class=\"ds-demo\"><strong>Productos de demostración.</strong> No se realizará ningún cobro.</aside>",
-      "css": ".ds-demo { padding: 14px 16px; border-top: 1px solid rgba(11,13,14,.16); border-bottom: 1px solid rgba(11,13,14,.16); background: #f4f3ef; color: #0b0d0e; font: 400 13px/1.5 Manrope, sans-serif; } .ds-demo strong { font-weight: 800; }"
+      "description": "Honest empty or unconfigured commerce state.",
+      "html": "<aside class=\"ds-commerce-state\"><strong>Collection incoming.</strong> El catálogo se conecta desde BilBildin.</aside>",
+      "css": ".ds-commerce-state { padding: 14px 16px; border-top: 1px solid rgba(11,13,14,.16); border-bottom: 1px solid rgba(11,13,14,.16); background: #f4f3ef; color: #0b0d0e; font: 400 13px/1.5 Manrope, sans-serif; } .ds-commerce-state strong { font-weight: 800; }"
     }
   ],
   "narrative": {

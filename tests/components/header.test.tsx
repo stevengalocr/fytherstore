@@ -8,9 +8,10 @@ vi.mock('@/context/CartContext', () => ({
 
 describe('Header', () => {
   it('exposes primary navigation and a labeled mobile menu control', () => {
-    render(<Header mode="demo" />)
+    render(<Header />)
     expect(screen.getByRole('navigation', { name: /principal/i })).toBeInTheDocument()
     expect(screen.getByRole('button', { name: /menú/i })).toBeInTheDocument()
     expect(screen.getByRole('link', { name: /carrito, 2 productos/i })).toBeInTheDocument()
+    expect(screen.queryByText(/modo demo/i)).not.toBeInTheDocument()
   })
 })

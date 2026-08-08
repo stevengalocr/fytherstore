@@ -3,14 +3,13 @@ import { commerceMode } from '@/lib/commerce'
 import { createServiceClient, getServerBusinessId } from '@/lib/supabase-server'
 import type { ThemeConfig } from '@/lib/commerce/types'
 import CheckoutClient, { type PaymentOption } from './CheckoutClient'
+import CommerceState from '@/components/commerce/CommerceState'
 
 export const metadata: Metadata = { title: 'Checkout' }
 export const dynamic = 'force-dynamic'
 
 export default async function CheckoutPage() {
-  if (commerceMode === 'demo') {
-    return <CheckoutClient mode="demo" methods={[{ id: 'demo', label: 'Simulación', description: 'Recorrido de prueba sin cobro real' }]} />
-  }
+  if (commerceMode === 'unconfigured') return <CommerceState state="unconfigured" />
 
   let methods: PaymentOption[] = []
   try {
@@ -21,5 +20,5 @@ export default async function CheckoutPage() {
     if (config.cash_instructions) methods.push({ id: 'cash', label: 'Efectivo', description: config.cash_instructions })
   } catch { methods = [] }
 
-  return <CheckoutClient mode="live" methods={methods} />
+  return <CheckoutClient methods={methods} />
 }

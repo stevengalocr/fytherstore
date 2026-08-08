@@ -4,9 +4,8 @@ import { useState } from 'react'
 import Link from 'next/link'
 import { Menu, ShoppingBag, X } from 'lucide-react'
 import { useCart } from '@/context/CartContext'
-import type { CommerceMode } from '@/lib/commerce/types'
 
-export default function Header({ mode = 'demo' }: { mode?: CommerceMode }) {
+export default function Header() {
   const { count } = useCart()
   const [open, setOpen] = useState(false)
   const countLabel = `${count} ${count === 1 ? 'producto' : 'productos'}`
@@ -23,7 +22,6 @@ export default function Header({ mode = 'demo' }: { mode?: CommerceMode }) {
           <Link href="/catalogo" onClick={() => setOpen(false)}>Colección</Link>
           <Link href="/#movimiento" onClick={() => setOpen(false)}>Movimiento</Link>
           <Link href="/#preguntas" onClick={() => setOpen(false)}>Preguntas</Link>
-          {mode === 'demo' && <span className="demo-label">Modo demo</span>}
         </nav>
 
         <div className="header-actions">

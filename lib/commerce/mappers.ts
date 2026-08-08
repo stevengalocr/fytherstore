@@ -66,6 +66,5 @@ export function mapBilBildinProduct(row: BilBildinProductRow): CommerceProduct {
     category: row.category,
     tags: row.tags ?? [],
     featured: Boolean(row.featured),
-    demo: false,
   }
 }

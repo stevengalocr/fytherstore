@@ -1,6 +1,6 @@
 # Fyther Store
 
-Tienda editorial de ropa y accesorios deportivos para Costa Rica. El proyecto funciona sin credenciales en un modo demo claramente identificado y cambia automáticamente al catálogo real de BilBildin cuando la configuración completa está disponible.
+Tienda editorial de ropa y accesorios deportivos para Costa Rica, conectada exclusivamente al catálogo y operación comercial de BilBildin.
 
 ## Desarrollo local
 
@@ -9,7 +9,7 @@ npm install
 npm run dev
 ```
 
-Abre `http://localhost:3000`. Sin `.env.local`, el catálogo, checkout, confirmación y tracking son una simulación local. El modo demo no escribe datos en Supabase.
+Abre `http://localhost:3000`. Sin `.env.local`, la interfaz permanece disponible pero no publica catálogo, precios, checkout ni pedidos. No existen datos comerciales simulados.
 
 ## Conexión con BilBildin
 
@@ -22,7 +22,7 @@ La integración usa Supabase como capa de datos de BilBildin:
 - Aislamiento: todas las operaciones aplicables filtran por `business_id`.
 - Seguridad: `SUPABASE_SERVICE_ROLE_KEY` solo se usa en módulos de servidor.
 
-El modo live se activa únicamente cuando son válidas `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY` y `NEXT_PUBLIC_BUSINESS_ID`. El checkout real también requiere `SUPABASE_SERVICE_ROLE_KEY`.
+La tienda se activa únicamente cuando son válidas `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY` y `NEXT_PUBLIC_BUSINESS_ID`. El checkout también requiere `SUPABASE_SERVICE_ROLE_KEY`.
 
 ## Vercel
 

@@ -3,7 +3,8 @@
 import { createContext, useContext, useEffect, useMemo, useState, type ReactNode } from 'react'
 import type { CartLine, CommerceProduct, CommerceVariant, Money } from '@/lib/commerce/types'
 
-const STORAGE_KEY = 'fyther-cart-v1'
+const STORAGE_KEY = 'fyther-cart-v2'
+const LEGACY_STORAGE_KEY = 'fyther-cart-v1'
 
 interface CartContextValue {
   items: CartLine[]
@@ -33,6 +34,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     try {
+      localStorage.removeItem(LEGACY_STORAGE_KEY)
       const parsed = JSON.parse(localStorage.getItem(STORAGE_KEY) ?? '[]') as unknown
       if (Array.isArray(parsed)) setItems(parsed.filter(isCartLine))
     } catch {

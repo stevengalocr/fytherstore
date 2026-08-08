@@ -3,12 +3,10 @@
 import { useMemo, useState } from 'react'
 import { Search } from 'lucide-react'
 import ProductCard from '@/components/ProductCard'
-import CommerceState from '@/components/commerce/CommerceState'
-import type { CommerceMode, CommerceProduct } from '@/lib/commerce/types'
+import type { CommerceProduct } from '@/lib/commerce/types'
 
-export default function CatalogClient({ products, mode, initialCategory }: {
+export default function CatalogClient({ products, initialCategory }: {
   products: CommerceProduct[]
-  mode: CommerceMode
   initialCategory: string
 }) {
   const categories = ['Todos', ...new Set(products.map((product) => product.category).filter((value): value is string => Boolean(value)))]
@@ -36,7 +34,6 @@ export default function CatalogClient({ products, mode, initialCategory }: {
         <h1 className="display">Active essentials.</h1>
         <p>Encuentra piezas para tu siguiente movimiento.</p>
       </header>
-      {mode === 'demo' && <CommerceState mode="demo" state="demo" />}
       <div className="catalog-tools container">
         <div className="category-filters" aria-label="Filtrar por categoría">
           {categories.map((item) => (

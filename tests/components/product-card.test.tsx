@@ -7,7 +7,7 @@ const product: CommerceProduct = {
   id: 'product-1', slug: 'motion-tee', name: 'Motion Tee', shortDescription: 'Technical tee',
   description: null, price: { amount: 18900, currency: 'CRC' }, compareAtPrice: null,
   images: [], availability: 'out_of_stock', stockQuantity: 0, variants: [], category: 'Ropa',
-  tags: [], featured: false, demo: false,
+  tags: [], featured: false,
 }
 
 describe('ProductCard', () => {

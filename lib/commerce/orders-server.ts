@@ -51,6 +51,5 @@ export async function readLiveOrder(orderId: string): Promise<CommerceOrder | nu
       location: event.location,
       createdAt: event.created_at,
     })),
-    demo: false,
   }
 }

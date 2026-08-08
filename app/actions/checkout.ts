@@ -4,7 +4,7 @@ import { randomBytes } from 'node:crypto'
 import { createServiceClient, getServerBusinessId } from '@/lib/supabase-server'
 import type { CheckoutInput, CheckoutResult, PaymentMethod } from '@/lib/commerce/types'
 
-const PAYMENT_LABELS: Record<Exclude<PaymentMethod, 'demo'>, string> = {
+const PAYMENT_LABELS: Record<PaymentMethod, string> = {
   sinpe: 'SINPE Móvil',
   link: 'Link de pago',
   cash: 'Efectivo',
@@ -16,7 +16,6 @@ function orderNumber(): string {
 
 export async function createOrder(input: CheckoutInput): Promise<CheckoutResult> {
   try {
-    if (input.paymentMethod === 'demo') throw new Error('El modo demo no puede crear pedidos en BilBildin.')
     if (!input.items.length) throw new Error('Tu carrito está vacío.')
     if (!input.customer.name.trim() || !input.customer.email.trim() || !input.address.address.trim()) {
       throw new Error('Completa nombre, correo y dirección para continuar.')

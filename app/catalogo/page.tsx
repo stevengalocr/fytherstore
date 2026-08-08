@@ -13,9 +13,14 @@ export default async function CatalogPage({ searchParams }: { searchParams: Prom
   const params = await searchParams
   try {
     const products = await commerce.getProducts()
-    if (products.length === 0) return <CommerceState mode={commerceMode} state="empty" />
-    return <CatalogClient products={products} mode={commerceMode} initialCategory={params.categoria ?? 'Todos'} />
+    if (commerceMode === 'unconfigured') return <><CatalogHeader /><CommerceState state="unconfigured" /></>
+    if (products.length === 0) return <><CatalogHeader /><CommerceState state="empty" /></>
+    return <CatalogClient products={products} initialCategory={params.categoria ?? 'Todos'} />
   } catch {
-    return <CommerceState mode={commerceMode} state="error" />
+    return <CommerceState state="error" />
   }
+}
+
+function CatalogHeader() {
+  return <header className="catalog-hero container"><p className="section-label">FYTHER / COLLECTION</p><h1 className="display">Active essentials.</h1><p>Encuentra piezas para tu siguiente movimiento.</p></header>
 }

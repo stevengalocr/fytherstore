@@ -1,6 +1,6 @@
 import type { Metadata } from 'next'
 import { notFound } from 'next/navigation'
-import { commerce, commerceMode } from '@/lib/commerce'
+import { commerce } from '@/lib/commerce'
 import ProductDetail from './ProductDetail'
 
 export const revalidate = 60
@@ -18,5 +18,5 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
   let product = null
   try { product = await commerce.getProductBySlug(slug) } catch { notFound() }
   if (!product) notFound()
-  return <ProductDetail product={product} mode={commerceMode} />
+  return <ProductDetail product={product} />
 }

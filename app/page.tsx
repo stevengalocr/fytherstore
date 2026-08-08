@@ -23,12 +23,13 @@ export default async function HomePage() {
   return (
     <>
       <HeroMedia />
-      {commerceMode === 'demo' && <CommerceState mode="demo" state="demo" />}
       <MotionTrack />
-      {failed ? (
-        <CommerceState mode={commerceMode} state="error" />
+      {commerceMode === 'unconfigured' ? (
+        <CommerceState state="unconfigured" />
+      ) : failed ? (
+        <CommerceState state="error" />
       ) : products.length === 0 ? (
-        <CommerceState mode={commerceMode} state="empty" />
+        <CommerceState state="empty" />
       ) : (
         <>
           <CategoryRail categories={categories} />

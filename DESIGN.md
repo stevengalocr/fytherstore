@@ -111,7 +111,7 @@ Controls use a restrained `4px` radius. Product media, editorial sections and in
 - **Inputs:** white field, 4px radius, dark 1px border, persistent visible label and stronger border on focus.
 - **Product cards:** unframed vertical composition, 4:5 media, factual category/name/price row and a separate action row.
 - **Navigation:** centered desktop links, 44px targets and a stacked mobile menu opened by a Lucide icon button.
-- **Commerce notices:** concise bordered bands that distinguish demo, empty and error states without impersonating live inventory.
+- **Commerce states:** concise editorial bands for unconfigured, empty and error states without impersonating live inventory.
 
 ## Do's and Don'ts
 

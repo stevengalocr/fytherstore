@@ -1,8 +1,8 @@
 import { createClient } from '@supabase/supabase-js'
-import { resolveCommerceMode } from '@/lib/commerce/config'
+import { commerceMode } from '@/lib/commerce/config'
 
 export function createPublicClient() {
-  if (resolveCommerceMode(process.env) !== 'live') {
+  if (commerceMode !== 'live') {
     throw new Error('El catálogo live no está configurado.')
   }
   return createClient(
@@ -12,7 +12,7 @@ export function createPublicClient() {
 }
 
 export function getBusinessId(): string {
-  if (resolveCommerceMode(process.env) !== 'live') {
+  if (commerceMode !== 'live') {
     throw new Error('El negocio live no está configurado.')
   }
   return process.env.NEXT_PUBLIC_BUSINESS_ID!

@@ -1,16 +1,17 @@
 import Link from 'next/link'
-import { AlertCircle, FlaskConical } from 'lucide-react'
-import type { CommerceMode } from '@/lib/commerce/types'
+import { AlertCircle } from 'lucide-react'
 
-type State = 'empty' | 'error' | 'demo'
+type State = 'empty' | 'error' | 'unconfigured'
 
-export default function CommerceState({ mode, state }: { mode: CommerceMode; state: State }) {
-  if (state === 'demo') {
+export default function CommerceState({ state }: { state: State }) {
+  if (state === 'unconfigured') {
     return (
-      <aside className="commerce-notice" aria-label="Información del modo demo">
-        <FlaskConical aria-hidden="true" size={19} strokeWidth={1.7} />
-        <p><strong>Productos de demostración.</strong> Puedes recorrer toda la compra. No se realizará ningún cobro.</p>
-      </aside>
+      <section className="commerce-empty">
+        <p className="section-label">FYTHER / ACTIVE STORE</p>
+        <h2 className="display">Collection incoming.</h2>
+        <p>El catálogo se conecta desde BilBildin. La selección aparecerá aquí cuando la tienda esté configurada.</p>
+        <a className="button button-ghost" href="mailto:stevengalocr@gmail.com">Contactar</a>
+      </section>
     )
   }
 
@@ -29,7 +30,7 @@ export default function CommerceState({ mode, state }: { mode: CommerceMode; sta
     <section className="commerce-empty">
       <p className="section-label">FYTHER / ACTIVE STORE</p>
       <h2 className="display">First drop in motion.</h2>
-      <p>{mode === 'live' ? 'La primera selección se está preparando.' : 'La demostración no tiene productos disponibles.'}</p>
+      <p>La primera selección se está preparando.</p>
       <a className="button button-ghost" href="mailto:stevengalocr@gmail.com">Contactar</a>
     </section>
   )

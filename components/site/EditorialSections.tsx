@@ -38,7 +38,7 @@ export default function EditorialSections() {
       <section className="faq-section container" id="preguntas" aria-labelledby="faq-title">
         <h2 id="faq-title" className="display">Antes de moverte.</h2>
         <div className="faq-list">
-          <details><summary>¿Los productos del modo demo son reales?</summary><p>No. Están identificados como demostración y sirven para probar la experiencia sin cobros ni cambios de inventario.</p></details>
+          <details><summary>¿De dónde proviene el catálogo?</summary><p>Productos, variantes, precios y disponibilidad se publican desde BilBildin.</p></details>
           <details><summary>¿Cómo confirmo disponibilidad?</summary><p>En la tienda conectada, cada detalle refleja la disponibilidad registrada en BilBildin.</p></details>
           <details><summary>¿Dónde puedo consultar mi pedido?</summary><p>La confirmación incluye un enlace único al seguimiento del pedido.</p></details>
           <details><summary>¿Cómo confirmo envíos o cambios?</summary><p>Consulta la página de envíos y cambios o contacta a Fyther antes de comprar.</p></details>

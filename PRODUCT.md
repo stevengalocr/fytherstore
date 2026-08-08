@@ -27,7 +27,7 @@ El visitante usa la tienda desde móvil o escritorio. El dueño gestiona product
 - Home editorial, catálogo, detalle, carrito, checkout, confirmación y tracking.
 - Catálogo real leído desde Supabase con anon key y filtro obligatorio por `business_id` y `status = 'visible'`.
 - Escrituras reales exclusivamente en servidor con service role.
-- Modo demo aislado cuando no existen credenciales. No escribe en Supabase ni representa un cobro real.
+- Sin credenciales, la tienda no publica productos, precios, checkout ni pedidos.
 - Moneda CRC.
 - La tienda no edita ni cancela productos, pedidos, inventario o tracking.
 - No se inventan precios, stock, reseñas, descuentos, políticas ni garantías en modo live.
@@ -51,7 +51,7 @@ El visitante usa la tienda desde móvil o escritorio. El dueño gestiona product
 ## Product Principles
 
 1. BilBildin es la fuente de verdad operativa.
-2. La demostración nunca toca datos reales.
+2. No se presentan datos comerciales ficticios cuando BilBildin no está configurado.
 3. La marca gana atención con precisión, no con ruido.
 4. Cada estado del recorrido debe ser útil y honesto.
 5. Seguridad, accesibilidad y rendimiento forman parte del producto.

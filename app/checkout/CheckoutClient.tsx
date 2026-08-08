@@ -3,20 +3,19 @@
 import { useState } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
-import { ArrowLeft, Check, LoaderCircle } from 'lucide-react'
+import { ArrowLeft, LoaderCircle } from 'lucide-react'
 import { createOrder } from '@/app/actions/checkout'
-import { createDemoOrder } from '@/lib/commerce/demo-orders'
 import { formatMoney } from '@/lib/format'
 import { useCart } from '@/context/CartContext'
-import type { CheckoutInput, CommerceMode, PaymentMethod } from '@/lib/commerce/types'
+import type { CheckoutInput, PaymentMethod } from '@/lib/commerce/types'
 
 export interface PaymentOption { id: PaymentMethod; label: string; description: string }
 
-export default function CheckoutClient({ mode, methods }: { mode: CommerceMode; methods: PaymentOption[] }) {
+export default function CheckoutClient({ methods }: { methods: PaymentOption[] }) {
   const { items, subtotal, clear } = useCart()
   const router = useRouter()
   const [form, setForm] = useState({ name: '', email: '', phone: '', address: '', city: '', notes: '' })
-  const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>(methods[0]?.id ?? 'demo')
+  const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>(methods[0]?.id ?? 'sinpe')
   const [error, setError] = useState('')
   const [sending, setSending] = useState(false)
 
@@ -42,19 +41,6 @@ export default function CheckoutClient({ mode, methods }: { mode: CommerceMode; 
       paymentMethod,
     }
 
-    if (mode === 'demo') {
-      try {
-        const order = createDemoOrder(input)
-        localStorage.setItem(`fyther-demo-order:${order.id}`, JSON.stringify(order))
-        clear()
-        router.push(`/confirmacion/${order.id}`)
-      } catch (demoError) {
-        setError(demoError instanceof Error ? demoError.message : 'No pudimos simular el pedido.')
-        setSending(false)
-      }
-      return
-    }
-
     const result = await createOrder(input)
     if (!result.ok || !result.orderId) { setError(result.error ?? 'No pudimos crear el pedido.'); setSending(false); return }
     clear()
@@ -65,7 +51,6 @@ export default function CheckoutClient({ mode, methods }: { mode: CommerceMode; 
     <div className="checkout-page container">
       <Link href="/carrito" className="back-link"><ArrowLeft aria-hidden="true" size={18} /> Volver al carrito</Link>
       <header><p className="section-label">FYTHER / CHECKOUT</p><h1 className="display">Cierra el movimiento.</h1></header>
-      {mode === 'demo' && <div className="checkout-demo"><Check aria-hidden="true" size={18} /><span>Simulación activa. No se realizará ningún cobro.</span></div>}
       {items.length === 0 ? (
         <div className="cart-empty"><h2 className="display">Tu carrito está vacío.</h2><Link className="button" href="/catalogo">Explorar colección</Link></div>
       ) : (
