@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FYTHER STORE · Ropa deportiva y accesorios premium</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,400..900&family=Space+Grotesk:wght@400;500;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+<div class="page">
+
+  <header class="site-header">
+    <div class="logo" data-action="goHome">
+      <span class="logo-main">FYTHER</span>
+      <span class="logo-sub">STORE</span>
+    </div>
+    <nav class="site-nav">
+      <span class="nav-item" data-action="goHome">Inicio</span>
+      <span class="nav-item" data-action="goCatalog">Catálogo</span>
+      <span class="nav-item nav-item--custom" data-action="goCustom">Personalizar</span>
+      <button class="cart-btn" data-action="goCart">
+        CARRITO
+        <span class="cart-count" id="cart-count">0</span>
+      </button>
+    </nav>
+  </header>
+
+  <main id="view"></main>
+
+  <footer class="site-footer">
+    <div class="footer-inner">
+      <div class="footer-brand">
+        <div class="footer-logo">
+          <span class="footer-logo-main">FYTHER</span>
+          <span class="footer-logo-sub">STORE</span>
+        </div>
+        <span class="footer-tag">Ropa deportiva y accesorios premium. Hecho con precisión, pensado para atletas.</span>
+      </div>
+      <div class="footer-cols">
+        <div class="footer-col">
+          <span class="footer-col-title">TIENDA</span>
+          <span class="footer-link" data-action="goCatalog">Catálogo</span>
+          <span class="footer-link" data-action="goCustom">Personalizar</span>
+          <span class="footer-link" data-action="goCart">Carrito</span>
+        </div>
+        <div class="footer-col">
+          <span class="footer-col-title">AYUDA</span>
+          <span class="footer-link">Envíos y devoluciones</span>
+          <span class="footer-link">Guía de tallas</span>
+          <span class="footer-link">Contacto</span>
+        </div>
+      </div>
+    </div>
+    <div class="footer-bottom">
+      <span>© 2026 FYTHER STORE · Costa Rica</span>
+      <span>Precios en colones (₡) · IVA incluido</span>
+    </div>
+  </footer>
+
+</div>
+<script src="app.js"></script>
+</body>
+</html>
