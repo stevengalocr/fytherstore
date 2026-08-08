@@ -1,56 +1,48 @@
 'use client'
 
+import Image from 'next/image'
 import Link from 'next/link'
-import { useCart, lineKey } from '@/context/CartContext'
-import { fmt, placeholderBg } from '@/lib/format'
+import { Minus, Plus, Trash2 } from 'lucide-react'
+import { formatMoney } from '@/lib/format'
+import { useCart } from '@/context/CartContext'
 
-export default function CarritoPage() {
-  const { items, subtotal, setQty, removeItem } = useCart()
+export default function CartPage() {
+  const { items, subtotal, setQuantity, removeItem } = useCart()
 
   return (
-    <div className="cart-main">
-      <h1 className="page-title" style={{ marginBottom: 30 }}>TU CARRITO</h1>
-
+    <div className="cart-page container">
+      <header><p className="section-label">FYTHER / BAG</p><h1 className="display">Tu selección.</h1></header>
       {items.length === 0 ? (
-        <div className="cart-empty">
-          <span>Tu carrito está vacío.</span>
-          <Link href="/catalogo" className="btn-neon-a btn-link">IR AL CATÁLOGO</Link>
-        </div>
+        <div className="cart-empty"><h2 className="display">Todavía hay espacio.</h2><p>Agrega una pieza para comenzar.</p><Link className="button" href="/catalogo">Explorar colección</Link></div>
       ) : (
-        <div className="cart-grid">
+        <div className="cart-layout">
           <div className="cart-lines">
-            {items.map(l => {
-              const key = lineKey(l)
-              return (
-                <div key={key} className="cart-line">
-                  <div className="cart-line-thumb" style={l.image ? undefined : { background: placeholderBg(l.product_id) }}>
-                    {l.image && <img src={l.image} alt={l.name} />}
-                  </div>
-                  <div className="cart-line-info">
-                    <span className="cart-line-name">{l.name}</span>
-                    <span className="cart-line-meta">{l.variant_name ?? 'Estándar'}</span>
-                    <span className="cart-line-price">{fmt(l.price * l.quantity)}</span>
-                  </div>
-                  <div className="cart-qty">
-                    <button onClick={() => setQty(key, -1)}>−</button>
-                    <span>{l.quantity}</span>
-                    <button onClick={() => setQty(key, 1)}>+</button>
-                  </div>
-                  <button className="cart-remove" title="Quitar" onClick={() => removeItem(key)}>✕</button>
+            {items.map((line) => (
+              <article key={line.key} className="cart-line">
+                <div className="cart-line-image">{line.image ? <Image src={line.image} alt="" fill sizes="120px" /> : <span>FYTHER</span>}</div>
+                <div className="cart-line-copy">
+                  <Link href={`/catalogo/${line.slug}`}><h2>{line.name}</h2></Link>
+                  {line.variantName && <p>{line.variantName}</p>}
+                  <span>{formatMoney(line.unitPrice)}</span>
                 </div>
-              )
-            })}
+                <div className="cart-line-actions">
+                  <div className="quantity-control" aria-label={`Cantidad de ${line.name}`}>
+                    <button type="button" aria-label={`Reducir ${line.name}`} onClick={() => setQuantity(line.key, line.quantity - 1)}><Minus aria-hidden="true" size={16} /></button>
+                    <output>{line.quantity}</output>
+                    <button type="button" aria-label={`Aumentar ${line.name}`} disabled={line.quantity >= line.maxQuantity} onClick={() => setQuantity(line.key, line.quantity + 1)}><Plus aria-hidden="true" size={16} /></button>
+                  </div>
+                  <button type="button" className="remove-button" aria-label={`Eliminar ${line.name}`} onClick={() => removeItem(line.key)}><Trash2 aria-hidden="true" size={18} /></button>
+                </div>
+              </article>
+            ))}
           </div>
-
-          <div className="summary">
-            <span className="summary-title">RESUMEN</span>
-            <div className="summary-row"><span>Subtotal</span><span>{fmt(subtotal)}</span></div>
-            <div className="summary-row"><span>Envío</span><span>Se coordina al confirmar</span></div>
-            <div className="summary-divider" />
-            <div className="summary-total"><span>Total</span><span className="amount">{fmt(subtotal)}</span></div>
-            <Link href="/checkout" className="checkout-btn btn-link">FINALIZAR COMPRA</Link>
-            <span className="summary-note">Coordinamos el pago y el envío por WhatsApp al confirmar tu pedido</span>
-          </div>
+          <aside className="cart-summary">
+            <h2>Resumen</h2>
+            <div><span>Subtotal</span><strong>{formatMoney(subtotal)}</strong></div>
+            <p>El envío y las instrucciones de pago se confirman durante el checkout.</p>
+            <Link className="button button-accent" href="/checkout">Ir al checkout</Link>
+            <Link className="text-link" href="/catalogo">Seguir explorando</Link>
+          </aside>
         </div>
       )}
     </div>

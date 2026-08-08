@@ -1,12 +1,12 @@
-// Cliente privado (service_role) — SOLO servidor.
-// Importar únicamente desde Server Actions / Server Components.
-// NUNCA desde un componente 'use client'.
 import 'server-only'
 import { createClient } from '@supabase/supabase-js'
+import { validateLiveCheckoutConfig } from '@/lib/commerce/checkout'
 
 export function createServiceClient() {
-  return createClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.SUPABASE_SERVICE_ROLE_KEY!
-  )
+  const config = validateLiveCheckoutConfig(process.env)
+  return createClient(config.url, config.serviceRoleKey)
+}
+
+export function getServerBusinessId(): string {
+  return validateLiveCheckoutConfig(process.env).businessId
 }

@@ -1,0 +1,76 @@
+{
+  "schemaVersion": 2,
+  "generatedAt": "2026-08-08T02:00:00.000Z",
+  "title": "Design System: Fyther Store",
+  "extensions": {
+    "colorMeta": {
+      "obsidian": { "role": "neutral", "displayName": "Obsidian", "canonical": "#0b0d0e" },
+      "bone": { "role": "neutral", "displayName": "Bone", "canonical": "#f4f3ef" },
+      "volt": { "role": "primary", "displayName": "Volt", "canonical": "#b8ff3d" }
+    },
+    "typographyMeta": {
+      "display": { "displayName": "Editorial Display", "purpose": "Short campaign and section statements." },
+      "body": { "displayName": "Commerce Body", "purpose": "Catalog, checkout and policy copy." }
+    },
+    "shadows": [],
+    "motion": [
+      { "name": "ease-out", "value": "cubic-bezier(0.23, 1, 0.32, 1)", "purpose": "Hover and state transitions." },
+      { "name": "state-fast", "value": "180ms", "purpose": "Controls and navigation feedback." }
+    ],
+    "breakpoints": [
+      { "name": "mobile", "value": "560px" },
+      { "name": "compact", "value": "767px" }
+    ]
+  },
+  "components": [
+    {
+      "name": "Volt Action",
+      "kind": "button",
+      "refersTo": "button-accent",
+      "description": "Primary action for the next meaningful commercial step.",
+      "html": "<button class=\"ds-button-accent\">SHOP THE DROP</button>",
+      "css": ".ds-button-accent { min-height: 48px; padding: 13px 20px; border: 1px solid #b8ff3d; border-radius: 4px; background: #b8ff3d; color: #0b0d0e; font: 800 13px Manrope, sans-serif; transition: background-color 180ms cubic-bezier(0.23,1,0.32,1), transform 140ms cubic-bezier(0.23,1,0.32,1); } .ds-button-accent:hover { background: #ffffff; } .ds-button-accent:active { transform: scale(0.97); } .ds-button-accent:focus-visible { outline: 2px solid #0b0d0e; outline-offset: 4px; }"
+    },
+    {
+      "name": "Obsidian Action",
+      "kind": "button",
+      "refersTo": "button-primary",
+      "description": "Default command button on light surfaces.",
+      "html": "<button class=\"ds-button-primary\">CONTINUE</button>",
+      "css": ".ds-button-primary { min-height: 48px; padding: 13px 20px; border: 1px solid #0b0d0e; border-radius: 4px; background: #0b0d0e; color: #ffffff; font: 800 13px Manrope, sans-serif; transition: background-color 180ms cubic-bezier(0.23,1,0.32,1), transform 140ms cubic-bezier(0.23,1,0.32,1); } .ds-button-primary:hover { background: #232628; } .ds-button-primary:active { transform: scale(0.97); } .ds-button-primary:focus-visible { outline: 2px solid #0b0d0e; outline-offset: 4px; }"
+    },
+    {
+      "name": "Commerce Input",
+      "kind": "input",
+      "refersTo": "input",
+      "description": "Persistent-label field for checkout and search.",
+      "html": "<label class=\"ds-field\">EMAIL<input type=\"email\" placeholder=\"name@example.com\"></label>",
+      "css": ".ds-field { display: flex; flex-direction: column; gap: 7px; color: #3c4143; font: 800 12px Manrope, sans-serif; } .ds-field input { min-height: 48px; padding: 12px; border: 1px solid #73797d; border-radius: 4px; background: #ffffff; color: #0b0d0e; font: 400 16px Manrope, sans-serif; } .ds-field input:focus-visible { border-color: #0b0d0e; outline: 1px solid #0b0d0e; outline-offset: 0; }"
+    },
+    {
+      "name": "Category Filter",
+      "kind": "chip",
+      "description": "Compact category selection in the catalog toolbar.",
+      "html": "<button class=\"ds-filter\" aria-pressed=\"true\">ROPA</button>",
+      "css": ".ds-filter { min-height: 44px; padding: 0 14px; border: 1px solid rgba(11,13,14,.16); border-radius: 999px; background: transparent; color: #0b0d0e; font: 800 12px Manrope, sans-serif; } .ds-filter[aria-pressed=true] { border-color: #0b0d0e; background: #0b0d0e; color: #ffffff; } .ds-filter:focus-visible { outline: 2px solid #0b0d0e; outline-offset: 3px; }"
+    },
+    {
+      "name": "Demo Notice",
+      "kind": "custom",
+      "description": "Transparent separation between simulated and live commerce.",
+      "html": "<aside class=\"ds-demo\"><strong>Productos de demostración.</strong> No se realizará ningún cobro.</aside>",
+      "css": ".ds-demo { padding: 14px 16px; border-top: 1px solid rgba(11,13,14,.16); border-bottom: 1px solid rgba(11,13,14,.16); background: #f4f3ef; color: #0b0d0e; font: 400 13px/1.5 Manrope, sans-serif; } .ds-demo strong { font-weight: 800; }"
+    }
+  ],
+  "narrative": {
+    "northStar": "The Performance Editorial",
+    "overview": "A calm sports magazine that can complete a purchase, balancing expressive campaign scale with precise commerce controls.",
+    "keyCharacteristics": ["Editorial scale", "Flat surfaces", "Rare Volt accent", "Honest commerce states"],
+    "rules": [
+      { "name": "The Volt Rule", "body": "Use Volt for the next meaningful action or one decisive phrase.", "section": "colors" },
+      { "name": "Flat by Default", "body": "Use tonal bands, borders and media instead of shadows.", "section": "elevation" }
+    ],
+    "dos": ["Preserve the Bone, Obsidian and Volt hierarchy.", "Keep live commerce data sourced from BilBildin."],
+    "donts": ["Do not add decorative gradients or nested cards.", "Do not invent commercial facts."]
+  }
+}

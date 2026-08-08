@@ -3,121 +3,100 @@
 import { useState } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
-import { useCart } from '@/context/CartContext'
+import { ArrowLeft, Check, LoaderCircle } from 'lucide-react'
 import { createOrder } from '@/app/actions/checkout'
-import { fmt } from '@/lib/format'
-import type { PaymentMethod } from '@/lib/types'
+import { createDemoOrder } from '@/lib/commerce/demo-orders'
+import { formatMoney } from '@/lib/format'
+import { useCart } from '@/context/CartContext'
+import type { CheckoutInput, CommerceMode, PaymentMethod } from '@/lib/commerce/types'
 
-type Method = { id: PaymentMethod; label: string; sub: string }
+export interface PaymentOption { id: PaymentMethod; label: string; description: string }
 
-export default function CheckoutClient({ methods }: { methods: Method[] }) {
+export default function CheckoutClient({ mode, methods }: { mode: CommerceMode; methods: PaymentOption[] }) {
   const { items, subtotal, clear } = useCart()
   const router = useRouter()
-
-  const [form, setForm] = useState({ nombre: '', correo: '', tel: '', dir: '', ciudad: '', notas: '' })
-  const [pay, setPay] = useState<PaymentMethod>(methods[0]?.id ?? 'cash')
-  const [error, setError] = useState<string | null>(null)
+  const [form, setForm] = useState({ name: '', email: '', phone: '', address: '', city: '', notes: '' })
+  const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>(methods[0]?.id ?? 'demo')
+  const [error, setError] = useState('')
   const [sending, setSending] = useState(false)
 
-  const set = (k: keyof typeof form) => (e: React.ChangeEvent<HTMLInputElement>) =>
-    setForm(f => ({ ...f, [k]: e.target.value }))
+  const change = (field: keyof typeof form) => (event: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+    setForm((current) => ({ ...current, [field]: event.target.value }))
+  }
 
-  const submit = async () => {
-    setError(null)
-    if (!form.nombre.trim() || !form.correo.trim() || !form.dir.trim()) {
+  const submit = async (event: React.FormEvent) => {
+    event.preventDefault()
+    setError('')
+    if (!form.name.trim() || !form.email.trim() || !form.address.trim()) {
       setError('Completa nombre, correo y dirección para continuar.')
       return
     }
-    if (items.length === 0) {
-      setError('Tu carrito está vacío.')
-      return
-    }
+    if (!items.length) { setError('Tu carrito está vacío.'); return }
+    if (!methods.length) { setError('No hay métodos de pago configurados. Contacta a Fyther.'); return }
     setSending(true)
-    const result = await createOrder({
-      items: items.map(l => ({
-        product_id: l.product_id,
-        variant_id: l.variant_id,
-        name: l.name,
-        variant_name: l.variant_name,
-        image: l.image,
-        price: l.price,
-        quantity: l.quantity,
-      })),
-      customer: { name: form.nombre, email: form.correo, phone: form.tel },
-      address: { address: form.dir, city: form.ciudad, country: 'Costa Rica', notes: form.notas },
-      paymentMethod: pay,
-    })
-    if (!result.ok) {
-      setError(result.error)
-      setSending(false)
+
+    const input: CheckoutInput = {
+      items: items.map((line) => ({ productId: line.productId, variantId: line.variantId, name: line.name, variantName: line.variantName, image: line.image, quantity: line.quantity })),
+      customer: { name: form.name, email: form.email, phone: form.phone },
+      address: { address: form.address, city: form.city, country: 'Costa Rica', notes: form.notes },
+      paymentMethod,
+    }
+
+    if (mode === 'demo') {
+      try {
+        const order = createDemoOrder(input)
+        localStorage.setItem(`fyther-demo-order:${order.id}`, JSON.stringify(order))
+        clear()
+        router.push(`/confirmacion/${order.id}`)
+      } catch (demoError) {
+        setError(demoError instanceof Error ? demoError.message : 'No pudimos simular el pedido.')
+        setSending(false)
+      }
       return
     }
+
+    const result = await createOrder(input)
+    if (!result.ok || !result.orderId) { setError(result.error ?? 'No pudimos crear el pedido.'); setSending(false); return }
     clear()
     router.push(`/confirmacion/${result.orderId}`)
   }
 
-  if (items.length === 0 && !sending) {
-    return (
-      <div className="cart-main">
-        <h1 className="page-title" style={{ marginBottom: 30 }}>CHECKOUT</h1>
-        <div className="cart-empty">
-          <span>Tu carrito está vacío.</span>
-          <Link href="/catalogo" className="btn-neon-a btn-link">IR AL CATÁLOGO</Link>
-        </div>
-      </div>
-    )
-  }
-
   return (
-    <div className="cart-main">
-      <Link href="/carrito" className="back-link">← Volver al carrito</Link>
-      <h1 className="page-title checkout-title">CHECKOUT</h1>
-
-      <div className="checkout-grid">
-        <div className="checkout-form">
-          <span className="form-title">DATOS DE ENVÍO</span>
-          <div className="form-fields">
-            <input className="field span-2" placeholder="Nombre completo" value={form.nombre} onChange={set('nombre')} />
-            <input className="field" type="email" placeholder="Correo electrónico" value={form.correo} onChange={set('correo')} />
-            <input className="field" placeholder="Teléfono" value={form.tel} onChange={set('tel')} />
-            <input className="field span-2" placeholder="Dirección exacta" value={form.dir} onChange={set('dir')} />
-            <input className="field" placeholder="Provincia / Cantón" value={form.ciudad} onChange={set('ciudad')} />
-            <input className="field" placeholder="Notas (opcional)" value={form.notas} onChange={set('notas')} />
-          </div>
-
-          <span className="form-title" style={{ marginTop: 8 }}>MÉTODO DE PAGO</span>
-          <div className="pay-list">
-            {methods.map(m => (
-              <div key={m.id} className={`pay-option${pay === m.id ? ' on' : ''}`} onClick={() => setPay(m.id)}>
-                <span className="pay-radio"><i /></span>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
-                  <span className="pay-label">{m.label}</span>
-                  <span className="pay-sub">{m.sub}</span>
-                </div>
+    <div className="checkout-page container">
+      <Link href="/carrito" className="back-link"><ArrowLeft aria-hidden="true" size={18} /> Volver al carrito</Link>
+      <header><p className="section-label">FYTHER / CHECKOUT</p><h1 className="display">Cierra el movimiento.</h1></header>
+      {mode === 'demo' && <div className="checkout-demo"><Check aria-hidden="true" size={18} /><span>Simulación activa. No se realizará ningún cobro.</span></div>}
+      {items.length === 0 ? (
+        <div className="cart-empty"><h2 className="display">Tu carrito está vacío.</h2><Link className="button" href="/catalogo">Explorar colección</Link></div>
+      ) : (
+        <div className="checkout-layout">
+          <form className="checkout-form" onSubmit={submit} noValidate>
+            <fieldset><legend>Contacto y entrega</legend>
+              <div className="form-grid">
+                <label className="field-block span-2">Nombre completo<input autoComplete="name" value={form.name} onChange={change('name')} required /></label>
+                <label className="field-block">Correo electrónico<input type="email" autoComplete="email" value={form.email} onChange={change('email')} required /></label>
+                <label className="field-block">Teléfono<input type="tel" autoComplete="tel" value={form.phone} onChange={change('phone')} /></label>
+                <label className="field-block span-2">Dirección exacta<input autoComplete="street-address" value={form.address} onChange={change('address')} required /></label>
+                <label className="field-block">Provincia o cantón<input autoComplete="address-level1" value={form.city} onChange={change('city')} /></label>
+                <label className="field-block">Notas<textarea value={form.notes} onChange={change('notes')} rows={3} /></label>
               </div>
-            ))}
-          </div>
+            </fieldset>
 
-          {error && <div className="notice-error">{error}</div>}
+            <fieldset className="payment-fieldset"><legend>Método de pago</legend>
+              {methods.length > 0 ? <div className="payment-options">{methods.map((method) => (
+                <label key={method.id} className="payment-option"><input type="radio" name="payment" value={method.id} checked={paymentMethod === method.id} onChange={() => setPaymentMethod(method.id)} /><span><strong>{method.label}</strong><small>{method.description}</small></span></label>
+              ))}</div> : <p className="payment-missing">No hay métodos de pago configurados. Contacta a Fyther antes de continuar.</p>}
+            </fieldset>
 
-          <button className="confirm-btn" onClick={submit} disabled={sending}>
-            {sending ? <><span className="spin" />PROCESANDO…</> : <>CONFIRMAR PEDIDO · {fmt(subtotal)}</>}
-          </button>
+            {error && <p className="form-error" role="alert">{error}</p>}
+            <button className="button button-accent checkout-submit" type="submit" disabled={sending || methods.length === 0}>
+              {sending ? <><LoaderCircle className="spinner" aria-hidden="true" size={18} /> Procesando</> : `Confirmar pedido - ${formatMoney(subtotal)}`}
+            </button>
+          </form>
+
+          <aside className="checkout-summary"><h2>Tu pedido</h2>{items.map((line) => <div key={line.key}><span>{line.quantity} × {line.name}{line.variantName ? `, ${line.variantName}` : ''}</span><strong>{formatMoney({ amount: line.unitPrice.amount * line.quantity, currency: 'CRC' })}</strong></div>)}<p><span>Total</span><strong>{formatMoney(subtotal)}</strong></p></aside>
         </div>
-
-        <div className="order-panel">
-          <span className="form-title">TU PEDIDO</span>
-          {items.map(l => (
-            <div key={`${l.product_id}|${l.variant_id ?? ''}|${l.variant_name ?? ''}`} className="order-line">
-              <span>{l.quantity}× {l.name}{l.variant_name ? ` — ${l.variant_name}` : ''}</span>
-              <span>{fmt(l.price * l.quantity)}</span>
-            </div>
-          ))}
-          <div className="summary-divider" />
-          <div className="order-ship"><span>Envío</span><span>Se coordina al confirmar</span></div>
-          <div className="order-total"><span>Total</span><span className="amount">{fmt(subtotal)}</span></div>
-        </div>
-      </div>
+      )}
     </div>
   )
 }
