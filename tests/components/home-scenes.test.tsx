@@ -57,6 +57,8 @@ describe('home scene contracts', () => {
     expect(scene).toHaveTextContent('Envíos claros')
     expect(scene).toHaveTextContent('Cambios con acompañamiento')
     expect(scene).toHaveTextContent('Soporte cercano')
+    const trustList = within(scene as HTMLElement).getByRole('list', { name: 'Compromisos de servicio' })
+    expect(within(trustList).getAllByRole('listitem')).toHaveLength(3)
     expect(screen.getByRole('heading', { name: 'Preguntas, sin vueltas.' })).toBeInTheDocument()
     expect(scene?.querySelectorAll('details')).toHaveLength(3)
     expect(scene?.querySelectorAll('summary')).toHaveLength(3)
@@ -71,6 +73,7 @@ describe('home scene contracts', () => {
     const { container } = render(<FinalGlow />)
 
     expect(container.querySelector('[data-variant="alternate"] img')).toHaveAttribute('src', expect.stringContaining('logo2'))
+    expect(container.querySelector('[data-variant="alternate"] img')).toHaveAttribute('sizes', '(max-width: 767px) 220px, 280px')
     expect(screen.getByRole('heading', { name: 'Lo que sigue, a tu manera.' })).toBeInTheDocument()
     expect(screen.getByRole('link', { name: 'Ver la colección' })).toHaveAttribute('href', '/catalogo')
     expect(screen.getByRole('link', { name: 'Ver la colección' })).toHaveClass('button', 'button-primary')

@@ -5,9 +5,9 @@ const trustPoints = ['Envíos claros', 'Cambios con acompañamiento', 'Soporte c
 export default function TrustFaq() {
   return (
     <section id="preguntas" className="trust-faq container" data-reveal aria-labelledby="trust-faq-title">
-      <div className="trust-chips" aria-label="Compromisos de servicio">
-        {trustPoints.map((point) => <span key={point}>{point}</span>)}
-      </div>
+      <ul className="trust-chips" aria-label="Compromisos de servicio">
+        {trustPoints.map((point) => <li key={point}>{point}</li>)}
+      </ul>
       <div className="trust-faq-layout">
         <div className="trust-faq-heading">
           <p className="section-label">ANTES DE ELEGIR</p>

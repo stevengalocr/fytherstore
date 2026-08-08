@@ -4,10 +4,12 @@ export default function BrandMark({
   decorative = false,
   priority = false,
   variant = 'primary',
+  sizes = '(max-width: 767px) 88px, 112px',
 }: {
   decorative?: boolean
   priority?: boolean
   variant?: 'primary' | 'alternate'
+  sizes?: string
 }) {
   return (
     <span className="brand-mark" data-variant={variant}>
@@ -17,7 +19,7 @@ export default function BrandMark({
         width={220}
         height={220}
         priority={priority}
-        sizes="(max-width: 767px) 88px, 112px"
+        sizes={sizes}
       />
     </span>
   )

@@ -1,21 +1,17 @@
-'use client'
-
 import Image from 'next/image'
 import Link from 'next/link'
-import { AlertCircle, ArrowUpRight, RefreshCw } from 'lucide-react'
-import { useRouter } from 'next/navigation'
+import { AlertCircle, ArrowUpRight } from 'lucide-react'
 import BrandMark from '@/components/BrandMark'
+import RetryCommerceButton from '@/components/commerce/RetryCommerceButton'
 
 type State = 'empty' | 'error' | 'unconfigured'
 
 export default function CommerceState({ state }: { state: State }) {
-  const router = useRouter()
-
   if (state === 'unconfigured') {
     return (
       <section className="commerce-state commerce-state-preparing container" aria-labelledby="commerce-preparing-title" data-reveal>
         <div className="commerce-state-mark" aria-hidden="true">
-          <BrandMark decorative variant="alternate" />
+          <BrandMark decorative variant="alternate" sizes="260px" />
         </div>
         <div className="commerce-state-copy">
           <p className="section-label">MUY PRONTO</p>
@@ -34,9 +30,7 @@ export default function CommerceState({ state }: { state: State }) {
         <h2 id="commerce-error-title" className="display">No pudimos cargar la colección.</h2>
         <p>La conexión se interrumpió por un momento. Puedes intentarlo otra vez.</p>
         <div className="commerce-state-actions">
-          <button className="button" type="button" onClick={() => router.refresh()}>
-            <RefreshCw aria-hidden="true" size={17} /> Intentar de nuevo
-          </button>
+          <RetryCommerceButton />
           <Link className="button button-ghost" href="/">Volver al inicio</Link>
         </div>
       </section>

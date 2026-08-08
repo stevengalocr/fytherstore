@@ -27,4 +27,13 @@ describe('BrandMark', () => {
 
     expect(container.querySelector('img')).toHaveAttribute('alt', '')
   })
+
+  it('forwards custom responsive source sizes to the official image', () => {
+    render(<BrandMark sizes="(max-width: 767px) 220px, 280px" />)
+
+    expect(screen.getByRole('img', { name: 'Fyther Store' })).toHaveAttribute(
+      'sizes',
+      '(max-width: 767px) 220px, 280px',
+    )
+  })
 })

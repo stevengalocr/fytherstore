@@ -9,6 +9,7 @@ import EditorialStory from '@/components/site/EditorialStory'
 import TrustFaq from '@/components/site/TrustFaq'
 import FinalGlow from '@/components/site/FinalGlow'
 import type { CommerceProduct } from '@/lib/commerce/types'
+import { selectHomeProducts } from '@/lib/home-selection'
 
 export const revalidate = 60
 
@@ -21,7 +22,7 @@ export default async function HomePage() {
     failed = true
   }
   const categories = [...new Set(products.map((product) => product.category).filter((value): value is string => Boolean(value)))]
-  const featured = products.filter((product) => product.featured).slice(0, 3)
+  const homeProducts = selectHomeProducts(products)
 
   return (
     <>
@@ -37,7 +38,7 @@ export default async function HomePage() {
       ) : products.length === 0 ? (
         <CommerceState state="empty" />
       ) : (
-        <ProductGrid products={featured.length > 0 ? featured : products.slice(0, 3)} />
+        <ProductGrid products={homeProducts} />
       )}
       <WhyFyther />
       <EditorialStory />
