@@ -1,10 +1,8 @@
 export default function MotionTrack() {
-  const message = 'MOVE DIFFERENT  ACTIVE ESSENTIALS  COSTA RICA  '
   return (
-    <div className="motion-track" aria-label="Move Different. Active essentials. Costa Rica.">
-      <div aria-hidden="true">
-        <span>{message}</span><span>{message}</span><span>{message}</span><span>{message}</span>
-      </div>
-    </div>
+    <section className="current-rail" aria-label="Moverse, sentirse bien, compartir, Fyther" data-current>
+      <p>MOVERSE <span>·</span> SENTIRSE BIEN <span>·</span> COMPARTIR <span>·</span> FYTHER</p>
+      <div className="current-line" aria-hidden="true"><span /></div>
+    </section>
   )
 }
