@@ -1,37 +1,64 @@
+'use client'
+
+import Image from 'next/image'
 import Link from 'next/link'
-import { AlertCircle } from 'lucide-react'
+import { AlertCircle, ArrowUpRight, RefreshCw } from 'lucide-react'
+import { useRouter } from 'next/navigation'
+import BrandMark from '@/components/BrandMark'
 
 type State = 'empty' | 'error' | 'unconfigured'
 
 export default function CommerceState({ state }: { state: State }) {
+  const router = useRouter()
+
   if (state === 'unconfigured') {
     return (
-      <section className="commerce-empty">
-        <p className="section-label">FYTHER / ACTIVE STORE</p>
-        <h2 className="display">Collection incoming.</h2>
-        <p>El catálogo se conecta desde BilBildin. La selección aparecerá aquí cuando la tienda esté configurada.</p>
-        <a className="button button-ghost" href="mailto:stevengalocr@gmail.com">Contactar</a>
+      <section className="commerce-state commerce-state-preparing container" aria-labelledby="commerce-preparing-title" data-reveal>
+        <div className="commerce-state-mark" aria-hidden="true">
+          <BrandMark decorative variant="alternate" />
+        </div>
+        <div className="commerce-state-copy">
+          <p className="section-label">MUY PRONTO</p>
+          <h2 id="commerce-preparing-title" className="display">Estamos preparando la colección.</h2>
+          <p>Estamos eligiendo cada pieza con calma para que encuentres una selección que se sienta bien desde el primer movimiento.</p>
+          <Link className="button button-ghost" href="/#fyther">Conocer Fyther</Link>
+        </div>
       </section>
     )
   }
 
   if (state === 'error') {
     return (
-      <section className="commerce-empty" role="alert">
+      <section className="commerce-state commerce-state-error container" role="alert" aria-labelledby="commerce-error-title">
         <AlertCircle aria-hidden="true" size={28} strokeWidth={1.6} />
-        <h2 className="display">El movimiento sigue.</h2>
-        <p>No pudimos cargar esta selección. Intenta de nuevo o vuelve al inicio.</p>
-        <Link className="button button-ghost" href="/">Volver al inicio</Link>
+        <h2 id="commerce-error-title" className="display">No pudimos cargar la colección.</h2>
+        <p>La conexión se interrumpió por un momento. Puedes intentarlo otra vez.</p>
+        <div className="commerce-state-actions">
+          <button className="button" type="button" onClick={() => router.refresh()}>
+            <RefreshCw aria-hidden="true" size={17} /> Intentar de nuevo
+          </button>
+          <Link className="button button-ghost" href="/">Volver al inicio</Link>
+        </div>
       </section>
     )
   }
 
   return (
-    <section className="commerce-empty">
-      <p className="section-label">FYTHER / ACTIVE STORE</p>
-      <h2 className="display">First drop in motion.</h2>
-      <p>La primera selección se está preparando.</p>
-      <a className="button button-ghost" href="mailto:stevengalocr@gmail.com">Contactar</a>
+    <section className="commerce-state commerce-state-empty container" aria-labelledby="commerce-empty-title" data-reveal>
+      <div className="commerce-state-media">
+        <Image
+          src="/modelo2.png"
+          alt="Mujer con ropa activa en un espacio de luz cyan"
+          fill
+          sizes="(max-width: 767px) calc(100vw - 32px), 44vw"
+        />
+      </div>
+      <div className="commerce-state-copy">
+        <p className="section-label">SELECCIÓN FYTHER</p>
+        <h2 id="commerce-empty-title" className="display">La colección vuelve pronto.</h2>
+        <p>Estamos dando espacio a lo que sigue: prendas elegidas para acompañarte con comodidad, intención y libertad.</p>
+        <Link className="text-link" href="/#fyther">Conocer Fyther <ArrowUpRight aria-hidden="true" size={18} /></Link>
+      </div>
     </section>
   )
 }

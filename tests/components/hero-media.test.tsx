@@ -4,7 +4,7 @@ import { act, cleanup, render, screen } from '@testing-library/react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import HeroMedia from '@/components/site/HeroMedia'
 import MotionTrack from '@/components/site/MotionTrack'
-import EditorialSections from '@/components/site/EditorialSections'
+import WhyFyther from '@/components/site/WhyFyther'
 
 const globalsCss = readFileSync(resolve(process.cwd(), 'app/globals.css'), 'utf8')
 
@@ -192,8 +192,8 @@ describe('HeroMedia', () => {
   })
 
   it('provides the Fyther brand-section anchor', () => {
-    const { container } = render(<EditorialSections />)
+    const { container } = render(<WhyFyther />)
 
-    expect(container.querySelector('.manifesto-section')).toHaveAttribute('id', 'fyther')
+    expect(container.querySelector('.why-fyther')).toHaveAttribute('id', 'fyther')
   })
 })

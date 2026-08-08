@@ -4,7 +4,10 @@ import MotionTrack from '@/components/site/MotionTrack'
 import CategoryRail from '@/components/site/CategoryRail'
 import ProductGrid from '@/components/commerce/ProductGrid'
 import CommerceState from '@/components/commerce/CommerceState'
-import EditorialSections from '@/components/site/EditorialSections'
+import WhyFyther from '@/components/site/WhyFyther'
+import EditorialStory from '@/components/site/EditorialStory'
+import TrustFaq from '@/components/site/TrustFaq'
+import FinalGlow from '@/components/site/FinalGlow'
 import type { CommerceProduct } from '@/lib/commerce/types'
 
 export const revalidate = 60
@@ -24,6 +27,9 @@ export default async function HomePage() {
     <>
       <HeroMedia />
       <MotionTrack />
+      {commerceMode === 'live' && !failed && products.length > 0 && categories.length > 0 && (
+        <CategoryRail categories={categories} />
+      )}
       {commerceMode === 'unconfigured' ? (
         <CommerceState state="unconfigured" />
       ) : failed ? (
@@ -31,12 +37,12 @@ export default async function HomePage() {
       ) : products.length === 0 ? (
         <CommerceState state="empty" />
       ) : (
-        <>
-          <CategoryRail categories={categories} />
-          <ProductGrid products={featured.length > 0 ? featured : products.slice(0, 3)} />
-        </>
+        <ProductGrid products={featured.length > 0 ? featured : products.slice(0, 3)} />
       )}
-      <EditorialSections />
+      <WhyFyther />
+      <EditorialStory />
+      <TrustFaq />
+      <FinalGlow />
     </>
   )
 }

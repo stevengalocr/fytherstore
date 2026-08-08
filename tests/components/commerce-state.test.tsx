@@ -1,18 +1,45 @@
 import { render, screen } from '@testing-library/react'
-import { describe, expect, it } from 'vitest'
+import userEvent from '@testing-library/user-event'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
 import CommerceState from '@/components/commerce/CommerceState'
 
+const { refresh } = vi.hoisted(() => ({ refresh: vi.fn() }))
+
+vi.mock('next/navigation', () => ({
+  useRouter: () => ({ refresh }),
+}))
+
 describe('CommerceState', () => {
-  it('renders an honest live empty state without product articles', () => {
+  beforeEach(() => refresh.mockClear())
+
+  it('renders an editorial empty state without product inventory', () => {
     render(<CommerceState state="empty" />)
-    expect(screen.getByText(/First drop in motion/i)).toBeInTheDocument()
+
+    expect(screen.getByRole('heading', { name: 'La colección vuelve pronto.' })).toBeInTheDocument()
+    expect(screen.getByRole('img', { name: /mujer con ropa activa/i })).toHaveAttribute('src', expect.stringContaining('modelo2'))
+    expect(screen.getByRole('link', { name: /conocer fyther/i })).toHaveAttribute('href', '/#fyther')
     expect(screen.queryByRole('article')).not.toBeInTheDocument()
   })
 
-  it('renders an unconfigured state without fictional products', () => {
-    render(<CommerceState state="unconfigured" />)
-    expect(screen.getByText(/catálogo se conecta desde bilbildin/i)).toBeInTheDocument()
+  it('renders a customer-safe unconfigured state without fictional products or technical copy', () => {
+    const { container } = render(<CommerceState state="unconfigured" />)
+
+    expect(screen.getByRole('heading', { name: 'Estamos preparando la colección.' })).toBeInTheDocument()
+    expect(container.querySelector('[data-variant="alternate"] img')).toHaveAttribute('src', expect.stringContaining('logo2'))
     expect(screen.queryByRole('article')).not.toBeInTheDocument()
-    expect(screen.queryByText(/demo|simulaci/i)).not.toBeInTheDocument()
+    expect(container).not.toHaveTextContent(/key|endpoint|supabase|bilbildin|demo|simulaci/i)
+  })
+
+  it('renders an alert and refreshes the route when retrying', async () => {
+    const user = userEvent.setup()
+    render(<CommerceState state="error" />)
+
+    const alert = screen.getByRole('alert')
+    expect(alert).toHaveTextContent('No pudimos cargar la colección.')
+    expect(screen.getByRole('link', { name: /volver al inicio/i })).toHaveAttribute('href', '/')
+
+    await user.click(screen.getByRole('button', { name: 'Intentar de nuevo' }))
+
+    expect(refresh).toHaveBeenCalledTimes(1)
   })
 })
