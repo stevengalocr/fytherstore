@@ -16,15 +16,15 @@ export default function TrustFaq() {
         <div className="trust-faq-list">
           <details>
             <summary>¿De dónde viene la colección?</summary>
-            <p>Los productos, variantes, precios y disponibilidad publicados vienen de BilBildin.</p>
+            <p>Productos, variantes, precios y disponibilidad se publican desde BilBildin.</p>
           </details>
           <details>
             <summary>¿Cómo consulto mi pedido?</summary>
-            <p>La confirmación incluye un enlace único para consultar el seguimiento de tu pedido.</p>
+            <p>La confirmación incluye un enlace único para seguir tu pedido.</p>
           </details>
           <details>
             <summary>¿Cómo funcionan envíos y cambios?</summary>
-            <p>Consulta la información vigente en <Link href="/envios-cambios">Envíos y cambios</Link> antes de completar tu compra.</p>
+            <p>Consulta nuestra información de <Link href="/envios-cambios">envíos y cambios</Link> antes de comprar.</p>
           </details>
         </div>
       </div>

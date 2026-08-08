@@ -60,8 +60,10 @@ describe('home scene contracts', () => {
     expect(screen.getByRole('heading', { name: 'Preguntas, sin vueltas.' })).toBeInTheDocument()
     expect(scene?.querySelectorAll('details')).toHaveLength(3)
     expect(scene?.querySelectorAll('summary')).toHaveLength(3)
-    expect(scene).toHaveTextContent(/productos, variantes, precios y disponibilidad.*BilBildin/i)
-    expect(scene).toHaveTextContent(/confirmación incluye un enlace único.*seguimiento/i)
+    const answers = scene?.querySelectorAll('details p')
+    expect(answers?.[0].textContent).toBe('Productos, variantes, precios y disponibilidad se publican desde BilBildin.')
+    expect(answers?.[1].textContent).toBe('La confirmación incluye un enlace único para seguir tu pedido.')
+    expect(answers?.[2].textContent).toBe('Consulta nuestra información de envíos y cambios antes de comprar.')
     expect(within(scene as HTMLElement).getByRole('link', { name: /envíos y cambios/i })).toHaveAttribute('href', '/envios-cambios')
   })
 
@@ -71,6 +73,7 @@ describe('home scene contracts', () => {
     expect(container.querySelector('[data-variant="alternate"] img')).toHaveAttribute('src', expect.stringContaining('logo2'))
     expect(screen.getByRole('heading', { name: 'Lo que sigue, a tu manera.' })).toBeInTheDocument()
     expect(screen.getByRole('link', { name: 'Ver la colección' })).toHaveAttribute('href', '/catalogo')
+    expect(screen.getByRole('link', { name: 'Ver la colección' })).toHaveClass('button', 'button-primary')
   })
 })
 

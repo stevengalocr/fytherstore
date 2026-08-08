@@ -10,7 +10,7 @@ export default function FinalGlow() {
           <BrandMark decorative variant="alternate" />
         </div>
         <h2 id="final-glow-title" className="display">Lo que sigue, a tu manera.</h2>
-        <Link className="button button-accent" href="/catalogo">Ver la colección <ArrowUpRight aria-hidden="true" size={18} /></Link>
+        <Link className="button button-primary" href="/catalogo">Ver la colección <ArrowUpRight aria-hidden="true" size={18} /></Link>
       </div>
     </section>
   )
