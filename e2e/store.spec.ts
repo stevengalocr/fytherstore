@@ -3,6 +3,7 @@ import { expect, test, type Page, type Request } from '@playwright/test'
 const forbiddenCommerceCopy = /modo demo|productos de demostraci[oó]n|simulaci[oó]n|Motion Tee|Training Layer|Daily Bag|Recovery Cap/i
 const exposedConfiguration = /Supabase|service_role|\bkey\b|endpoint|\bdemo\b|simulaci/i
 const frameworkDialog = '[data-nextjs-dialog]'
+const backendTimeout = 15_000
 
 function isBenignAbort(request: Request, errorText: string) {
   const aborted = /ERR_ABORTED|NS_BINDING_ABORTED|cancelled|canceled/i.test(errorText)
@@ -10,7 +11,7 @@ function isBenignAbort(request: Request, errorText: string) {
   const nextNavigationPrefetch = request.method() === 'GET'
     && request.resourceType() === 'fetch'
     && url.searchParams.has('_rsc')
-  return aborted && (request.isNavigationRequest() || request.resourceType() === 'media' || nextNavigationPrefetch)
+  return aborted && (request.isNavigationRequest() || request.resourceType() === 'image' || request.resourceType() === 'media' || nextNavigationPrefetch)
 }
 
 function watchBrowserErrors(page: Page) {
@@ -59,6 +60,32 @@ async function expectNoOverlap(page: Page, selectors: string[]) {
       expect(overlaps, `${selectors[index]} overlaps ${selectors[otherIndex]}`).toBe(false)
     }
   }
+}
+
+async function expectVerticalOrder(page: Page, selectors: string[]) {
+  const boxes = await Promise.all(selectors.map((selector) => page.locator(selector).boundingBox()))
+  boxes.forEach((box, index) => expect(box, `${selectors[index]} must be visible`).not.toBeNull())
+  for (let index = 0; index < boxes.length - 1; index += 1) {
+    const current = boxes[index]
+    const next = boxes[index + 1]
+    if (!current || !next) continue
+    expect(current.y + current.height, `${selectors[index]} must end before ${selectors[index + 1]}`).toBeLessThanOrEqual(next.y + 1)
+  }
+}
+
+async function expectNoHorizontalClipping(page: Page, selectors: string[]) {
+  const clipped = await page.locator(selectors.join(', ')).evaluateAll((elements) => elements.flatMap((element) => {
+    const htmlElement = element as HTMLElement
+    const style = getComputedStyle(htmlElement)
+    const visible = style.display !== 'none' && style.visibility !== 'hidden' && htmlElement.getClientRects().length > 0
+    if (!visible || htmlElement.clientWidth === 0 || htmlElement.scrollWidth <= htmlElement.clientWidth + 1) return []
+    return [{
+      element: htmlElement.className || htmlElement.tagName.toLowerCase(),
+      clientWidth: htmlElement.clientWidth,
+      scrollWidth: htmlElement.scrollWidth,
+    }]
+  }))
+  expect(clipped).toEqual([])
 }
 
 async function expectFooterMarkContained(page: Page) {
@@ -141,6 +168,10 @@ function longestDurationSeconds(value: string) {
 
 test('renders the final home without simulated commerce', async ({ page }, testInfo) => {
   const browser = watchBrowserErrors(page)
+  const isDesktop = testInfo.project.name.startsWith('desktop')
+  const isLive = testInfo.project.name.endsWith('-live')
+  const isUnconfigured = testInfo.project.name.endsWith('-unconfigured')
+  expect(isLive || isUnconfigured).toBe(true)
 
   await page.goto('/')
   await expect(page.getByRole('heading', { name: 'Muévete a tu manera.', exact: true })).toBeVisible()
@@ -160,7 +191,7 @@ test('renders the final home without simulated commerce', async ({ page }, testI
   const currentBox = await current.boundingBox()
   expect(currentBox?.y ?? Number.POSITIVE_INFINITY).toBeLessThan(testInfo.project.use.viewport?.height ?? 1000)
 
-  const mobileHeader = testInfo.project.name !== 'desktop'
+  const mobileHeader = !isDesktop
   await expectNoOverlap(page, mobileHeader
     ? ['.menu-button', '.wordmark', '.cart-link']
     : ['.wordmark', '.site-nav', '.cart-link'])
@@ -176,13 +207,73 @@ test('renders the final home without simulated commerce', async ({ page }, testI
   await page.evaluate(() => (document.activeElement as HTMLElement | null)?.blur())
   await expect(page.locator(':focus-visible')).toHaveCount(0)
   await revealFullPage(page)
+
+  const worldPanels = page.locator('.collection-world-panel')
+  const worldBoxes = await Promise.all([worldPanels.nth(0).boundingBox(), worldPanels.nth(1).boundingBox()])
+  expect(worldBoxes.every(Boolean)).toBe(true)
+  const [firstWorld, secondWorld] = worldBoxes
+  if (isLive && isDesktop && firstWorld && secondWorld) {
+    expect(Math.abs(firstWorld.y - secondWorld.y)).toBeLessThanOrEqual(1)
+    expect(firstWorld.x + firstWorld.width).toBeLessThanOrEqual(secondWorld.x + 1)
+  } else if (isLive && !isDesktop && firstWorld && secondWorld) {
+    expect(firstWorld.y + firstWorld.height).toBeLessThanOrEqual(secondWorld.y + 1)
+  }
+
+  const worldRadii = await page.locator('.collection-world-media').evaluateAll((elements) => elements.map((element) => {
+    const style = getComputedStyle(element)
+    return [style.borderTopLeftRadius, style.borderTopRightRadius, style.borderBottomRightRadius, style.borderBottomLeftRadius]
+      .map((radius) => Number.parseFloat(radius))
+  }))
+  expect(worldRadii).toHaveLength(2)
+  for (const radii of worldRadii) {
+    expect(radii.every((radius) => Number.isFinite(radius) && radius <= 8)).toBe(true)
+  }
+
+  await expect.poll(() => page.locator('.collection-world-media img').evaluateAll((images) => images.map((image) => {
+    const media = image as HTMLImageElement
+    return media.complete && media.naturalWidth > 0
+  }))).toEqual([true, true])
+
+  const revealedSecondPanelDelay = await worldPanels.nth(1).evaluate((element) => getComputedStyle(element).transitionDelay)
+  expect(longestDurationSeconds(revealedSecondPanelDelay)).toBe(0)
+
+  await expectNoHorizontalClipping(page, [
+    '.hero-content',
+    '.collection-world-heading',
+    '.collection-world-copy',
+    '.commerce-state-copy',
+    '.collection-section-intro',
+    '.collection-empty',
+    '.editorial-story-copy',
+    '.trust-faq-heading',
+    '.trust-faq-list summary',
+    '.footer-top',
+  ])
+
+  if (isLive) {
+    const liveSections = [
+      '.hero-section',
+      '.current-rail',
+      '.collection-worlds',
+      '#ropa.collection-section',
+      '.editorial-story',
+      '#accesorios.collection-section',
+      '#preguntas',
+      '.site-footer',
+    ]
+    await expectVerticalOrder(page, liveSections)
+    await expectNoOverlap(page, liveSections)
+  }
+
   await expectFooterMarkContained(page)
   await page.screenshot({ path: testInfo.outputPath(`home-v02-${testInfo.project.name}.png`), fullPage: true })
   browser.expectClean()
 })
 
 test('mobile and tablet menu closes with Escape and returns focus', async ({ page }, testInfo) => {
-  test.skip(testInfo.project.name === 'desktop', 'Desktop uses the inline navigation')
+  const isDesktop = testInfo.project.name.startsWith('desktop')
+  const isLive = testInfo.project.name.endsWith('-live')
+  test.skip(isDesktop || !isLive, 'The mobile menu runs only in tablet-live and mobile-live')
   const browser = watchBrowserErrors(page)
 
   await page.goto('/')
@@ -198,24 +289,18 @@ test('mobile and tablet menu closes with Escape and returns focus', async ({ pag
 
   await trigger.click()
   await Promise.all([
-    page.waitForURL(/\/catalogo\?categoria=Ropa$/, { timeout: 15_000 }),
+    page.waitForURL(/\/catalogo\?categoria=Ropa$/, { timeout: backendTimeout }),
     page.locator('#primary-navigation').getByRole('link', { name: 'Ropa', exact: true }).click(),
   ])
 
-  const visibleH1 = page.locator('h1:visible')
-  await expect(visibleH1).toHaveCount(1)
-  await expect(visibleH1).toBeVisible()
-  await expectHealthyPage(page)
-
+  await expect(page.locator('.catalog-loading')).toHaveCount(0, { timeout: backendTimeout })
+  const visibleH1 = page.getByRole('heading', { level: 1, name: 'Encuentra algo para ti.' })
   const ropaFilter = page.getByRole('button', { name: 'Ropa', exact: true })
-  if (await ropaFilter.count() > 0) {
-    await expect(ropaFilter).toHaveAttribute('aria-pressed', 'true')
-    await expect(visibleH1).toHaveText('Encuentra algo para ti.')
-  } else {
-    await expect(page.getByRole('heading', { name: 'Estamos preparando la colección.' })).toBeVisible()
-    await expect(page.getByText(exposedConfiguration)).toHaveCount(0)
-    await expect(page.getByText(forbiddenCommerceCopy)).toHaveCount(0)
-  }
+  await expect(visibleH1).toBeVisible({ timeout: backendTimeout })
+  await expect(ropaFilter).toBeVisible({ timeout: backendTimeout })
+  await expect(ropaFilter).toHaveAttribute('aria-pressed', 'true', { timeout: backendTimeout })
+  await expect(page.locator('h1:visible')).toHaveCount(1)
+  await expectHealthyPage(page)
   browser.expectClean()
 })
 
@@ -239,22 +324,26 @@ test('renders final trust pages without internal language', async ({ page }) => 
   browser.expectClean()
 })
 
-test('keeps catalog, cart, and checkout truthful across harness states', async ({ page }) => {
+test('keeps catalog, cart, and checkout truthful across harness states', async ({ page }, testInfo) => {
   const browser = watchBrowserErrors(page)
+  const isLive = testInfo.project.name.endsWith('-live')
+  const isUnconfigured = testInfo.project.name.endsWith('-unconfigured')
+  expect(isLive || isUnconfigured).toBe(true)
 
   await page.goto('/catalogo')
+  await expect(page.locator('.catalog-loading')).toHaveCount(0, { timeout: backendTimeout })
   const catalogH1 = page.locator('h1:visible')
   await expect(catalogH1).toHaveCount(1)
   await expect(catalogH1).toBeVisible()
   await expect(page.getByText(exposedConfiguration)).toHaveCount(0)
   await expectHealthyPage(page)
 
-  const liveCatalog = await page.getByRole('button', { name: 'Ropa', exact: true }).count() > 0
-  if (liveCatalog) {
-    await expect(catalogH1).toHaveText('Encuentra algo para ti.')
-    await expect(page.getByRole('button', { name: 'Todos', exact: true })).toHaveAttribute('aria-pressed', 'true')
+  if (isLive) {
+    await expect(catalogH1).toHaveText('Encuentra algo para ti.', { timeout: backendTimeout })
+    await expect(page.getByRole('button', { name: 'Todos', exact: true })).toHaveAttribute('aria-pressed', 'true', { timeout: backendTimeout })
   } else {
-    await expect(page.getByRole('heading', { name: 'Estamos preparando la colección.' })).toBeVisible()
+    expect(isUnconfigured).toBe(true)
+    await expect(page.getByRole('heading', { name: 'Estamos preparando la colección.' })).toBeVisible({ timeout: backendTimeout })
     await expect(page.getByText(forbiddenCommerceCopy)).toHaveCount(0)
   }
   browser.expectClean()
@@ -265,11 +354,12 @@ test('keeps catalog, cart, and checkout truthful across harness states', async (
   browser.expectClean()
 
   await page.goto('/checkout')
-  if (liveCatalog) {
-    await expect(page.getByRole('heading', { level: 1, name: 'Terminemos juntas.' })).toBeVisible()
-    await expect(page.getByRole('heading', { name: 'Tu carrito está vacío.' })).toBeVisible()
+  if (isLive) {
+    await expect(page.getByRole('heading', { level: 1, name: 'Terminemos juntas.' })).toBeVisible({ timeout: backendTimeout })
+    await expect(page.getByRole('heading', { name: 'Tu carrito está vacío.' })).toBeVisible({ timeout: backendTimeout })
   } else {
-    await expect(page.getByRole('heading', { name: 'Estamos preparando la colección.' })).toBeVisible()
+    await expect(page.getByRole('heading', { name: 'Estamos preparando la colección.' })).toBeVisible({ timeout: backendTimeout })
+    await expect(page.getByText(forbiddenCommerceCopy)).toHaveCount(0)
   }
   await expect(page.getByText(exposedConfiguration)).toHaveCount(0)
   await expectHealthyPage(page)

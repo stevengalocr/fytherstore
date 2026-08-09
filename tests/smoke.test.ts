@@ -70,7 +70,8 @@ describe('Task 5 flagship home styling', () => {
     expect(globalsCss).toMatch(/\.collection-world-panel:last-child\s*\{[^}]*--world-accent:\s*var\(--color-pink\)/)
     expect(globalsCss).toMatch(/\.collection-world-copy\s*\{[^}]*min-height:\s*(?:6[4-9]|7[0-2])px/)
     expect(globalsCss).toMatch(/\.collection-world-panel\[data-reveal\]:not\(\[data-reveal='on'\]\)\s*\{[^}]*opacity:\s*0;[^}]*clip-path:/)
-    expect(globalsCss).toMatch(/\.collection-world-panel:nth-child\(2\)\[data-reveal\]\s*\{[^}]*transition-delay:\s*(?:[4-9]\d|1[0-2]\d)ms/)
+    expect(globalsCss).toMatch(/\.collection-world-panel:nth-child\(2\)\[data-reveal\]:not\(\[data-reveal='on'\]\)\s*\{[^}]*transition-delay:\s*90ms/)
+    expect(globalsCss).not.toMatch(/\.collection-world-panel:nth-child\(2\)\[data-reveal\]\s*\{[^}]*transition-delay:\s*90ms/)
   })
 
   it('gives collection sections stable responsive product grids and truthful empty bands', () => {
@@ -82,6 +83,7 @@ describe('Task 5 flagship home styling', () => {
     expect(globalsCss).toMatch(/\.collection-section-accesorios\s*\{[^}]*--collection-accent:\s*var\(--color-pink\)/)
     expect(globalsCss).toMatch(/@media \(max-width:\s*1024px\)[\s\S]*?\.collection-product-grid\s*\{[^}]*grid-template-columns:\s*repeat\(2,\s*minmax\(0,\s*1fr\)\)/)
     expect(globalsCss).toMatch(/@media \(max-width:\s*767px\)[\s\S]*?\.collection-world-grid\s*\{[^}]*grid-template-columns:\s*1fr/)
+    expect(globalsCss).toMatch(/@media \(width:\s*768px\)[\s\S]*?\.collection-world-grid\s*\{[^}]*grid-template-columns:\s*1fr/)
     expect(globalsCss).toMatch(/@media \(max-width:\s*560px\)[\s\S]*?\.collection-product-grid\s*\{[^}]*grid-template-columns:\s*1fr/)
   })
 
@@ -100,5 +102,32 @@ describe('Task 5 flagship home styling', () => {
     expect(reducedMotionCss).toMatch(/\.collection-world-panel\[data-reveal\],[\s\S]*\.collection-world-panel\[data-reveal\]:not\(\[data-reveal='on'\]\)\s*\{[^}]*clip-path:\s*none !important;[^}]*transform:\s*none !important/)
     expect(reducedMotionCss).toMatch(/\.collection-world-media img,[\s\S]*\.collection-world-copy svg,[\s\S]*\.trust-faq-list summary svg,[\s\S]*\.trust-faq-answer\s*\{[^}]*transform:\s*none !important;[^}]*animation:\s*none !important/)
     expect(reducedMotionCss).toMatch(/\.collection-world-panel,[\s\S]*\.trust-faq-list details\s*\{[^}]*transition-property:\s*background-color, border-color, color, opacity;[^}]*transition-duration:\s*120ms/)
+  })
+})
+
+describe('Task 5 deterministic browser matrix', () => {
+  const playwrightConfig = readFileSync(resolve(process.cwd(), 'playwright.config.ts'), 'utf8')
+  const storeE2e = readFileSync(resolve(process.cwd(), 'e2e/store.spec.ts'), 'utf8')
+
+  it('defines live responsive projects and a separate unconfigured desktop project', () => {
+    for (const projectName of ['desktop-live', 'tablet-live', 'mobile-live', 'desktop-unconfigured']) {
+      expect(playwrightConfig).toContain(`name: '${projectName}'`)
+    }
+    expect(playwrightConfig.match(/webServer:\s*\[/)).not.toBeNull()
+    expect(playwrightConfig).toContain('http://127.0.0.1:3197')
+    expect(playwrightConfig).toContain('http://127.0.0.1:3198')
+    expect(playwrightConfig).toMatch(/NEXT_PUBLIC_SUPABASE_URL:\s*''/)
+    expect(playwrightConfig).toMatch(/NEXT_PUBLIC_SUPABASE_ANON_KEY:\s*''/)
+    expect(playwrightConfig).toMatch(/NEXT_PUBLIC_BUSINESS_ID:\s*''/)
+    expect(playwrightConfig).toMatch(/SUPABASE_SERVICE_ROLE_KEY:\s*''/)
+    expect(playwrightConfig).toMatch(/workers:\s*1/)
+    expect(playwrightConfig).toMatch(/retries:\s*0/)
+  })
+
+  it('derives browser expectations from project mode instead of rendered locator counts', () => {
+    expect(storeE2e).toContain("startsWith('desktop')")
+    expect(storeE2e).toContain("endsWith('-live')")
+    expect(storeE2e).toContain("endsWith('-unconfigured')")
+    expect(storeE2e).not.toMatch(/if\s*\(await [^\n]*\.count\(\)/)
   })
 })
