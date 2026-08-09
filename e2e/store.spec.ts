@@ -144,6 +144,7 @@ test('renders the final home without simulated commerce', async ({ page }, testI
 
   await page.goto('/')
   await expect(page.getByRole('heading', { name: 'Muévete a tu manera.', exact: true })).toBeVisible()
+  await expect(page.getByText(/cambios|devoluciones/i)).toHaveCount(0)
   await expect(page.getByRole('link', { name: 'Ver la colección' }).first()).toBeVisible()
   await expect(page.getByText(forbiddenCommerceCopy)).toHaveCount(0)
   await expectHealthyPage(page)
