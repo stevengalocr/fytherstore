@@ -202,13 +202,21 @@ test('mobile and tablet menu closes with Escape and returns focus', async ({ pag
 test('renders final trust pages without internal language', async ({ page }) => {
   const browser = watchBrowserErrors(page)
 
-  for (const route of ['/privacidad', '/terminos', '/envios-cambios']) {
+  for (const route of ['/privacidad', '/terminos', '/envios-apartados']) {
     await page.goto(route)
     await expect(page.locator('h1')).toBeVisible()
     await expect(page.getByText(forbiddenCommerceCopy)).toHaveCount(0)
+    await expect(page.locator('body')).not.toContainText(/cambios|devoluciones/i)
     await expectHealthyPage(page)
     browser.expectClean()
   }
+
+  await page.goto('/envios-cambios')
+  await expect(page).toHaveURL(/\/envios-apartados$/)
+  await expect(page.getByRole('heading', { name: 'Envíos y apartados, con claridad.' })).toBeVisible()
+  await expect(page.locator('body')).not.toContainText(/cambios|devoluciones/i)
+  await expectHealthyPage(page)
+  browser.expectClean()
 })
 
 test('keeps unconfigured catalog, cart, and checkout truthful and stable', async ({ page }) => {

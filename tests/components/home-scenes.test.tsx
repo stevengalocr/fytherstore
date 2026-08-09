@@ -37,24 +37,36 @@ describe('home scene contracts', () => {
     expect(screen.queryByRole('link', { name: 'Ver la colección' })).not.toBeInTheDocument()
   })
 
-  it('uses native disclosure controls and factual support links in TrustFaq', () => {
+  it('uses five independent native disclosures for the factual service FAQ', () => {
     const { container } = render(<TrustFaq />)
-    const scene = container.querySelector('#preguntas')
+    const scene = container.querySelector('#preguntas') as HTMLElement
 
     expect(scene).toBeInTheDocument()
-    expect(scene).toHaveTextContent('Envíos claros')
-    expect(scene).toHaveTextContent('Cambios con acompañamiento')
-    expect(scene).toHaveTextContent('Soporte cercano')
-    const trustList = within(scene as HTMLElement).getByRole('list', { name: 'Compromisos de servicio' })
-    expect(within(trustList).getAllByRole('listitem')).toHaveLength(3)
-    expect(screen.getByRole('heading', { name: 'Preguntas, sin vueltas.' })).toBeInTheDocument()
-    expect(scene?.querySelectorAll('details')).toHaveLength(3)
-    expect(scene?.querySelectorAll('summary')).toHaveLength(3)
-    const answers = scene?.querySelectorAll('details p')
-    expect(answers?.[0].textContent).toBe('Productos, variantes, precios y disponibilidad se publican desde BilBildin.')
-    expect(answers?.[1].textContent).toBe('La confirmación incluye un enlace único para seguir tu pedido.')
-    expect(answers?.[2].textContent).toBe('Consulta nuestra información de envíos y cambios antes de comprar.')
-    expect(within(scene as HTMLElement).getByRole('link', { name: /envíos y cambios/i })).toHaveAttribute('href', '/envios-cambios')
+    expect(within(scene).getByRole('heading', { name: 'Preguntas frecuentes', level: 2 })).toBeInTheDocument()
+    expect(within(scene).queryByRole('list')).not.toBeInTheDocument()
+    expect(scene.querySelector('.trust-chips')).not.toBeInTheDocument()
+
+    const details = scene.querySelectorAll('details')
+    const summaries = scene.querySelectorAll('summary')
+    expect(details).toHaveLength(5)
+    expect(summaries).toHaveLength(5)
+    expect(Array.from(summaries, (summary) => summary.textContent)).toEqual([
+      '¿Los productos son originales?',
+      '¿Cómo realizan los envíos?',
+      '¿Cuánto tardan en responder?',
+      '¿Puedo apartar un producto?',
+      '¿Cómo consulto mi pedido?',
+    ])
+    expect(Array.from(details).every((detail) => !detail.hasAttribute('open'))).toBe(true)
+
+    expect(scene).toHaveTextContent(/productos seleccionados.*marcas reconocidas/i)
+    expect(scene).toHaveTextContent(/Correos de Costa Rica/i)
+    expect(scene).toHaveTextContent(/cobertura.*costo.*cada pedido/i)
+    expect(scene).toHaveTextContent(/menos de 24 horas/i)
+    expect(scene).toHaveTextContent(/apartados.*coordina.*antes de reservar/i)
+    expect(scene).toHaveTextContent(/confirmación.*enlace único.*seguir tu pedido/i)
+    expect(within(scene).getByRole('link', { name: /envíos y apartados/i })).toHaveAttribute('href', '/envios-apartados')
+    expect(scene).not.toHaveTextContent(/cambios|devoluciones/i)
   })
 
 })

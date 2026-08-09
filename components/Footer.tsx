@@ -20,7 +20,7 @@ export default function Footer() {
           </div>
           <div>
             <strong>Información</strong>
-            <Link href="/envios-cambios">Envíos y cambios</Link>
+            <Link href="/envios-apartados">Envíos y apartados</Link>
             <Link href="/privacidad">Privacidad</Link>
             <Link href="/terminos">Términos</Link>
           </div>
