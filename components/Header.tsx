@@ -59,9 +59,8 @@ export default function Header() {
           className={`site-nav${open ? ' is-open' : ''}`}
           aria-label="Navegación principal"
         >
-          <Link href="/#descubrir" onClick={() => setOpen(false)}>Descubrir</Link>
-          <Link href="/catalogo" onClick={() => setOpen(false)}>Colección</Link>
-          <Link href="/#fyther" onClick={() => setOpen(false)}>Nosotras</Link>
+          <Link href="/catalogo?categoria=Ropa" onClick={() => setOpen(false)}>Ropa</Link>
+          <Link href="/catalogo?categoria=Accesorios" onClick={() => setOpen(false)}>Accesorios</Link>
         </nav>
 
         <Link

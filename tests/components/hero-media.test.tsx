@@ -103,8 +103,9 @@ describe('HeroMedia', () => {
     expect(hero).toHaveAttribute('id', 'descubrir')
     expect(hero).toHaveAttribute('data-scene', 'hero')
     expect(screen.getByRole('heading', { name: 'Muévete a tu manera.' })).toBeInTheDocument()
-    expect(screen.getByRole('link', { name: 'Ver la colección' })).toHaveAttribute('href', '/catalogo')
-    expect(screen.getByRole('link', { name: 'Conocer Fyther' })).toHaveAttribute('href', '/#fyther')
+    expect(screen.getByText('Ropa y accesorios elegidos para moverte, compartir y sentirte bien.')).toBeInTheDocument()
+    expect(screen.getByRole('link', { name: 'Descubrir ropa' })).toHaveAttribute('href', '#ropa')
+    expect(screen.getByRole('link', { name: 'Ver accesorios' })).toHaveAttribute('href', '#accesorios')
     expect(screen.getByRole('img', { name: 'Boutique nocturna de Fyther Store' })).toBeInTheDocument()
     expect(screen.queryByText(/move different/i)).not.toBeInTheDocument()
   })
@@ -112,10 +113,14 @@ describe('HeroMedia', () => {
   it('renders the calm Fyther Current without a repeated marquee', () => {
     const { container } = render(<MotionTrack />)
 
-    const rail = screen.getByRole('region', { name: 'Moverse, sentirse bien, compartir, Fyther' })
+    const rail = screen.getByRole('region', {
+      name: 'ORIGINALES · CORREOS DE COSTA RICA · APARTADOS · RESPUESTA EN MENOS DE 24H',
+    })
     expect(rail).toHaveClass('current-rail')
     expect(rail).toHaveAttribute('data-current')
-    expect(rail.querySelector('p')).toHaveTextContent('MOVERSE · SENTIRSE BIEN · COMPARTIR · FYTHER')
+    expect(rail.querySelector('p')).toHaveTextContent(
+      'ORIGINALES · CORREOS DE COSTA RICA · APARTADOS · RESPUESTA EN MENOS DE 24H',
+    )
     expect(rail.querySelectorAll('p span')).toHaveLength(3)
     expect(container.querySelector('.current-line')).toHaveAttribute('aria-hidden', 'true')
     expect(container.querySelectorAll('.current-line > span')).toHaveLength(1)

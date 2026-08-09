@@ -70,10 +70,10 @@ export default function HeroMedia() {
       <div className="hero-content container" data-reveal>
         <p>PARA MOVERTE, COMPARTIR Y SENTIRTE BIEN</p>
         <h1 id="hero-title" className="display">Muévete a tu manera.</h1>
-        <p className="hero-description">Una selección de ropa activa para entrenar, caminar o disfrutar el día con las personas que te impulsan.</p>
+        <p className="hero-description">Ropa y accesorios elegidos para moverte, compartir y sentirte bien.</p>
         <div className="hero-actions">
-          <Link className="button button-primary" href="/catalogo">Ver la colección</Link>
-          <Link className="button button-secondary" href="/#fyther">Conocer Fyther</Link>
+          <Link className="button button-primary" href="#ropa">Descubrir ropa</Link>
+          <Link className="button button-secondary" href="#accesorios">Ver accesorios</Link>
         </div>
       </div>
     </section>
