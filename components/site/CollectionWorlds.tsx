@@ -3,8 +3,8 @@ import Link from 'next/link'
 import { ArrowDownRight } from 'lucide-react'
 
 interface CollectionWorldsProps {
-  ropaAvailable: boolean
-  accesoriosAvailable: boolean
+  ropaAvailable: boolean | null
+  accesoriosAvailable: boolean | null
 }
 
 const COLLECTION_IMAGE_SIZES = '(max-width: 767px) calc(100vw - 32px), 50vw'
@@ -25,7 +25,7 @@ export default function CollectionWorlds({ ropaAvailable, accesoriosAvailable }:
           className="collection-world-panel"
           href="#ropa"
           aria-label="Descubrir ropa"
-          aria-describedby={ropaAvailable ? undefined : ROPA_STATUS_ID}
+          aria-describedby={ropaAvailable === false ? ROPA_STATUS_ID : undefined}
           data-reveal
         >
           <span className="collection-world-media">
@@ -38,7 +38,14 @@ export default function CollectionWorlds({ ropaAvailable, accesoriosAvailable }:
           </span>
           <span className="collection-world-copy">
             <span className="collection-world-name">Ropa</span>
-            {!ropaAvailable && <span id={ROPA_STATUS_ID} className="collection-world-status">Próximamente</span>}
+            {ropaAvailable !== true && (
+              <span
+                id={ropaAvailable === false ? ROPA_STATUS_ID : undefined}
+                className="collection-world-status"
+              >
+                {ropaAvailable === false ? 'Próximamente' : 'Explorar'}
+              </span>
+            )}
             <ArrowDownRight aria-hidden="true" size={22} strokeWidth={1.6} />
           </span>
         </Link>
@@ -46,7 +53,7 @@ export default function CollectionWorlds({ ropaAvailable, accesoriosAvailable }:
           className="collection-world-panel"
           href="#accesorios"
           aria-label="Ver accesorios"
-          aria-describedby={accesoriosAvailable ? undefined : ACCESORIOS_STATUS_ID}
+          aria-describedby={accesoriosAvailable === false ? ACCESORIOS_STATUS_ID : undefined}
           data-reveal
         >
           <span className="collection-world-media">
@@ -59,8 +66,13 @@ export default function CollectionWorlds({ ropaAvailable, accesoriosAvailable }:
           </span>
           <span className="collection-world-copy">
             <span className="collection-world-name">Accesorios</span>
-            {!accesoriosAvailable && (
-              <span id={ACCESORIOS_STATUS_ID} className="collection-world-status">Próximamente</span>
+            {accesoriosAvailable !== true && (
+              <span
+                id={accesoriosAvailable === false ? ACCESORIOS_STATUS_ID : undefined}
+                className="collection-world-status"
+              >
+                {accesoriosAvailable === false ? 'Próximamente' : 'Explorar'}
+              </span>
             )}
             <ArrowDownRight aria-hidden="true" size={22} strokeWidth={1.6} />
           </span>

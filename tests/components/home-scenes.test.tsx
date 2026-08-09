@@ -106,6 +106,21 @@ describe('home commerce presentation', () => {
     }
   })
 
+  it('uses neutral statuses without unavailable descriptions when availability is unknown', () => {
+    render(<CollectionWorlds ropaAvailable={null} accesoriosAvailable={null} />)
+
+    const ropaLink = screen.getByRole('link', { name: /descubrir ropa/i })
+    const accesoriosLink = screen.getByRole('link', { name: /ver accesorios/i })
+
+    expect(within(ropaLink).getByText('Explorar')).toBeInTheDocument()
+    expect(within(accesoriosLink).getByText('Explorar')).toBeInTheDocument()
+    expect(screen.queryByText('Próximamente')).not.toBeInTheDocument()
+    expect(ropaLink).not.toHaveAttribute('aria-describedby')
+    expect(accesoriosLink).not.toHaveAttribute('aria-describedby')
+    expect(ropaLink).not.toHaveAccessibleDescription()
+    expect(accesoriosLink).not.toHaveAccessibleDescription()
+  })
+
   it('renders supplied empty Ropa messaging without products, prices, or a category link', () => {
     const { container } = render(
       <CollectionSection

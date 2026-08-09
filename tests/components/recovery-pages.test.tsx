@@ -1,10 +1,21 @@
 import { render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
-import { afterEach, describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import ErrorPage from '@/app/error'
 import NotFound from '@/app/not-found'
 
+const getProducts = vi.hoisted(() => vi.fn())
+
+vi.mock('@/lib/commerce', () => ({
+  commerce: { getProducts },
+  commerceMode: 'live',
+}))
+
+import CatalogPage from '@/app/catalogo/page'
+
 describe('recovery pages', () => {
+  beforeEach(() => getProducts.mockReset())
+
   afterEach(() => {
     vi.restoreAllMocks()
   })
@@ -26,5 +37,14 @@ describe('recovery pages', () => {
 
     expect(screen.getByRole('heading', { name: 'No encontramos esta página.', level: 1 })).toBeInTheDocument()
     expect(screen.getByRole('link', { name: 'Ver la colección' })).toHaveAttribute('href', '/catalogo')
+  })
+
+  it('uses the inclusive catalog lead when the live catalog is empty', async () => {
+    getProducts.mockResolvedValue([])
+
+    render(await CatalogPage({ searchParams: Promise.resolve({}) }))
+
+    expect(screen.getByText('Ropa y accesorios elegidos para moverte y disfrutar cada día.')).toBeInTheDocument()
+    expect(screen.queryByText('Ropa activa para entrenar, caminar y compartir tu ritmo.')).not.toBeInTheDocument()
   })
 })

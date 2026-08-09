@@ -1,4 +1,4 @@
-import { render, screen, within } from '@testing-library/react'
+import { render, screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { describe, expect, it } from 'vitest'
 import CatalogClient from '@/app/catalogo/CatalogClient'
@@ -130,6 +130,26 @@ describe('CatalogClient', () => {
     render(<CatalogClient products={products} initialCategory="Calzado" />)
 
     expect(screen.getByRole('button', { name: 'Todos' })).toHaveAttribute('aria-pressed', 'true')
+    expect(within(productList()).getByText('Legging Flujo')).toBeInTheDocument()
+    expect(within(productList()).getByText('Top Brisa')).toBeInTheDocument()
+  })
+
+  it('synchronizes the selected category when the URL-derived prop changes', async () => {
+    const { rerender } = render(<CatalogClient products={products} initialCategory="Ropa" />)
+
+    expect(screen.getByRole('button', { name: 'Ropa' })).toHaveAttribute('aria-pressed', 'true')
+    expect(within(productList()).getByText('Legging Flujo')).toBeInTheDocument()
+    expect(within(productList()).queryByText('Top Brisa')).not.toBeInTheDocument()
+
+    rerender(<CatalogClient products={products} initialCategory="Accesorios" />)
+
+    await waitFor(() => expect(screen.getByRole('button', { name: 'Accesorios' })).toHaveAttribute('aria-pressed', 'true'))
+    expect(within(productList()).getByText('Top Brisa')).toBeInTheDocument()
+    expect(within(productList()).queryByText('Legging Flujo')).not.toBeInTheDocument()
+
+    rerender(<CatalogClient products={products} initialCategory="Calzado" />)
+
+    await waitFor(() => expect(screen.getByRole('button', { name: 'Todos' })).toHaveAttribute('aria-pressed', 'true'))
     expect(within(productList()).getByText('Legging Flujo')).toBeInTheDocument()
     expect(within(productList()).getByText('Top Brisa')).toBeInTheDocument()
   })

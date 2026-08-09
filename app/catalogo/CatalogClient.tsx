@@ -1,6 +1,6 @@
 'use client'
 
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { ArrowDownUp, Search } from 'lucide-react'
 import ProductCard from '@/components/ProductCard'
 import type { CommerceProduct } from '@/lib/commerce/types'
@@ -10,15 +10,22 @@ const CATALOG_PRODUCT_IMAGE_SIZES = '(max-width: 560px) calc(100vw - 32px), (max
 const CATEGORIES = ['Todos', 'Ropa', 'Accesorios'] as const
 type CatalogCategory = (typeof CATEGORIES)[number]
 
+function canonicalCategory(category: string): CatalogCategory {
+  return CATEGORIES.find((candidate) => candidate === category) ?? 'Todos'
+}
+
 export default function CatalogClient({ products, initialCategory }: {
   products: CommerceProduct[]
   initialCategory: string
 }) {
-  const [category, setCategory] = useState<CatalogCategory>(
-    CATEGORIES.includes(initialCategory as CatalogCategory) ? initialCategory as CatalogCategory : 'Todos',
-  )
+  const canonicalInitialCategory = canonicalCategory(initialCategory)
+  const [category, setCategory] = useState<CatalogCategory>(canonicalInitialCategory)
   const [query, setQuery] = useState('')
   const [sort, setSort] = useState('featured')
+
+  useEffect(() => {
+    setCategory(canonicalInitialCategory)
+  }, [canonicalInitialCategory])
 
   function clearFilters() {
     setCategory('Todos')

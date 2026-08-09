@@ -2,11 +2,14 @@ import { cleanup, render, screen, within } from '@testing-library/react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import type { CommerceProduct } from '@/lib/commerce/types'
 
-const getProducts = vi.hoisted(() => vi.fn())
+const commerceMock = vi.hoisted(() => ({
+  getProducts: vi.fn(),
+  mode: 'live' as 'live' | 'unconfigured',
+}))
 
 vi.mock('@/lib/commerce', () => ({
-  commerce: { getProducts },
-  commerceMode: 'live',
+  commerce: { getProducts: commerceMock.getProducts },
+  get commerceMode() { return commerceMock.mode },
 }))
 
 vi.mock('next/navigation', () => ({
@@ -40,7 +43,8 @@ function sceneOrder(container: HTMLElement) {
 
 describe('HomePage', () => {
   beforeEach(() => {
-    getProducts.mockReset()
+    commerceMock.getProducts.mockReset()
+    commerceMock.mode = 'live'
     vi.spyOn(HTMLMediaElement.prototype, 'play').mockResolvedValue()
     vi.spyOn(HTMLMediaElement.prototype, 'pause').mockImplementation(() => undefined)
   })
@@ -51,7 +55,7 @@ describe('HomePage', () => {
   })
 
   it('splits exact worlds and renders the requested anchored scene order', async () => {
-    getProducts.mockResolvedValue([
+    commerceMock.getProducts.mockResolvedValue([
       product('ropa-real', 'Ropa Real', 'Ropa'),
       product('accesorio-real', 'Accesorio Real', 'Accesórios'),
       product('calzado', 'Calzado Ignorado', 'Calzado'),
@@ -82,7 +86,7 @@ describe('HomePage', () => {
   })
 
   it('renders both honest collection empty states after a successful empty response', async () => {
-    getProducts.mockResolvedValue([])
+    commerceMock.getProducts.mockResolvedValue([])
 
     const { container } = render(await HomePage())
     const ropa = container.querySelector('section#ropa') as HTMLElement
@@ -102,25 +106,36 @@ describe('HomePage', () => {
     expect(within(accesorios).getByRole('heading', { name: 'Estamos preparando los detalles.' })).toBeInTheDocument()
     expect(within(accesorios).getByText('La selección de accesorios estará disponible pronto.')).toBeInTheDocument()
     expect(container.querySelector('.commerce-state')).not.toBeInTheDocument()
+    expect(container.querySelectorAll('section.collection-section')).toHaveLength(2)
     expect(screen.getAllByText('Próximamente')).toHaveLength(2)
   })
 
-  it('renders one error state and no collection sections when commerce fails', async () => {
-    getProducts.mockRejectedValue(new Error('offline'))
+  it('keeps truthful anchors and unknown world statuses when commerce fails', async () => {
+    commerceMock.getProducts.mockRejectedValue(new Error('offline'))
 
     const { container } = render(await HomePage())
 
+    expect(container.querySelectorAll('#ropa')).toHaveLength(1)
+    expect(container.querySelectorAll('#accesorios')).toHaveLength(1)
     expect(container.querySelectorAll('section.collection-section')).toHaveLength(0)
     expect(container.querySelectorAll('section.commerce-state')).toHaveLength(1)
     expect(screen.getByRole('alert')).toHaveTextContent('No pudimos cargar la colección.')
-    expect(screen.getAllByText('Próximamente')).toHaveLength(2)
-    expect(sceneOrder(container)).toEqual([
-      'descubrir',
-      'current-rail',
-      'collection-worlds',
-      'commerce-state',
-      'fyther',
-      'preguntas',
-    ])
+    expect(screen.queryByText('Próximamente')).not.toBeInTheDocument()
+    expect(screen.getAllByText('Explorar')).toHaveLength(2)
+  })
+
+  it('keeps truthful anchors and one preparing state when commerce is unconfigured', async () => {
+    commerceMock.mode = 'unconfigured'
+    commerceMock.getProducts.mockResolvedValue([])
+
+    const { container } = render(await HomePage())
+
+    expect(container.querySelectorAll('#ropa')).toHaveLength(1)
+    expect(container.querySelectorAll('#accesorios')).toHaveLength(1)
+    expect(container.querySelectorAll('section.collection-section')).toHaveLength(0)
+    expect(container.querySelectorAll('section.commerce-state')).toHaveLength(1)
+    expect(screen.getByRole('heading', { name: 'Estamos preparando la colección.' })).toBeInTheDocument()
+    expect(screen.queryByText('Próximamente')).not.toBeInTheDocument()
+    expect(screen.getAllByText('Explorar')).toHaveLength(2)
   })
 })

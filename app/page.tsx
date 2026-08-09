@@ -27,11 +27,15 @@ export default async function HomePage() {
       <HeroMedia />
       <MotionTrack />
       <CollectionWorlds
-        ropaAvailable={!commerceUnavailable && ropa.length > 0}
-        accesoriosAvailable={!commerceUnavailable && accesorios.length > 0}
+        ropaAvailable={commerceUnavailable ? null : ropa.length > 0}
+        accesoriosAvailable={commerceUnavailable ? null : accesorios.length > 0}
       />
       {commerceUnavailable ? (
-        <CommerceState state={commerceMode === 'unconfigured' ? 'unconfigured' : 'error'} />
+        <div id="ropa">
+          <div id="accesorios">
+            <CommerceState state={commerceMode === 'unconfigured' ? 'unconfigured' : 'error'} />
+          </div>
+        </div>
       ) : (
         <CollectionSection
           id="ropa"

@@ -26,7 +26,7 @@ function CatalogHeader() {
     <header className="catalog-hero container">
       <p className="section-label">FYTHER / COLECCIÓN</p>
       <h1 className="display">Encuentra algo para ti.</h1>
-      <p>Ropa activa para entrenar, caminar y compartir tu ritmo.</p>
+      <p>Ropa y accesorios elegidos para moverte y disfrutar cada día.</p>
     </header>
   )
 }
