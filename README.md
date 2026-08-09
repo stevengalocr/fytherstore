@@ -17,10 +17,12 @@ La integración usa Supabase como capa de datos de BilBildin:
 
 - Catálogo: lectura pública con revalidación de 60 segundos.
 - Carrito: estado local persistido en el navegador.
-- Checkout: Server Action con precios y stock verificados en servidor.
+- Checkout: Server Action que delega en una RPC transaccional, idempotente y consciente de variantes.
 - Pedidos y tracking: lectura de servidor.
 - Aislamiento: todas las operaciones aplicables filtran por `business_id`.
 - Seguridad: `SUPABASE_SERVICE_ROLE_KEY` solo se usa en módulos de servidor.
+
+La función de pedidos está versionada en `supabase/migrations/202608080001_create_fyther_storefront_order.sql`. Valida tenant, configuración de pago, productos y variantes; crea cliente, pedido, líneas y tracking; descuenta el inventario correcto; y revierte todo ante cualquier fallo.
 
 La tienda se activa únicamente cuando son válidas `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY` y `NEXT_PUBLIC_BUSINESS_ID`. El checkout también requiere `SUPABASE_SERVICE_ROLE_KEY`.
 
@@ -29,7 +31,7 @@ La tienda se activa únicamente cuando son válidas `NEXT_PUBLIC_SUPABASE_URL`, 
 1. Importa el repositorio en Vercel como un proyecto Next.js.
 2. Agrega las cinco variables de `.env.example` en **Settings > Environment Variables**.
 3. Usa el dominio final en `NEXT_PUBLIC_SITE_URL`.
-4. Despliega y verifica catálogo, variantes, métodos de pago, creación del pedido y tracking contra un negocio de prueba.
+4. Despliega y verifica catálogo, variantes, métodos de pago, creación del pedido y tracking contra el tenant configurado de Fyther.
 
 No incluyas `.env.local` ni claves reales en Git. Los métodos de pago se muestran únicamente si existen en `theme_config` de BilBildin.
 

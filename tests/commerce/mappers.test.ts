@@ -39,4 +39,18 @@ describe('BilBildin product mapping', () => {
     })
     expect(product.variants[0].price.amount).toBe(20400)
   })
+
+  it('derives availability from variants when the product has variants', () => {
+    const product = mapBilBildinProduct({
+      ...row,
+      stock_quantity: 0,
+      variants: [{
+        id: 'variant-1', product_id: 'product-1', name: 'Talla M', sku: null,
+        price_modifier: 0, stock_quantity: 3, attributes: { size: 'M' }, images: [],
+      }],
+    })
+
+    expect(product.availability).toBe('in_stock')
+    expect(product.stockQuantity).toBe(3)
+  })
 })

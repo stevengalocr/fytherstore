@@ -42,12 +42,14 @@ export default function CheckoutClient({ methods }: { methods: PaymentOption[] }
   const emailRef = useRef<HTMLInputElement>(null)
   const addressRef = useRef<HTMLInputElement>(null)
   const inFlightRef = useRef(false)
+  const idempotencyKeyRef = useRef<string | null>(null)
 
   useEffect(() => {
     setPaymentMethod((current) => methods.some((method) => method.id === current) ? current : (methods[0]?.id ?? null))
   }, [methods])
 
   const change = (field: keyof typeof form) => (event: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+    idempotencyKeyRef.current = null
     setForm((current) => ({ ...current, [field]: event.target.value }))
     setServerError('')
     if (field === 'name' || field === 'email' || field === 'address') {
@@ -88,6 +90,7 @@ export default function CheckoutClient({ methods }: { methods: PaymentOption[] }
     setSending(true)
 
     const input: CheckoutInput = {
+      idempotencyKey: idempotencyKeyRef.current ??= crypto.randomUUID(),
       items: items.map((line) => ({ productId: line.productId, variantId: line.variantId, name: line.name, variantName: line.variantName, image: line.image, quantity: line.quantity })),
       customer: { name: form.name, email: normalizedEmail, phone: form.phone },
       address: { address: form.address, city: form.city, country: 'Costa Rica', notes: form.notes },
@@ -100,6 +103,7 @@ export default function CheckoutClient({ methods }: { methods: PaymentOption[] }
         setServerError(result.error ?? 'No pudimos crear el pedido.')
         return
       }
+      idempotencyKeyRef.current = null
       clear()
       router.push(`/confirmacion/${result.orderId}`)
     } catch {
@@ -132,7 +136,7 @@ export default function CheckoutClient({ methods }: { methods: PaymentOption[] }
 
             <fieldset className="payment-fieldset"><legend>Método de pago</legend>
               {methods.length > 0 ? <div className="payment-options">{methods.map((method) => (
-                <label key={method.id} className="payment-option"><input type="radio" name="payment" value={method.id} checked={paymentMethod === method.id} onChange={() => setPaymentMethod(method.id)} /><span><strong>{method.label}</strong><small>{method.description}</small></span></label>
+                <label key={method.id} className="payment-option"><input type="radio" name="payment" value={method.id} checked={paymentMethod === method.id} onChange={() => { idempotencyKeyRef.current = null; setPaymentMethod(method.id) }} /><span><strong>{method.label}</strong><small>{method.description}</small></span></label>
               ))}</div> : <p className="payment-missing">No hay métodos de pago configurados. Contacta a Fyther antes de continuar.</p>}
             </fieldset>
 

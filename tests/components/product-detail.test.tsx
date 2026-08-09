@@ -63,6 +63,7 @@ describe('ProductDetail', () => {
 
     expect(screen.getByRole('link', { name: 'Volver a la colección' })).toHaveAttribute('href', '/catalogo')
     expect(screen.getByRole('group', { name: 'Elige tu opción' })).toBeInTheDocument()
+    expect(screen.getByRole('group', { name: 'Cantidad de Legging Flujo' })).toBeInTheDocument()
     expect(screen.getByText(product.description!)).toBeInTheDocument()
     expect(screen.getByText('2 disponibles')).toBeInTheDocument()
   })

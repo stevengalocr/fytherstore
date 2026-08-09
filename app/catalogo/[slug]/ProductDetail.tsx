@@ -109,7 +109,7 @@ export default function ProductDetail({ product }: { product: CommerceProduct })
           )}
 
           <div className="purchase-row">
-            <div className="quantity-control" aria-label="Cantidad">
+            <div className="quantity-control" role="group" aria-label={`Cantidad de ${product.name}`}>
               <button type="button" aria-label="Reducir cantidad" disabled={!available || selectedQuantity <= 1} onClick={() => setQuantity((value) => Math.max(1, value - 1))}><Minus aria-hidden="true" size={17} /></button>
               <span className="quantity-value" aria-label="Cantidad seleccionada">{selectedQuantity}</span>
               <button type="button" aria-label="Aumentar cantidad" disabled={!available || selectedQuantity >= maxQuantity} onClick={() => setQuantity((value) => Math.min(maxQuantity, value + 1))}><Plus aria-hidden="true" size={17} /></button>

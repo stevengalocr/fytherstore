@@ -11,9 +11,15 @@ interface OrderRow {
   status: OrderStatus
   total: number
   created_at: string
-  payment_method: PaymentMethod
+  payment_method: unknown
   items: Array<{ id: string; product_name: string; product_image: string | null; quantity: number; unit_price: number; subtotal: number }> | null
   tracking: Array<{ id: string; status: OrderStatus; title: string; description: string | null; location: string | null; created_at: string }> | null
+}
+
+function mapPaymentMethod(value: unknown): PaymentMethod {
+  if (value === 'card') return 'link'
+  if (value === 'sinpe' || value === 'link' || value === 'cash') return value
+  throw new Error('El método de pago del pedido no es válido.')
 }
 
 export async function readLiveOrder(orderId: string): Promise<CommerceOrder | null> {
@@ -26,7 +32,8 @@ export async function readLiveOrder(orderId: string): Promise<CommerceOrder | nu
     tracking:order_tracking(id,status,title,description,location,created_at)
   `).eq('id', filters.id).eq('business_id', filters.business_id)
     .order('created_at', { referencedTable: 'order_tracking', ascending: true }).maybeSingle()
-  if (error || !data) return null
+  if (error) throw new Error('No pudimos consultar este pedido.')
+  if (!data) return null
   const row = data as unknown as OrderRow
   return {
     id: row.id,
@@ -34,7 +41,7 @@ export async function readLiveOrder(orderId: string): Promise<CommerceOrder | nu
     status: row.status,
     total: { amount: Number(row.total), currency: 'CRC' },
     createdAt: row.created_at,
-    paymentMethod: row.payment_method,
+    paymentMethod: mapPaymentMethod(row.payment_method),
     lines: (row.items ?? []).map((item) => ({
       id: item.id,
       name: item.product_name,

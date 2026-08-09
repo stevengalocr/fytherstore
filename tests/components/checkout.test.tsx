@@ -150,6 +150,22 @@ describe('CheckoutClient', () => {
     expect(push).not.toHaveBeenCalled()
   })
 
+  it('reuses the same idempotency key when a customer retries', async () => {
+    const user = userEvent.setup()
+    vi.mocked(createOrder).mockResolvedValue({ ok: false, mode: 'live', error: 'Intenta de nuevo.' })
+    render(<CheckoutClient methods={methods} />)
+
+    await completeRequiredFields(user)
+    await user.click(screen.getByRole('button', { name: /confirmar pedido/i }))
+    await user.click(screen.getByRole('button', { name: /confirmar pedido/i }))
+
+    expect(createOrder).toHaveBeenCalledTimes(2)
+    const firstKey = vi.mocked(createOrder).mock.calls[0][0].idempotencyKey
+    const secondKey = vi.mocked(createOrder).mock.calls[1][0].idempotencyKey
+    expect(firstKey).toMatch(/^[0-9a-f-]{36}$/i)
+    expect(secondKey).toBe(firstKey)
+  })
+
   it('recovers from a rejected order request without clearing the form', async () => {
     const user = userEvent.setup()
     vi.mocked(createOrder).mockRejectedValue(new Error('network details'))
@@ -175,6 +191,7 @@ describe('CheckoutClient', () => {
 
     await waitFor(() => expect(push).toHaveBeenCalledWith('/confirmacion/order-123'))
     expect(createOrder).toHaveBeenCalledWith({
+      idempotencyKey: expect.stringMatching(/^[0-9a-f-]{36}$/i),
       items: [{
         productId: item.productId,
         variantId: item.variantId,

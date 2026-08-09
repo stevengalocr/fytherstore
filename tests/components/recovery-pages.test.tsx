@@ -15,7 +15,7 @@ describe('recovery pages', () => {
     vi.spyOn(console, 'error').mockImplementation(() => undefined)
     render(<ErrorPage error={new Error('private integration detail')} reset={reset} />)
 
-    expect(screen.getByRole('heading', { name: 'No pudimos abrir esta vista.' })).toBeInTheDocument()
+    expect(screen.getByRole('heading', { name: 'No pudimos abrir esta vista.', level: 1 })).toBeInTheDocument()
     expect(screen.queryByText(/private integration detail/i)).not.toBeInTheDocument()
     await user.click(screen.getByRole('button', { name: 'Intentar de nuevo' }))
     expect(reset).toHaveBeenCalledOnce()
@@ -24,7 +24,7 @@ describe('recovery pages', () => {
   it('returns missing routes to the collection', () => {
     render(<NotFound />)
 
-    expect(screen.getByRole('heading', { name: 'No encontramos esta página.' })).toBeInTheDocument()
+    expect(screen.getByRole('heading', { name: 'No encontramos esta página.', level: 1 })).toBeInTheDocument()
     expect(screen.getByRole('link', { name: 'Ver la colección' })).toHaveAttribute('href', '/catalogo')
   })
 })

@@ -48,6 +48,9 @@ export function mapBilBildinProduct(row: BilBildinProductRow): CommerceProduct {
     attributes: variant.attributes ?? {},
     images: mapImages(variant.images, `${row.name}, ${variant.name}`),
   }))
+  const stockQuantity = variants.length > 0
+    ? variants.reduce((total, variant) => total + variant.stockQuantity, 0)
+    : Number(row.stock_quantity) || 0
 
   return {
     id: row.id,
@@ -60,8 +63,8 @@ export function mapBilBildinProduct(row: BilBildinProductRow): CommerceProduct {
       ? { amount: row.compare_at_price, currency: 'CRC' }
       : null,
     images: mapImages(row.images, row.name),
-    availability: availability(Number(row.stock_quantity) || 0),
-    stockQuantity: Number(row.stock_quantity) || 0,
+    availability: availability(stockQuantity),
+    stockQuantity,
     variants,
     category: row.category,
     tags: row.tags ?? [],

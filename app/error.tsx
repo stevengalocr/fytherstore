@@ -7,7 +7,7 @@ export default function ErrorPage({ error, reset }: { error: Error & { digest?: 
   return (
     <div className="recovery-page container">
       <p className="section-label">FYTHER</p>
-      <h2 className="display">No pudimos abrir esta vista.</h2>
+      <h1 className="display">No pudimos abrir esta vista.</h1>
       <p>Tu selección sigue guardada en este navegador.</p>
       <button type="button" className="button button-primary" onClick={reset}>Intentar de nuevo</button>
     </div>

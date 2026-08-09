@@ -322,7 +322,7 @@ main { flex: 1; }
 .policy-sections a { font-weight: 800; text-decoration: underline; }
 
 .recovery-page { min-height: 78svh; display: flex; flex-direction: column; justify-content: center; align-items: flex-start; gap: 1rem; max-width: 760px; }
-.recovery-page h2 { max-width: 12ch; margin: 0; font-size: clamp(3rem, 7vw, 6rem); }
+.recovery-page :is(h1, h2) { max-width: 12ch; margin: 0; font-size: clamp(3rem, 7vw, 6rem); }
 .recovery-page > p:not(.section-label) { max-width: 52ch; margin: 0 0 0.5rem; color: var(--color-mist); }
 .recovery-page .button-primary { background: var(--color-cyan); border-color: var(--color-cyan); color: var(--color-night); }
 

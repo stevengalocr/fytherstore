@@ -58,6 +58,7 @@ export interface CartLine extends CheckoutLine {
 }
 
 export interface CheckoutInput {
+  idempotencyKey: string
   items: CheckoutLine[]
   customer: { name: string; email: string; phone: string }
   address: { address: string; city: string; country: string; notes: string }
