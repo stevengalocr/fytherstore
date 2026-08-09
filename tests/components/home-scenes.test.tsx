@@ -1,10 +1,9 @@
 import { render, screen, within } from '@testing-library/react'
 import { describe, expect, it } from 'vitest'
-import CategoryRail from '@/components/site/CategoryRail'
+import CollectionSection from '@/components/site/CollectionSection'
+import CollectionWorlds from '@/components/site/CollectionWorlds'
 import EditorialStory from '@/components/site/EditorialStory'
-import FinalGlow from '@/components/site/FinalGlow'
 import TrustFaq from '@/components/site/TrustFaq'
-import ProductGrid from '@/components/commerce/ProductGrid'
 import type { CommerceProduct } from '@/lib/commerce/types'
 
 function product(id: string, name: string): CommerceProduct {
@@ -27,14 +26,15 @@ function product(id: string, name: string): CommerceProduct {
 }
 
 describe('home scene contracts', () => {
-  it('uses the approved campaign image and collection action in EditorialStory', () => {
+  it('uses EditorialStory as a pure transition into the Fyther point of view', () => {
     const { container } = render(<EditorialStory />)
 
     expect(container.querySelector('.editorial-story')).toHaveAttribute('id', 'fyther')
     expect(screen.getByRole('img', { name: 'Mujer entrenando en un espacio de luz cyan y rosa' })).toHaveAttribute('src', expect.stringContaining('modelo1'))
-    expect(screen.getByRole('heading', { name: 'Sentirte bien también cuenta.' })).toBeInTheDocument()
-    expect(screen.getByText('Prendas para acompañar tu rutina sin dictarla.')).toBeInTheDocument()
-    expect(screen.getByRole('link', { name: 'Ver la colección' })).toHaveAttribute('href', '/catalogo')
+    expect(screen.getByText('A TU MANERA')).toBeInTheDocument()
+    expect(screen.getByRole('heading', { name: 'Tu rutina también vive en los detalles.' })).toBeInTheDocument()
+    expect(screen.getByText('Lo que eliges para moverte puede sentirse cercano, útil y muy tuyo.')).toBeInTheDocument()
+    expect(screen.queryByRole('link', { name: 'Ver la colección' })).not.toBeInTheDocument()
   })
 
   it('uses native disclosure controls and factual support links in TrustFaq', () => {
@@ -57,37 +57,89 @@ describe('home scene contracts', () => {
     expect(within(scene as HTMLElement).getByRole('link', { name: /envíos y cambios/i })).toHaveAttribute('href', '/envios-cambios')
   })
 
-  it('closes with the alternate official mark and collection action', () => {
-    const { container } = render(<FinalGlow />)
-
-    expect(container.querySelector('[data-variant="alternate"] img')).toHaveAttribute('src', expect.stringContaining('logo2'))
-    expect(container.querySelector('[data-variant="alternate"] img')).toHaveAttribute('sizes', '(max-width: 767px) 220px, 280px')
-    expect(screen.getByRole('heading', { name: 'Lo que sigue, a tu manera.' })).toBeInTheDocument()
-    expect(screen.getByRole('link', { name: 'Ver la colección' })).toHaveAttribute('href', '/catalogo')
-    expect(screen.getByRole('link', { name: 'Ver la colección' })).toHaveClass('button', 'button-primary')
-  })
 })
 
 describe('home commerce presentation', () => {
-  it('omits the category scene when no live categories exist', () => {
-    const { container } = render(<CategoryRail categories={[]} />)
-    expect(container).toBeEmptyDOMElement()
+  it('presents two stable collection worlds and marks only unavailable Ropa as upcoming', () => {
+    const { container } = render(<CollectionWorlds ropaAvailable={false} accesoriosAvailable />)
+
+    expect(container.querySelector('section.collection-worlds')).toBeInTheDocument()
+    expect(screen.getByRole('heading', { name: 'Dos formas de acompañar tu movimiento.' })).toBeInTheDocument()
+
+    const ropaLink = screen.getByRole('link', { name: /descubrir ropa/i })
+    const accesoriosLink = screen.getByRole('link', { name: /ver accesorios/i })
+    expect(ropaLink).toHaveAttribute('href', '#ropa')
+    expect(accesoriosLink).toHaveAttribute('href', '#accesorios')
+    expect(ropaLink).toHaveAttribute('data-reveal')
+    expect(accesoriosLink).toHaveAttribute('data-reveal')
+    expect(within(ropaLink).getByText('Próximamente')).toBeInTheDocument()
+    expect(within(accesoriosLink).queryByText('Próximamente')).not.toBeInTheDocument()
+
+    expect(within(ropaLink).getByRole('img', { name: /ropa/i })).toHaveAttribute('src', expect.stringContaining('ropa'))
+    expect(within(accesoriosLink).getByRole('img', { name: /accesorios/i })).toHaveAttribute('src', expect.stringContaining('modelo2'))
+    for (const image of screen.getAllByRole('img')) {
+      expect(image).toHaveAttribute('sizes', '(max-width: 767px) calc(100vw - 32px), 50vw')
+    }
+    expect(container.querySelectorAll('.collection-world-media')).toHaveLength(2)
   })
 
-  it('links category exploration with encoded live category values', () => {
-    render(<CategoryRail categories={['Yoga & movilidad', 'Running']} />)
+  it('renders supplied empty Ropa messaging without products, prices, or a category link', () => {
+    const { container } = render(
+      <CollectionSection
+        id="ropa"
+        eyebrow="ROPA"
+        title="Ropa para moverte contigo."
+        description="Capas cómodas para todos tus ritmos."
+        products={[]}
+        emptyTitle="La ropa viene en camino."
+        emptyCopy="Estamos preparando esta selección para ti."
+      />,
+    )
 
-    expect(screen.getByRole('heading', { name: 'Encuentra tu movimiento.' })).toBeInTheDocument()
-    expect(screen.getByRole('link', { name: /explorar la categoría yoga & movilidad/i })).toHaveAttribute('href', '/catalogo?categoria=Yoga%20%26%20movilidad')
-    expect(screen.getByRole('link', { name: /explorar la categoría running/i })).toHaveAttribute('href', '/catalogo?categoria=Running')
+    const section = container.querySelector('section#ropa')
+    expect(section).toHaveClass('collection-section')
+    expect(section).toHaveAttribute('data-reveal')
+    expect(within(section as HTMLElement).getByRole('heading', { name: 'Ropa para moverte contigo.' })).toBeInTheDocument()
+    expect(within(section as HTMLElement).getByText('Capas cómodas para todos tus ritmos.')).toBeInTheDocument()
+    const emptyState = section?.querySelector('.collection-empty') as HTMLElement
+    expect(within(emptyState).getByRole('heading', { name: 'La ropa viene en camino.' })).toBeInTheDocument()
+    expect(within(emptyState).getByText('Estamos preparando esta selección para ti.')).toBeInTheDocument()
+    expect(within(section as HTMLElement).queryByRole('article')).not.toBeInTheDocument()
+    expect(within(section as HTMLElement).queryByText(/₡/)).not.toBeInTheDocument()
+    expect(within(section as HTMLElement).queryByRole('link', { name: 'Ver toda la ropa' })).not.toBeInTheDocument()
   })
 
-  it('renders exactly the supplied products under the default title', () => {
-    render(<ProductGrid products={[product('uno', 'Producto Uno'), product('dos', 'Producto Dos')]} />)
+  it('renders exactly the supplied Accesorios ProductCard articles and category action', () => {
+    const products = [
+      { ...product('uno', 'Accesorio Uno'), images: [{ src: '/uno.png', alt: 'Accesorio Uno en uso' }] },
+      product('dos', 'Accesorio Dos'),
+    ]
+    const { container } = render(
+      <CollectionSection
+        id="accesorios"
+        eyebrow="ACCESORIOS"
+        title="Detalles que acompañan."
+        description="Útiles, cercanos y tuyos."
+        products={products}
+        emptyTitle="Más detalles muy pronto."
+        emptyCopy="Estamos preparando nuevos accesorios."
+      />,
+    )
 
-    expect(screen.getByRole('heading', { name: 'Una selección para ti.' })).toBeInTheDocument()
-    expect(screen.getAllByRole('article')).toHaveLength(2)
-    expect(screen.getByText('Producto Uno')).toBeInTheDocument()
-    expect(screen.getByText('Producto Dos')).toBeInTheDocument()
+    const section = container.querySelector('section#accesorios') as HTMLElement
+    const grid = section.querySelector('.collection-product-grid') as HTMLElement
+    const cardWrappers = grid.querySelectorAll('.collection-product-card[data-reveal]')
+    const cards = within(grid).getAllByRole('article')
+    expect(cards).toHaveLength(products.length)
+    expect(cardWrappers).toHaveLength(products.length)
+    expect(Array.from(cardWrappers).every((wrapper) => wrapper.querySelector(':scope > article.product-card'))).toBe(true)
+    expect(within(grid).getByRole('heading', { name: 'Accesorio Uno' })).toBeInTheDocument()
+    expect(within(grid).getByRole('heading', { name: 'Accesorio Dos' })).toBeInTheDocument()
+    expect(within(section).queryByText('Más detalles muy pronto.')).not.toBeInTheDocument()
+    expect(within(section).getByRole('link', { name: 'Ver todos los accesorios' })).toHaveAttribute('href', '/catalogo?categoria=Accesorios')
+    expect(within(grid).getByRole('img', { name: 'Accesorio Uno en uso' })).toHaveAttribute(
+      'sizes',
+      '(max-width: 767px) calc(100vw - 32px), (max-width: 1240px) 42vw, 500px',
+    )
   })
 })
