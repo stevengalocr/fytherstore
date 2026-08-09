@@ -1,7 +1,6 @@
 import { render, screen } from '@testing-library/react'
 import { describe, expect, it } from 'vitest'
 import ProductCard from '@/components/ProductCard'
-import ProductGrid from '@/components/commerce/ProductGrid'
 import type { CommerceProduct } from '@/lib/commerce/types'
 
 const product: CommerceProduct = {
@@ -38,17 +37,6 @@ describe('ProductCard', () => {
     expect(screen.getByRole('img', { name: 'Motion Tee en color negro' })).toHaveAttribute(
       'sizes',
       '(max-width: 767px) calc(100vw - 32px), 500px',
-    )
-  })
-
-  it('uses the home grid image sizing at the single-column tablet breakpoint', () => {
-    render(<ProductGrid products={[
-      { ...product, images: [{ src: '/producto.jpg', alt: 'Motion Tee en el inicio' }] },
-    ]} />)
-
-    expect(screen.getByRole('img', { name: 'Motion Tee en el inicio' })).toHaveAttribute(
-      'sizes',
-      '(max-width: 767px) calc(100vw - 32px), (max-width: 1240px) 42vw, 500px',
     )
   })
 

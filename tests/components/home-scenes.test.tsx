@@ -83,6 +83,21 @@ describe('home commerce presentation', () => {
     expect(container.querySelectorAll('.collection-world-media')).toHaveLength(2)
   })
 
+  it('marks only unavailable Accesorios as upcoming and gives both world links a direction icon', () => {
+    render(<CollectionWorlds ropaAvailable accesoriosAvailable={false} />)
+
+    const ropaLink = screen.getByRole('link', { name: /descubrir ropa/i })
+    const accesoriosLink = screen.getByRole('link', { name: /ver accesorios/i })
+    expect(within(ropaLink).queryByText('Próximamente')).not.toBeInTheDocument()
+    expect(within(accesoriosLink).getByText('Próximamente')).toBeInTheDocument()
+
+    for (const link of [ropaLink, accesoriosLink]) {
+      const icon = link.querySelector('svg.lucide-arrow-down-right')
+      expect(icon).toBeInTheDocument()
+      expect(icon).toHaveAttribute('aria-hidden', 'true')
+    }
+  })
+
   it('renders supplied empty Ropa messaging without products, prices, or a category link', () => {
     const { container } = render(
       <CollectionSection
@@ -140,6 +155,26 @@ describe('home commerce presentation', () => {
     expect(within(grid).getByRole('img', { name: 'Accesorio Uno en uso' })).toHaveAttribute(
       'sizes',
       '(max-width: 767px) calc(100vw - 32px), (max-width: 1240px) 42vw, 500px',
+    )
+  })
+
+  it('links a populated Ropa collection to the filtered catalog', () => {
+    const { container } = render(
+      <CollectionSection
+        id="ropa"
+        eyebrow="ROPA"
+        title="Ropa para moverte contigo."
+        description="Capas cómodas para todos tus ritmos."
+        products={[product('ropa-uno', 'Ropa Uno')]}
+        emptyTitle="La ropa viene en camino."
+        emptyCopy="Estamos preparando esta selección para ti."
+      />,
+    )
+
+    const section = container.querySelector('section#ropa') as HTMLElement
+    expect(within(section).getByRole('link', { name: 'Ver toda la ropa' })).toHaveAttribute(
+      'href',
+      '/catalogo?categoria=Ropa',
     )
   })
 })
