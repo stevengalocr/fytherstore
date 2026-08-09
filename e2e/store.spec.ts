@@ -96,16 +96,38 @@ async function expectFooterMarkContained(page: Page) {
 }
 
 async function revealFullPage(page: Page) {
-  const dimensions = await page.evaluate(() => ({ height: document.documentElement.scrollHeight, viewport: window.innerHeight }))
-  const step = Math.max(200, Math.floor(dimensions.viewport * 0.7))
-  for (let y = 0; y < dimensions.height; y += step) {
-    await page.evaluate((scrollTop) => window.scrollTo(0, scrollTop), y)
-    await page.waitForTimeout(80)
+  const reveals = page.locator('[data-reveal]')
+  const revealCount = await reveals.count()
+  expect(revealCount).toBeGreaterThan(0)
+  await expect(reveals.first()).toHaveAttribute('data-reveal', 'on', { timeout: 10_000 })
+
+  for (let index = 0; index < revealCount; index += 1) {
+    const reveal = reveals.nth(index)
+    await reveal.scrollIntoViewIfNeeded()
+    await expect(reveal).toHaveAttribute('data-reveal', 'on', { timeout: 10_000 })
   }
-  await page.evaluate(() => window.scrollTo(0, document.documentElement.scrollHeight))
-  await page.waitForTimeout(150)
-  await expect.poll(() => page.locator('[data-reveal]:not([data-reveal="on"])').count()).toBe(0)
-  await page.evaluate(() => window.scrollTo(0, 0))
+
+  const footer = page.locator('.site-footer')
+  await footer.scrollIntoViewIfNeeded()
+  await expect(footer).toBeInViewport()
+  await page.evaluate(() => {
+    const root = document.documentElement
+    const previousBehavior = root.style.scrollBehavior
+    root.style.scrollBehavior = 'auto'
+    window.scrollTo(0, root.scrollHeight)
+    root.style.scrollBehavior = previousBehavior
+  })
+  await expect.poll(() => page.evaluate(() => window.scrollY + window.innerHeight >= document.documentElement.scrollHeight - 1)).toBe(true)
+  await expect(page.locator('[data-reveal]:not([data-reveal="on"])')).toHaveCount(0)
+
+  await page.evaluate(() => {
+    const root = document.documentElement
+    const previousBehavior = root.style.scrollBehavior
+    root.style.scrollBehavior = 'auto'
+    window.scrollTo(0, 0)
+    root.style.scrollBehavior = previousBehavior
+  })
+  await expect.poll(() => page.evaluate(() => window.scrollY)).toBeLessThanOrEqual(1)
 }
 
 function longestDurationSeconds(value: string) {
