@@ -4,7 +4,6 @@ import CategoryRail from '@/components/site/CategoryRail'
 import EditorialStory from '@/components/site/EditorialStory'
 import FinalGlow from '@/components/site/FinalGlow'
 import TrustFaq from '@/components/site/TrustFaq'
-import WhyFyther from '@/components/site/WhyFyther'
 import ProductGrid from '@/components/commerce/ProductGrid'
 import type { CommerceProduct } from '@/lib/commerce/types'
 
@@ -28,21 +27,10 @@ function product(id: string, name: string): CommerceProduct {
 }
 
 describe('home scene contracts', () => {
-  it('presents the three Fyther values in the anchored why scene', () => {
-    const { container } = render(<WhyFyther />)
-    const scene = container.querySelector('#fyther')
-
-    expect(scene).toBeInTheDocument()
-    expect(scene).toHaveTextContent('POR QUÉ FYTHER')
-    expect(scene).toHaveTextContent('Elegimos con intención.')
-    expect(scene).toHaveTextContent('Calidad seleccionada')
-    expect(scene).toHaveTextContent('Originalidad verificable')
-    expect(scene).toHaveTextContent('Lista para moverte')
-  })
-
   it('uses the approved campaign image and collection action in EditorialStory', () => {
-    render(<EditorialStory />)
+    const { container } = render(<EditorialStory />)
 
+    expect(container.querySelector('.editorial-story')).toHaveAttribute('id', 'fyther')
     expect(screen.getByRole('img', { name: 'Mujer entrenando en un espacio de luz cyan y rosa' })).toHaveAttribute('src', expect.stringContaining('modelo1'))
     expect(screen.getByRole('heading', { name: 'Sentirte bien también cuenta.' })).toBeInTheDocument()
     expect(screen.getByText('Prendas para acompañar tu rutina sin dictarla.')).toBeInTheDocument()

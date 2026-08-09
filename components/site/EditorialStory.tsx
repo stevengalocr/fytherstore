@@ -4,7 +4,7 @@ import { ArrowUpRight } from 'lucide-react'
 
 export default function EditorialStory() {
   return (
-    <section className="editorial-story container" data-reveal aria-labelledby="editorial-story-title">
+    <section id="fyther" className="editorial-story container" data-reveal aria-labelledby="editorial-story-title">
       <div className="editorial-story-media">
         <Image
           src="/modelo1.png"

@@ -4,7 +4,6 @@ import MotionTrack from '@/components/site/MotionTrack'
 import CategoryRail from '@/components/site/CategoryRail'
 import ProductGrid from '@/components/commerce/ProductGrid'
 import CommerceState from '@/components/commerce/CommerceState'
-import WhyFyther from '@/components/site/WhyFyther'
 import EditorialStory from '@/components/site/EditorialStory'
 import TrustFaq from '@/components/site/TrustFaq'
 import FinalGlow from '@/components/site/FinalGlow'
@@ -40,7 +39,6 @@ export default async function HomePage() {
       ) : (
         <ProductGrid products={homeProducts} />
       )}
-      <WhyFyther />
       <EditorialStory />
       <TrustFaq />
       <FinalGlow />
