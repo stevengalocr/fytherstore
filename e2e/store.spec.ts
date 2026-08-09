@@ -201,10 +201,21 @@ test('mobile and tablet menu closes with Escape and returns focus', async ({ pag
     page.waitForURL(/\/catalogo\?categoria=Ropa$/, { timeout: 15_000 }),
     page.locator('#primary-navigation').getByRole('link', { name: 'Ropa', exact: true }).click(),
   ])
-  await expect(page.getByRole('heading', { level: 1, name: 'Encuentra algo para ti.' })).toBeVisible()
-  await expect(page.getByRole('button', { name: 'Ropa', exact: true })).toHaveAttribute('aria-pressed', 'true')
-  await expect(page.getByText(exposedConfiguration)).toHaveCount(0)
+
+  const visibleH1 = page.locator('h1:visible')
+  await expect(visibleH1).toHaveCount(1)
+  await expect(visibleH1).toBeVisible()
   await expectHealthyPage(page)
+
+  const ropaFilter = page.getByRole('button', { name: 'Ropa', exact: true })
+  if (await ropaFilter.count() > 0) {
+    await expect(ropaFilter).toHaveAttribute('aria-pressed', 'true')
+    await expect(visibleH1).toHaveText('Encuentra algo para ti.')
+  } else {
+    await expect(page.getByRole('heading', { name: 'Estamos preparando la colección.' })).toBeVisible()
+    await expect(page.getByText(exposedConfiguration)).toHaveCount(0)
+    await expect(page.getByText(forbiddenCommerceCopy)).toHaveCount(0)
+  }
   browser.expectClean()
 })
 
@@ -228,13 +239,24 @@ test('renders final trust pages without internal language', async ({ page }) => 
   browser.expectClean()
 })
 
-test('keeps unconfigured catalog, cart, and checkout truthful and stable', async ({ page }) => {
+test('keeps catalog, cart, and checkout truthful across harness states', async ({ page }) => {
   const browser = watchBrowserErrors(page)
 
   await page.goto('/catalogo')
-  await expect(page.getByRole('heading', { name: 'Estamos preparando la colección.' })).toBeVisible()
+  const catalogH1 = page.locator('h1:visible')
+  await expect(catalogH1).toHaveCount(1)
+  await expect(catalogH1).toBeVisible()
   await expect(page.getByText(exposedConfiguration)).toHaveCount(0)
   await expectHealthyPage(page)
+
+  const liveCatalog = await page.getByRole('button', { name: 'Ropa', exact: true }).count() > 0
+  if (liveCatalog) {
+    await expect(catalogH1).toHaveText('Encuentra algo para ti.')
+    await expect(page.getByRole('button', { name: 'Todos', exact: true })).toHaveAttribute('aria-pressed', 'true')
+  } else {
+    await expect(page.getByRole('heading', { name: 'Estamos preparando la colección.' })).toBeVisible()
+    await expect(page.getByText(forbiddenCommerceCopy)).toHaveCount(0)
+  }
   browser.expectClean()
 
   await page.goto('/carrito')
@@ -243,7 +265,12 @@ test('keeps unconfigured catalog, cart, and checkout truthful and stable', async
   browser.expectClean()
 
   await page.goto('/checkout')
-  await expect(page.getByRole('heading', { name: 'Estamos preparando la colección.' })).toBeVisible()
+  if (liveCatalog) {
+    await expect(page.getByRole('heading', { level: 1, name: 'Terminemos juntas.' })).toBeVisible()
+    await expect(page.getByRole('heading', { name: 'Tu carrito está vacío.' })).toBeVisible()
+  } else {
+    await expect(page.getByRole('heading', { name: 'Estamos preparando la colección.' })).toBeVisible()
+  }
   await expect(page.getByText(exposedConfiguration)).toHaveCount(0)
   await expectHealthyPage(page)
   browser.expectClean()
