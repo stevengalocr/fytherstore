@@ -74,6 +74,10 @@ describe('home commerce presentation', () => {
     expect(accesoriosLink).toHaveAttribute('data-reveal')
     expect(within(ropaLink).getByText('Próximamente')).toBeInTheDocument()
     expect(within(accesoriosLink).queryByText('Próximamente')).not.toBeInTheDocument()
+    expect(ropaLink).toHaveAccessibleDescription('Próximamente')
+    expect(accesoriosLink).not.toHaveAccessibleDescription('Próximamente')
+    expect(ropaLink).toHaveAttribute('aria-describedby', 'collection-world-ropa-status')
+    expect(accesoriosLink).not.toHaveAttribute('aria-describedby')
 
     expect(within(ropaLink).getByRole('img', { name: /ropa/i })).toHaveAttribute('src', expect.stringContaining('ropa'))
     expect(within(accesoriosLink).getByRole('img', { name: /accesorios/i })).toHaveAttribute('src', expect.stringContaining('modelo2'))
@@ -90,6 +94,10 @@ describe('home commerce presentation', () => {
     const accesoriosLink = screen.getByRole('link', { name: /ver accesorios/i })
     expect(within(ropaLink).queryByText('Próximamente')).not.toBeInTheDocument()
     expect(within(accesoriosLink).getByText('Próximamente')).toBeInTheDocument()
+    expect(ropaLink).not.toHaveAccessibleDescription('Próximamente')
+    expect(accesoriosLink).toHaveAccessibleDescription('Próximamente')
+    expect(ropaLink).not.toHaveAttribute('aria-describedby')
+    expect(accesoriosLink).toHaveAttribute('aria-describedby', 'collection-world-accesorios-status')
 
     for (const link of [ropaLink, accesoriosLink]) {
       const icon = link.querySelector('svg.lucide-arrow-down-right')

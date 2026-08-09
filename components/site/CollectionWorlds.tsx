@@ -8,6 +8,8 @@ interface CollectionWorldsProps {
 }
 
 const COLLECTION_IMAGE_SIZES = '(max-width: 767px) calc(100vw - 32px), 50vw'
+const ROPA_STATUS_ID = 'collection-world-ropa-status'
+const ACCESORIOS_STATUS_ID = 'collection-world-accesorios-status'
 
 export default function CollectionWorlds({ ropaAvailable, accesoriosAvailable }: CollectionWorldsProps) {
   return (
@@ -19,7 +21,13 @@ export default function CollectionWorlds({ ropaAvailable, accesoriosAvailable }:
         </h2>
       </div>
       <div className="collection-world-grid">
-        <Link className="collection-world-panel" href="#ropa" aria-label="Descubrir ropa" data-reveal>
+        <Link
+          className="collection-world-panel"
+          href="#ropa"
+          aria-label="Descubrir ropa"
+          aria-describedby={ropaAvailable ? undefined : ROPA_STATUS_ID}
+          data-reveal
+        >
           <span className="collection-world-media">
             <Image
               src="/ropa.png"
@@ -30,11 +38,17 @@ export default function CollectionWorlds({ ropaAvailable, accesoriosAvailable }:
           </span>
           <span className="collection-world-copy">
             <span className="collection-world-name">Ropa</span>
-            {!ropaAvailable && <span className="collection-world-status">Próximamente</span>}
+            {!ropaAvailable && <span id={ROPA_STATUS_ID} className="collection-world-status">Próximamente</span>}
             <ArrowDownRight aria-hidden="true" size={22} strokeWidth={1.6} />
           </span>
         </Link>
-        <Link className="collection-world-panel" href="#accesorios" aria-label="Ver accesorios" data-reveal>
+        <Link
+          className="collection-world-panel"
+          href="#accesorios"
+          aria-label="Ver accesorios"
+          aria-describedby={accesoriosAvailable ? undefined : ACCESORIOS_STATUS_ID}
+          data-reveal
+        >
           <span className="collection-world-media">
             <Image
               src="/modelo2.png"
@@ -45,7 +59,9 @@ export default function CollectionWorlds({ ropaAvailable, accesoriosAvailable }:
           </span>
           <span className="collection-world-copy">
             <span className="collection-world-name">Accesorios</span>
-            {!accesoriosAvailable && <span className="collection-world-status">Próximamente</span>}
+            {!accesoriosAvailable && (
+              <span id={ACCESORIOS_STATUS_ID} className="collection-world-status">Próximamente</span>
+            )}
             <ArrowDownRight aria-hidden="true" size={22} strokeWidth={1.6} />
           </span>
         </Link>
