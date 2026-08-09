@@ -6,6 +6,7 @@ const baseURL = `http://127.0.0.1:${port}`
 export default defineConfig({
   testDir: './e2e',
   outputDir: 'test-results/e2e',
+  workers: 1,
   fullyParallel: false,
   retries: 0,
   reporter: 'list',
@@ -28,9 +29,9 @@ export default defineConfig({
     },
   ],
   webServer: {
-    command: `npm run dev -- --hostname 127.0.0.1 --port ${port}`,
+    command: `npm run build && npm run start -- --hostname 127.0.0.1 --port ${port}`,
     url: baseURL,
     reuseExistingServer: false,
-    timeout: 120_000,
+    timeout: 180_000,
   },
 })

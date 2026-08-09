@@ -7,7 +7,7 @@ export default function Footer() {
       <div className="footer-top">
         <div className="footer-brand">
           <Link href="/" className="footer-wordmark" aria-label="Fyther Store, inicio">
-            <BrandMark decorative variant="alternate" />
+            <BrandMark decorative variant="alternate" sizes="176px" />
           </Link>
           <p>Muévete a tu manera.</p>
         </div>

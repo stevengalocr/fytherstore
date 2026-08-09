@@ -343,9 +343,9 @@ main { flex: 1; }
 .footer-top, .footer-bottom { width: min(100%, var(--container)); margin-inline: auto; }
 .footer-top { display: grid; grid-template-columns: 1.2fr 2fr; gap: 4rem; }
 .footer-brand { display: flex; flex-direction: column; align-items: flex-start; }
-.footer-wordmark { min-width: 176px; min-height: 72px; display: inline-flex; align-items: center; }
-.footer-wordmark .brand-mark { width: 176px; height: 72px; }
-.footer-wordmark .brand-mark img { position: absolute; width: 156px; height: 156px; top: -42px; left: 10px; object-fit: contain; }
+.footer-wordmark { width: 176px; height: 176px; display: inline-flex; align-items: center; }
+.footer-wordmark .brand-mark { width: 176px; height: 176px; overflow: visible; }
+.footer-wordmark .brand-mark img { position: static; width: 176px; height: 176px; object-fit: contain; }
 .footer-top p { max-width: 30ch; color: var(--color-mist); }
 .footer-links { display: grid; grid-template-columns: repeat(3, 1fr); gap: 2rem; }
 .footer-links div { display: flex; flex-direction: column; align-items: flex-start; gap: 0.7rem; }

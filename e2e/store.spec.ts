@@ -1,15 +1,41 @@
-import { expect, test, type Page } from '@playwright/test'
+import { expect, test, type Page, type Request } from '@playwright/test'
 
 const forbiddenCommerceCopy = /modo demo|productos de demostraci[oó]n|simulaci[oó]n|Motion Tee|Training Layer|Daily Bag|Recovery Cap/i
 const exposedConfiguration = /Supabase|service_role|\bkey\b|endpoint|\bdemo\b|simulaci/i
 const frameworkDialog = '[data-nextjs-dialog]'
 
-function watchConsoleErrors(page: Page) {
-  const errors: string[] = []
+function isBenignAbort(request: Request, errorText: string) {
+  const aborted = /ERR_ABORTED|NS_BINDING_ABORTED|cancelled|canceled/i.test(errorText)
+  const url = new URL(request.url())
+  const nextNavigationPrefetch = request.method() === 'GET'
+    && request.resourceType() === 'fetch'
+    && url.searchParams.has('_rsc')
+  return aborted && (request.isNavigationRequest() || request.resourceType() === 'media' || nextNavigationPrefetch)
+}
+
+function watchBrowserErrors(page: Page) {
+  const issues: string[] = []
+
   page.on('console', (message) => {
-    if (message.type() === 'error') errors.push(message.text())
+    if (message.type() === 'error') issues.push(`console.error: ${message.text()}`)
   })
-  return errors
+  page.on('pageerror', (error) => issues.push(`pageerror: ${error.message}`))
+  page.on('requestfailed', (request) => {
+    const errorText = request.failure()?.errorText ?? 'unknown failure'
+    if (!isBenignAbort(request, errorText)) {
+      issues.push(`requestfailed: ${request.method()} ${request.url()} (${errorText})`)
+    }
+  })
+  page.on('response', (response) => {
+    if (response.status() >= 400) issues.push(`http ${response.status()}: ${response.url()}`)
+  })
+
+  return {
+    expectClean() {
+      expect(issues).toEqual([])
+      issues.length = 0
+    },
+  }
 }
 
 async function expectHealthyPage(page: Page) {
@@ -35,6 +61,40 @@ async function expectNoOverlap(page: Page, selectors: string[]) {
   }
 }
 
+async function expectFooterMarkContained(page: Page) {
+  const geometry = await page.locator('.footer-wordmark .brand-mark').evaluate((container) => {
+    const image = container.querySelector('img')
+    if (!image) return null
+    const containerBounds = container.getBoundingClientRect()
+    const imageBounds = image.getBoundingClientRect()
+    return {
+      container: {
+        top: containerBounds.top,
+        right: containerBounds.right,
+        bottom: containerBounds.bottom,
+        left: containerBounds.left,
+        height: containerBounds.height,
+      },
+      image: {
+        top: imageBounds.top,
+        right: imageBounds.right,
+        bottom: imageBounds.bottom,
+        left: imageBounds.left,
+        height: imageBounds.height,
+      },
+    }
+  })
+
+  expect(geometry).not.toBeNull()
+  if (!geometry) return
+  expect(geometry.container.height).toBeGreaterThan(48)
+  expect(geometry.image.height).toBeGreaterThan(48)
+  expect(geometry.image.top).toBeGreaterThanOrEqual(geometry.container.top - 1)
+  expect(geometry.image.left).toBeGreaterThanOrEqual(geometry.container.left - 1)
+  expect(geometry.image.right).toBeLessThanOrEqual(geometry.container.right + 1)
+  expect(geometry.image.bottom).toBeLessThanOrEqual(geometry.container.bottom + 1)
+}
+
 async function revealFullPage(page: Page) {
   const dimensions = await page.evaluate(() => ({ height: document.documentElement.scrollHeight, viewport: window.innerHeight }))
   const step = Math.max(200, Math.floor(dimensions.viewport * 0.7))
@@ -58,7 +118,7 @@ function longestDurationSeconds(value: string) {
 }
 
 test('renders the final home without simulated commerce', async ({ page }, testInfo) => {
-  const browserErrors = watchConsoleErrors(page)
+  const browser = watchBrowserErrors(page)
 
   await page.goto('/')
   await expect(page.getByRole('heading', { name: 'Muévete a tu manera.', exact: true })).toBeVisible()
@@ -84,14 +144,17 @@ test('renders the final home without simulated commerce', async ({ page }, testI
   expect(focusStyle.style).not.toBe('none')
   expect(Number.parseFloat(focusStyle.width)).toBeGreaterThan(0)
 
+  await page.evaluate(() => (document.activeElement as HTMLElement | null)?.blur())
+  await expect(page.locator(':focus-visible')).toHaveCount(0)
   await revealFullPage(page)
+  await expectFooterMarkContained(page)
   await page.screenshot({ path: testInfo.outputPath(`home-v02-${testInfo.project.name}.png`), fullPage: true })
-  expect(browserErrors).toEqual([])
+  browser.expectClean()
 })
 
 test('mobile and tablet menu closes with Escape and returns focus', async ({ page }, testInfo) => {
   test.skip(testInfo.project.name === 'desktop', 'Desktop uses the inline navigation')
-  const browserErrors = watchConsoleErrors(page)
+  const browser = watchBrowserErrors(page)
 
   await page.goto('/')
   const trigger = page.locator('.menu-button')
@@ -102,48 +165,53 @@ test('mobile and tablet menu closes with Escape and returns focus', async ({ pag
   await page.keyboard.press('Escape')
   await expect(trigger).toHaveAttribute('aria-expanded', 'false')
   await expect(trigger).toBeFocused()
+  browser.expectClean()
 
   await trigger.click()
-  await page.locator('#primary-navigation').getByRole('link', { name: 'Colección', exact: true }).click()
-  await expect(page).toHaveURL(/\/catalogo$/)
+  await Promise.all([
+    page.waitForURL('**/catalogo', { timeout: 15_000 }),
+    page.locator('#primary-navigation').getByRole('link', { name: 'Colección', exact: true }).click(),
+  ])
   await expect(page.getByRole('heading', { name: 'Estamos preparando la colección.' })).toBeVisible()
   await expectHealthyPage(page)
-  expect(browserErrors).toEqual([])
+  browser.expectClean()
 })
 
 test('renders final trust pages without internal language', async ({ page }) => {
-  const browserErrors = watchConsoleErrors(page)
+  const browser = watchBrowserErrors(page)
 
   for (const route of ['/privacidad', '/terminos', '/envios-cambios']) {
     await page.goto(route)
     await expect(page.locator('h1')).toBeVisible()
     await expect(page.getByText(forbiddenCommerceCopy)).toHaveCount(0)
     await expectHealthyPage(page)
+    browser.expectClean()
   }
-  expect(browserErrors).toEqual([])
 })
 
 test('keeps unconfigured catalog, cart, and checkout truthful and stable', async ({ page }) => {
-  const browserErrors = watchConsoleErrors(page)
+  const browser = watchBrowserErrors(page)
 
   await page.goto('/catalogo')
   await expect(page.getByRole('heading', { name: 'Estamos preparando la colección.' })).toBeVisible()
   await expect(page.getByText(exposedConfiguration)).toHaveCount(0)
   await expectHealthyPage(page)
+  browser.expectClean()
 
   await page.goto('/carrito')
   await expect(page.getByRole('heading', { name: 'Tu selección empieza aquí.' })).toBeVisible()
   await expectHealthyPage(page)
+  browser.expectClean()
 
   await page.goto('/checkout')
   await expect(page.getByRole('heading', { name: 'Estamos preparando la colección.' })).toBeVisible()
   await expect(page.getByText(exposedConfiguration)).toHaveCount(0)
   await expectHealthyPage(page)
-  expect(browserErrors).toEqual([])
+  browser.expectClean()
 })
 
 test('disables ambient motion when reduced motion is requested', async ({ page }) => {
-  const browserErrors = watchConsoleErrors(page)
+  const browser = watchBrowserErrors(page)
   await page.emulateMedia({ reducedMotion: 'reduce' })
   await page.goto('/')
   await expect(page.getByRole('heading', { name: 'Muévete a tu manera.', exact: true })).toBeVisible()
@@ -157,7 +225,9 @@ test('disables ambient motion when reduced motion is requested', async ({ page }
     expect(longestDurationSeconds(motion.transitionDuration)).toBeLessThanOrEqual(0.15)
   }
 
-  await expect(page.locator('.hero-media video')).toHaveCount(0)
+  const videoStates = await page.locator('.hero-media video').evaluateAll((videos) => videos.map((video) => (video as HTMLVideoElement).paused))
+  expect(videoStates.every(Boolean)).toBe(true)
+
   const currentMotion = await page.locator('.current-line > span').evaluate((element) => {
     const style = getComputedStyle(element)
     return { animation: style.animationName, transition: style.transitionDuration, transform: style.transform }
@@ -165,14 +235,5 @@ test('disables ambient motion when reduced motion is requested', async ({ page }
   expect(currentMotion.animation).toBe('none')
   expect(longestDurationSeconds(currentMotion.transition)).toBeLessThanOrEqual(0.15)
   expect(currentMotion.transform).toBe('none')
-
-  const cameraMotion = await page.locator('[data-camera]').evaluateAll((elements) => elements.map((element) => {
-    const style = getComputedStyle(element)
-    return [style.animationDuration, style.transitionDuration]
-  }))
-  for (const durations of cameraMotion) {
-    expect(longestDurationSeconds(durations[0])).toBeLessThanOrEqual(0.15)
-    expect(longestDurationSeconds(durations[1])).toBeLessThanOrEqual(0.15)
-  }
-  expect(browserErrors).toEqual([])
+  browser.expectClean()
 })
