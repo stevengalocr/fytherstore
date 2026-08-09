@@ -12,7 +12,7 @@ export default function TermsPage() {
       { title: 'Catálogo y disponibilidad', content: <p>En modo live, productos, variantes, precios y existencias provienen de BilBildin. La disponibilidad se vuelve a validar en el servidor al confirmar el pedido.</p> },
       { title: 'Fuente comercial', content: <p>Los productos, precios, variantes, disponibilidad y métodos de pago publicados por la tienda provienen de la configuración activa en BilBildin.</p> },
       { title: 'Pedidos reales', content: <p>Un pedido real queda sujeto a confirmación y al método de pago mostrado durante el checkout. No se ofrecen métodos que no estén configurados por el negocio.</p> },
-      { title: 'Contacto', content: <p>Para aclaraciones sobre un pedido, escribe a <a href="mailto:stevengalocr@gmail.com">stevengalocr@gmail.com</a> o utiliza el canal de WhatsApp publicado en el sitio.</p> },
+      { title: 'Contacto', content: <p>Para aclaraciones sobre un pedido, escribe a <a href="mailto:fytherstore@gmail.com">fytherstore@gmail.com</a>.</p> },
     ]}
   />
 }

@@ -25,8 +25,7 @@ export default function Footer() {
           </div>
           <div>
             <strong>Contacto</strong>
-            <a href="https://wa.me/50672874779" target="_blank" rel="noreferrer">WhatsApp</a>
-            <a href="mailto:stevengalocr@gmail.com">Correo</a>
+            <a href="mailto:fytherstore@gmail.com">fytherstore@gmail.com</a>
           </div>
         </div>
       </div>

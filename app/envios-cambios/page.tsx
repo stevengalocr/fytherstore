@@ -12,7 +12,7 @@ export default function ShippingPage() {
       { title: 'Coordinación del envío', content: <p>Después de confirmar un pedido real, Fyther utilizará los datos de contacto proporcionados para coordinar entrega, cobertura y cualquier costo aplicable.</p> },
       { title: 'Seguimiento', content: <p>Cada pedido real incluye una vista de seguimiento. Sus eventos reflejan únicamente las actualizaciones registradas por el equipo en BilBildin.</p> },
       { title: 'Cambios', content: <p>Antes de devolver un artículo, comunícate con Fyther indicando tu número de pedido y el motivo. El equipo confirmará elegibilidad, disponibilidad y pasos aplicables al caso.</p> },
-      { title: 'Ayuda', content: <p>Escribe a <a href="mailto:stevengalocr@gmail.com">stevengalocr@gmail.com</a> o contacta por WhatsApp para revisar tu pedido.</p> },
+      { title: 'Ayuda', content: <p>Escribe a <a href="mailto:fytherstore@gmail.com">fytherstore@gmail.com</a> para revisar tu pedido.</p> },
     ]}
   />
 }
