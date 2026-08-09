@@ -198,10 +198,12 @@ test('mobile and tablet menu closes with Escape and returns focus', async ({ pag
 
   await trigger.click()
   await Promise.all([
-    page.waitForURL('**/catalogo', { timeout: 15_000 }),
-    page.locator('#primary-navigation').getByRole('link', { name: 'Colección', exact: true }).click(),
+    page.waitForURL(/\/catalogo\?categoria=Ropa$/, { timeout: 15_000 }),
+    page.locator('#primary-navigation').getByRole('link', { name: 'Ropa', exact: true }).click(),
   ])
-  await expect(page.getByRole('heading', { name: 'Estamos preparando la colección.' })).toBeVisible()
+  await expect(page.getByRole('heading', { level: 1, name: 'Encuentra algo para ti.' })).toBeVisible()
+  await expect(page.getByRole('button', { name: 'Ropa', exact: true })).toHaveAttribute('aria-pressed', 'true')
+  await expect(page.getByText(exposedConfiguration)).toHaveCount(0)
   await expectHealthyPage(page)
   browser.expectClean()
 })
