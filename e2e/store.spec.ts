@@ -5,6 +5,12 @@ const exposedConfiguration = /Supabase|service_role|\bkey\b|endpoint|\bdemo\b|si
 const frameworkDialog = '[data-nextjs-dialog]'
 const backendTimeout = 15_000
 
+function projectMode(projectName: string) {
+  if (projectName.endsWith('-configured')) return 'configured' as const
+  if (projectName.endsWith('-unconfigured')) return 'unconfigured' as const
+  throw new Error(`Unknown E2E project mode: ${projectName}`)
+}
+
 function isBenignAbort(request: Request, errorText: string) {
   const aborted = /ERR_ABORTED|NS_BINDING_ABORTED|cancelled|canceled/i.test(errorText)
   const url = new URL(request.url())
@@ -88,6 +94,42 @@ async function expectNoHorizontalClipping(page: Page, selectors: string[]) {
   expect(clipped).toEqual([])
 }
 
+async function expectTextContained(page: Page, selector: string) {
+  const geometry = await page.locator(selector).evaluate((element) => {
+    const htmlElement = element as HTMLElement
+    const container = htmlElement.parentElement
+    if (!container) return null
+    const range = document.createRange()
+    range.selectNodeContents(htmlElement)
+    const textBounds = range.getBoundingClientRect()
+    const elementBounds = htmlElement.getBoundingClientRect()
+    const containerBounds = container.getBoundingClientRect()
+    const style = getComputedStyle(htmlElement)
+    return {
+      text: { top: textBounds.top, right: textBounds.right, bottom: textBounds.bottom, left: textBounds.left },
+      element: { top: elementBounds.top, right: elementBounds.right, bottom: elementBounds.bottom, left: elementBounds.left },
+      container: { top: containerBounds.top, right: containerBounds.right, bottom: containerBounds.bottom, left: containerBounds.left },
+      overflowX: style.overflowX,
+      overflowY: style.overflowY,
+      whiteSpace: style.whiteSpace,
+    }
+  })
+
+  expect(geometry).not.toBeNull()
+  if (!geometry) return
+  expect(geometry.whiteSpace).not.toBe('nowrap')
+  expect(geometry.overflowX).not.toBe('hidden')
+  expect(geometry.overflowY).not.toBe('hidden')
+  expect(geometry.text.top).toBeGreaterThanOrEqual(geometry.element.top - 1)
+  expect(geometry.text.left).toBeGreaterThanOrEqual(geometry.element.left - 1)
+  expect(geometry.text.right).toBeLessThanOrEqual(geometry.element.right + 1)
+  expect(geometry.text.bottom).toBeLessThanOrEqual(geometry.element.bottom + 1)
+  expect(geometry.element.top).toBeGreaterThanOrEqual(geometry.container.top - 1)
+  expect(geometry.element.left).toBeGreaterThanOrEqual(geometry.container.left - 1)
+  expect(geometry.element.right).toBeLessThanOrEqual(geometry.container.right + 1)
+  expect(geometry.element.bottom).toBeLessThanOrEqual(geometry.container.bottom + 1)
+}
+
 async function expectFooterMarkContained(page: Page) {
   const geometry = await page.locator('.footer-wordmark .brand-mark').evaluate((container) => {
     const image = container.querySelector('img')
@@ -169,9 +211,8 @@ function longestDurationSeconds(value: string) {
 test('renders the final home without simulated commerce', async ({ page }, testInfo) => {
   const browser = watchBrowserErrors(page)
   const isDesktop = testInfo.project.name.startsWith('desktop')
-  const isLive = testInfo.project.name.endsWith('-live')
-  const isUnconfigured = testInfo.project.name.endsWith('-unconfigured')
-  expect(isLive || isUnconfigured).toBe(true)
+  const mode = projectMode(testInfo.project.name)
+  const isConfigured = mode === 'configured'
 
   await page.goto('/')
   await expect(page.getByRole('heading', { name: 'Muévete a tu manera.', exact: true })).toBeVisible()
@@ -212,10 +253,10 @@ test('renders the final home without simulated commerce', async ({ page }, testI
   const worldBoxes = await Promise.all([worldPanels.nth(0).boundingBox(), worldPanels.nth(1).boundingBox()])
   expect(worldBoxes.every(Boolean)).toBe(true)
   const [firstWorld, secondWorld] = worldBoxes
-  if (isLive && isDesktop && firstWorld && secondWorld) {
+  if (isConfigured && isDesktop && firstWorld && secondWorld) {
     expect(Math.abs(firstWorld.y - secondWorld.y)).toBeLessThanOrEqual(1)
     expect(firstWorld.x + firstWorld.width).toBeLessThanOrEqual(secondWorld.x + 1)
-  } else if (isLive && !isDesktop && firstWorld && secondWorld) {
+  } else if (isConfigured && !isDesktop && firstWorld && secondWorld) {
     expect(firstWorld.y + firstWorld.height).toBeLessThanOrEqual(secondWorld.y + 1)
   }
 
@@ -239,6 +280,8 @@ test('renders the final home without simulated commerce', async ({ page }, testI
 
   await expectNoHorizontalClipping(page, [
     '.hero-content',
+    '.current-rail',
+    '.current-rail p',
     '.collection-world-heading',
     '.collection-world-copy',
     '.commerce-state-copy',
@@ -250,8 +293,8 @@ test('renders the final home without simulated commerce', async ({ page }, testI
     '.footer-top',
   ])
 
-  if (isLive) {
-    const liveSections = [
+  if (isConfigured) {
+    const configuredSections = [
       '.hero-section',
       '.current-rail',
       '.collection-worlds',
@@ -261,9 +304,11 @@ test('renders the final home without simulated commerce', async ({ page }, testI
       '#preguntas',
       '.site-footer',
     ]
-    await expectVerticalOrder(page, liveSections)
-    await expectNoOverlap(page, liveSections)
+    await expectVerticalOrder(page, configuredSections)
+    await expectNoOverlap(page, configuredSections)
   }
+
+  await expectTextContained(page, '.current-rail p')
 
   await expectFooterMarkContained(page)
   await page.screenshot({ path: testInfo.outputPath(`home-v02-${testInfo.project.name}.png`), fullPage: true })
@@ -272,8 +317,8 @@ test('renders the final home without simulated commerce', async ({ page }, testI
 
 test('mobile and tablet menu closes with Escape and returns focus', async ({ page }, testInfo) => {
   const isDesktop = testInfo.project.name.startsWith('desktop')
-  const isLive = testInfo.project.name.endsWith('-live')
-  test.skip(isDesktop || !isLive, 'The mobile menu runs only in tablet-live and mobile-live')
+  const isConfigured = projectMode(testInfo.project.name) === 'configured'
+  test.skip(isDesktop || !isConfigured, 'The mobile menu runs only in tablet-configured and mobile-configured')
   const browser = watchBrowserErrors(page)
 
   await page.goto('/')
@@ -326,9 +371,8 @@ test('renders final trust pages without internal language', async ({ page }) => 
 
 test('keeps catalog, cart, and checkout truthful across harness states', async ({ page }, testInfo) => {
   const browser = watchBrowserErrors(page)
-  const isLive = testInfo.project.name.endsWith('-live')
-  const isUnconfigured = testInfo.project.name.endsWith('-unconfigured')
-  expect(isLive || isUnconfigured).toBe(true)
+  const mode = projectMode(testInfo.project.name)
+  const isConfigured = mode === 'configured'
 
   await page.goto('/catalogo')
   await expect(page.locator('.catalog-loading')).toHaveCount(0, { timeout: backendTimeout })
@@ -338,11 +382,11 @@ test('keeps catalog, cart, and checkout truthful across harness states', async (
   await expect(page.getByText(exposedConfiguration)).toHaveCount(0)
   await expectHealthyPage(page)
 
-  if (isLive) {
+  if (isConfigured) {
     await expect(catalogH1).toHaveText('Encuentra algo para ti.', { timeout: backendTimeout })
     await expect(page.getByRole('button', { name: 'Todos', exact: true })).toHaveAttribute('aria-pressed', 'true', { timeout: backendTimeout })
   } else {
-    expect(isUnconfigured).toBe(true)
+    expect(mode).toBe('unconfigured')
     await expect(page.getByRole('heading', { name: 'Estamos preparando la colección.' })).toBeVisible({ timeout: backendTimeout })
     await expect(page.getByText(forbiddenCommerceCopy)).toHaveCount(0)
   }
@@ -354,7 +398,7 @@ test('keeps catalog, cart, and checkout truthful across harness states', async (
   browser.expectClean()
 
   await page.goto('/checkout')
-  if (isLive) {
+  if (isConfigured) {
     await expect(page.getByRole('heading', { level: 1, name: 'Terminemos juntas.' })).toBeVisible({ timeout: backendTimeout })
     await expect(page.getByRole('heading', { name: 'Tu carrito está vacío.' })).toBeVisible({ timeout: backendTimeout })
   } else {
@@ -362,6 +406,22 @@ test('keeps catalog, cart, and checkout truthful across harness states', async (
     await expect(page.getByText(forbiddenCommerceCopy)).toHaveCount(0)
   }
   await expect(page.getByText(exposedConfiguration)).toHaveCount(0)
+  await expectHealthyPage(page)
+  browser.expectClean()
+})
+
+test('keeps every service ribbon phrase visible at 200% mobile text size', async ({ page }, testInfo) => {
+  test.skip(testInfo.project.name !== 'mobile-configured', 'Text resizing runs only in mobile-configured')
+  const browser = watchBrowserErrors(page)
+
+  await page.goto('/')
+  await page.addStyleTag({ content: 'html { font-size: 200% !important; }' })
+
+  const rail = page.locator('.current-rail')
+  await expect(rail).toBeVisible()
+  await expect(rail).toContainText('ORIGINALES · CORREOS DE COSTA RICA · APARTADOS · RESPUESTA EN MENOS DE 24H')
+  await expectNoHorizontalClipping(page, ['.current-rail', '.current-rail p'])
+  await expectTextContained(page, '.current-rail p')
   await expectHealthyPage(page)
   browser.expectClean()
 })

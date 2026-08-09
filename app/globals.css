@@ -108,8 +108,8 @@ main { flex: 1; }
 .hero-actions .button-primary { background: var(--color-cyan); border-color: var(--color-cyan); color: var(--color-night); }
 .hero-actions .button-secondary { background: rgba(5, 6, 8, 0.46); border-color: var(--color-ice); color: var(--color-ice); }
 
-.current-rail { min-height: 112px; overflow: hidden; padding: 1.15rem clamp(1rem, 5vw, 5rem) 1.35rem; display: flex; flex-direction: column; justify-content: space-between; gap: 0.9rem; background: var(--color-night-raised); color: var(--color-ice); border-block: 1px solid rgba(234, 251, 251, 0.16); }
-.current-rail p { margin: 0; overflow: hidden; font-family: var(--font-display), sans-serif; font-size: clamp(0.68rem, 0.62rem + 0.3vmin, 0.84rem); font-weight: 700; line-height: 1.4; letter-spacing: 0; text-align: center; white-space: nowrap; }
+.current-rail { min-height: 112px; padding: 1.15rem clamp(1rem, 5vw, 5rem) 1.35rem; display: flex; flex-direction: column; justify-content: space-between; gap: 0.9rem; background: var(--color-night-raised); color: var(--color-ice); border-block: 1px solid rgba(234, 251, 251, 0.16); }
+.current-rail p { width: min(100%, 82ch); margin: 0 auto; font-family: var(--font-display), sans-serif; font-size: clamp(0.68rem, 0.62rem + 0.3vmin, 0.84rem); font-weight: 700; line-height: 1.6; letter-spacing: 0; text-align: center; white-space: normal; text-wrap: balance; }
 .current-rail p span { padding-inline: clamp(0.2rem, 1vw, 0.75rem); color: var(--color-pink); }
 .current-line { position: relative; width: 100%; height: 2px; background: rgba(234, 251, 251, 0.16); }
 .current-line > span { position: relative; display: block; width: 100%; height: 2px; background: var(--color-cyan); transform: scaleX(var(--current-progress, 0)); transform-origin: left; transition: transform 120ms linear; }
@@ -146,7 +146,7 @@ main { flex: 1; }
 .collection-section-eyebrow { grid-column: 1 / -1; color: var(--collection-accent); }
 .collection-section-title { max-width: 13ch; margin: 0.7rem 0 0; font-size: clamp(2.4rem, 4.6vw, 4.5rem); }
 .collection-section-description { max-width: 46ch; margin: 0 0 0.35rem; color: var(--color-mist); font-size: clamp(0.9rem, 1.2vw, 1rem); line-height: 1.7; }
-.collection-product-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: clamp(1rem, 2vw, 1.75rem); align-items: start; }
+.collection-product-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: clamp(1rem, 2vw, 1.75rem); align-items: start; }
 .collection-product-card { min-width: 0; }
 .collection-product-card .product-card { height: 100%; }
 .collection-empty { width: 100%; min-height: 240px; padding-block: clamp(2rem, 5vw, 4rem); border-block: 1px solid color-mix(in srgb, var(--collection-accent) 42%, transparent); display: grid; grid-template-columns: minmax(0, 1fr) minmax(260px, 0.7fr); gap: clamp(1.5rem, 6vw, 6rem); align-items: center; }

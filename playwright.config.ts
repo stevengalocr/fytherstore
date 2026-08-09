@@ -2,9 +2,9 @@ import { tmpdir } from 'node:os'
 import { resolve } from 'node:path'
 import { defineConfig, devices } from '@playwright/test'
 
-const livePort = 3197
+const configuredPort = 3197
 const unconfiguredPort = 3198
-const liveBaseURL = 'http://127.0.0.1:3197'
+const configuredBaseURL = 'http://127.0.0.1:3197'
 const unconfiguredBaseURL = 'http://127.0.0.1:3198'
 const projectRoot = process.cwd()
 const unconfiguredRoot = resolve(tmpdir(), `fyther-store-e2e-unconfigured-${process.pid}`)
@@ -53,12 +53,21 @@ const unconfiguredServerScript = `
 `
 
 const unconfiguredServerScriptBase64 = Buffer.from(unconfiguredServerScript).toString('base64')
+const configuredEnv = {
+  ...process.env,
+  NEXT_PUBLIC_SUPABASE_URL: '',
+  NEXT_PUBLIC_SUPABASE_ANON_KEY: '',
+  NEXT_PUBLIC_BUSINESS_ID: '',
+  SUPABASE_SERVICE_ROLE_KEY: '',
+  FYTHER_E2E_COMMERCE_FIXTURE: 'live',
+}
 const unconfiguredEnv = {
   ...process.env,
   NEXT_PUBLIC_SUPABASE_URL: '',
   NEXT_PUBLIC_SUPABASE_ANON_KEY: '',
   NEXT_PUBLIC_BUSINESS_ID: '',
   SUPABASE_SERVICE_ROLE_KEY: '',
+  FYTHER_E2E_COMMERCE_FIXTURE: '',
   FYTHER_UNCONFIGURED_SERVER_SCRIPT: unconfiguredServerScriptBase64,
 }
 const unconfiguredServerCommand = `${JSON.stringify(process.execPath)} -e "eval(Buffer.from(process.env.FYTHER_UNCONFIGURED_SERVER_SCRIPT,'base64').toString('utf8'))"`
@@ -75,16 +84,16 @@ export default defineConfig({
   },
   projects: [
     {
-      name: 'desktop-live',
-      use: { ...devices['Desktop Chrome'], viewport: { width: 1440, height: 900 }, baseURL: liveBaseURL },
+      name: 'desktop-configured',
+      use: { ...devices['Desktop Chrome'], viewport: { width: 1440, height: 900 }, baseURL: configuredBaseURL },
     },
     {
-      name: 'tablet-live',
-      use: { viewport: { width: 768, height: 1024 }, deviceScaleFactor: 1, isMobile: true, hasTouch: true, baseURL: liveBaseURL },
+      name: 'tablet-configured',
+      use: { viewport: { width: 768, height: 1024 }, deviceScaleFactor: 1, isMobile: true, hasTouch: true, baseURL: configuredBaseURL },
     },
     {
-      name: 'mobile-live',
-      use: { ...devices['Pixel 7'], viewport: { width: 390, height: 844 }, baseURL: liveBaseURL },
+      name: 'mobile-configured',
+      use: { ...devices['Pixel 7'], viewport: { width: 390, height: 844 }, baseURL: configuredBaseURL },
     },
     {
       name: 'desktop-unconfigured',
@@ -93,8 +102,9 @@ export default defineConfig({
   ],
   webServer: [
     {
-      command: `npm run build && npm run start -- --hostname 127.0.0.1 --port ${livePort}`,
-      url: liveBaseURL,
+      command: `npm run build && npm run start -- --hostname 127.0.0.1 --port ${configuredPort}`,
+      url: configuredBaseURL,
+      env: configuredEnv,
       reuseExistingServer: false,
       timeout: 240_000,
     },

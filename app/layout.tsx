@@ -15,10 +15,10 @@ const siteUrl = configuredSiteUrl && URL.canParse(configuredSiteUrl) ? configure
 export const metadata: Metadata = {
   metadataBase: new URL(siteUrl),
   title: { default: 'Fyther Store | Muévete a tu manera', template: '%s | Fyther Store' },
-  description: 'Ropa activa seleccionada para moverte, compartir y sentirte bien.',
+  description: 'Accesorios originales y nuevas selecciones en camino para acompañar tu movimiento.',
   openGraph: {
     title: 'Fyther Store | Muévete a tu manera',
-    description: 'Ropa activa seleccionada para moverte, compartir y sentirte bien.',
+    description: 'Accesorios originales y nuevas selecciones en camino para acompañar tu movimiento.',
     locale: 'es_CR',
     type: 'website',
     images: [{ url: '/home.jpeg', width: 1024, height: 572, alt: 'Boutique nocturna de Fyther Store' }],

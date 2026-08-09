@@ -77,7 +77,7 @@ describe('Task 5 flagship home styling', () => {
   it('gives collection sections stable responsive product grids and truthful empty bands', () => {
     expect(globalsCss).toMatch(/\.collection-section\s*\{[^}]*scroll-margin-top:\s*[^;]+;[^}]*padding-block:/)
     expect(globalsCss).toMatch(/\.collection-section-intro\s*\{[^}]*display:\s*grid/)
-    expect(globalsCss).toMatch(/\.collection-product-grid\s*\{[^}]*display:\s*grid;[^}]*grid-template-columns:\s*repeat\(4,\s*minmax\(0,\s*1fr\)\)/)
+    expect(globalsCss).toMatch(/\.collection-product-grid\s*\{[^}]*display:\s*grid;[^}]*grid-template-columns:\s*repeat\(3,\s*minmax\(0,\s*1fr\)\)/)
     expect(globalsCss).toMatch(/\.collection-empty\s*\{[^}]*width:\s*100%;[^}]*border-(?:block|top):/)
     expect(globalsCss).toMatch(/\.collection-section-ropa\s*\{[^}]*--collection-accent:\s*var\(--color-cyan\)/)
     expect(globalsCss).toMatch(/\.collection-section-accesorios\s*\{[^}]*--collection-accent:\s*var\(--color-pink\)/)
@@ -85,6 +85,17 @@ describe('Task 5 flagship home styling', () => {
     expect(globalsCss).toMatch(/@media \(max-width:\s*767px\)[\s\S]*?\.collection-world-grid\s*\{[^}]*grid-template-columns:\s*1fr/)
     expect(globalsCss).toMatch(/@media \(width:\s*768px\)[\s\S]*?\.collection-world-grid\s*\{[^}]*grid-template-columns:\s*1fr/)
     expect(globalsCss).toMatch(/@media \(max-width:\s*560px\)[\s\S]*?\.collection-product-grid\s*\{[^}]*grid-template-columns:\s*1fr/)
+  })
+
+  it('lets the service ribbon wrap and grow without clipping its centered separators', () => {
+    const railCss = globalsCss.match(/\.current-rail\s*\{([^}]*)\}/)?.[1] ?? ''
+    const copyCss = globalsCss.match(/\.current-rail p\s*\{([^}]*)\}/)?.[1] ?? ''
+
+    expect(railCss).not.toMatch(/overflow(?:-[xy])?:\s*hidden/)
+    expect(copyCss).not.toMatch(/overflow(?:-[xy])?:\s*hidden/)
+    expect(copyCss).toMatch(/white-space:\s*normal/)
+    expect(copyCss).toMatch(/text-align:\s*center/)
+    expect(globalsCss).toMatch(/\.current-rail p span\s*\{[^}]*padding-inline:[^}]*color:\s*var\(--color-pink\)/)
   })
 
   it('keeps editorial media restrained and presents a centered one-column FAQ', () => {
@@ -109,8 +120,8 @@ describe('Task 5 deterministic browser matrix', () => {
   const playwrightConfig = readFileSync(resolve(process.cwd(), 'playwright.config.ts'), 'utf8')
   const storeE2e = readFileSync(resolve(process.cwd(), 'e2e/store.spec.ts'), 'utf8')
 
-  it('defines live responsive projects and a separate unconfigured desktop project', () => {
-    for (const projectName of ['desktop-live', 'tablet-live', 'mobile-live', 'desktop-unconfigured']) {
+  it('defines configured responsive projects and a separate unconfigured desktop project', () => {
+    for (const projectName of ['desktop-configured', 'tablet-configured', 'mobile-configured', 'desktop-unconfigured']) {
       expect(playwrightConfig).toContain(`name: '${projectName}'`)
     }
     expect(playwrightConfig.match(/webServer:\s*\[/)).not.toBeNull()
@@ -120,14 +131,19 @@ describe('Task 5 deterministic browser matrix', () => {
     expect(playwrightConfig).toMatch(/NEXT_PUBLIC_SUPABASE_ANON_KEY:\s*''/)
     expect(playwrightConfig).toMatch(/NEXT_PUBLIC_BUSINESS_ID:\s*''/)
     expect(playwrightConfig).toMatch(/SUPABASE_SERVICE_ROLE_KEY:\s*''/)
+    expect(playwrightConfig).toMatch(/FYTHER_E2E_COMMERCE_FIXTURE:\s*'live'/)
+    expect(playwrightConfig).toMatch(/FYTHER_E2E_COMMERCE_FIXTURE:\s*''/)
+    expect(playwrightConfig).not.toContain('-live')
     expect(playwrightConfig).toMatch(/workers:\s*1/)
     expect(playwrightConfig).toMatch(/retries:\s*0/)
   })
 
   it('derives browser expectations from project mode instead of rendered locator counts', () => {
     expect(storeE2e).toContain("startsWith('desktop')")
-    expect(storeE2e).toContain("endsWith('-live')")
+    expect(storeE2e).toContain("endsWith('-configured')")
     expect(storeE2e).toContain("endsWith('-unconfigured')")
+    expect(storeE2e).toContain('projectMode')
+    expect(storeE2e).not.toContain("endsWith('-live')")
     expect(storeE2e).not.toMatch(/if\s*\(await [^\n]*\.count\(\)/)
   })
 })
