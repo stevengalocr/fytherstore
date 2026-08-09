@@ -1,4 +1,5 @@
 import Link from 'next/link'
+import { ChevronDown } from 'lucide-react'
 
 export default function TrustFaq() {
   return (
@@ -10,24 +11,24 @@ export default function TrustFaq() {
         </div>
         <div className="trust-faq-list">
           <details>
-            <summary>¿Los productos son originales?</summary>
-            <p>Sí. Son productos seleccionados, originales y de marcas reconocidas.</p>
+            <summary><span>¿Los productos son originales?</span><ChevronDown aria-hidden="true" size={20} strokeWidth={1.7} /></summary>
+            <div className="trust-faq-answer"><p>Sí. Son productos seleccionados, originales y de marcas reconocidas.</p></div>
           </details>
           <details>
-            <summary>¿Cómo realizan los envíos?</summary>
-            <p>Enviamos por Correos de Costa Rica. Confirmamos la cobertura y el costo para cada pedido; consulta <Link href="/envios-apartados">envíos y apartados</Link>.</p>
+            <summary><span>¿Cómo realizan los envíos?</span><ChevronDown aria-hidden="true" size={20} strokeWidth={1.7} /></summary>
+            <div className="trust-faq-answer"><p>Enviamos por Correos de Costa Rica. Confirmamos la cobertura y el costo para cada pedido; consulta <Link href="/envios-apartados">envíos y apartados</Link>.</p></div>
           </details>
           <details>
-            <summary>¿Cuánto tardan en responder?</summary>
-            <p>Respondemos tus consultas y confirmamos pedidos en menos de 24 horas.</p>
+            <summary><span>¿Cuánto tardan en responder?</span><ChevronDown aria-hidden="true" size={20} strokeWidth={1.7} /></summary>
+            <div className="trust-faq-answer"><p>Respondemos tus consultas y confirmamos pedidos en menos de 24 horas.</p></div>
           </details>
           <details>
-            <summary>¿Puedo apartar un producto?</summary>
-            <p>Sí. Los apartados se coordinan directamente antes de reservar el producto.</p>
+            <summary><span>¿Puedo apartar un producto?</span><ChevronDown aria-hidden="true" size={20} strokeWidth={1.7} /></summary>
+            <div className="trust-faq-answer"><p>Sí. Los apartados se coordinan directamente antes de reservar el producto.</p></div>
           </details>
           <details>
-            <summary>¿Cómo consulto mi pedido?</summary>
-            <p>La confirmación incluye un enlace único con la información para seguir tu pedido.</p>
+            <summary><span>¿Cómo consulto mi pedido?</span><ChevronDown aria-hidden="true" size={20} strokeWidth={1.7} /></summary>
+            <div className="trust-faq-answer"><p>La confirmación incluye un enlace único con la información para seguir tu pedido.</p></div>
           </details>
         </div>
       </div>

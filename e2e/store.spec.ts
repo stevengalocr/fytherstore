@@ -145,7 +145,13 @@ test('renders the final home without simulated commerce', async ({ page }, testI
   await page.goto('/')
   await expect(page.getByRole('heading', { name: 'Muévete a tu manera.', exact: true })).toBeVisible()
   await expect(page.getByText(/cambios|devoluciones/i)).toHaveCount(0)
-  await expect(page.getByRole('link', { name: 'Ver la colección' }).first()).toBeVisible()
+  await expect(page.getByRole('link', { name: 'Descubrir ropa' }).first()).toBeVisible()
+  await expect(page.locator('.collection-world-grid')).toBeVisible()
+  await expect(page.locator('.collection-world-panel')).toHaveCount(2)
+  await expect(page.locator('#ropa')).toBeVisible()
+  await expect(page.locator('#accesorios')).toBeVisible()
+  await expect(page.locator('#preguntas')).toBeVisible()
+  await expect(page.getByRole('heading', { name: 'Preguntas frecuentes' })).toBeVisible()
   await expect(page.getByText(forbiddenCommerceCopy)).toHaveCount(0)
   await expectHealthyPage(page)
 
@@ -266,5 +272,25 @@ test('disables ambient motion when reduced motion is requested', async ({ page }
   expect(currentMotion.animation).toBe('none')
   expect(longestDurationSeconds(currentMotion.transition)).toBeLessThanOrEqual(0.15)
   expect(currentMotion.transform).toBe('none')
+
+  const spatialMotion = await page.locator([
+    '.collection-world-media img',
+    '.collection-world-copy svg',
+    '.trust-faq-list summary svg',
+    '.trust-faq-answer',
+  ].join(', ')).evaluateAll((elements) => elements.map((element) => {
+    const style = getComputedStyle(element)
+    return {
+      animation: style.animationName,
+      transition: style.transitionDuration,
+      transform: style.transform,
+    }
+  }))
+  expect(spatialMotion.length).toBeGreaterThan(0)
+  for (const motion of spatialMotion) {
+    expect(motion.animation).toBe('none')
+    expect(longestDurationSeconds(motion.transition)).toBeLessThanOrEqual(0.15)
+    expect(motion.transform).toBe('none')
+  }
   browser.expectClean()
 })

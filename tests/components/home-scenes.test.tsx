@@ -48,8 +48,14 @@ describe('home scene contracts', () => {
 
     const details = scene.querySelectorAll('details')
     const summaries = scene.querySelectorAll('summary')
+    const chevrons = scene.querySelectorAll('summary svg.lucide-chevron-down')
+    const answers = scene.querySelectorAll('.trust-faq-answer')
     expect(details).toHaveLength(5)
     expect(summaries).toHaveLength(5)
+    expect(chevrons).toHaveLength(5)
+    expect(answers).toHaveLength(5)
+    expect(Array.from(chevrons).every((icon) => icon.getAttribute('aria-hidden') === 'true')).toBe(true)
+    expect(Array.from(details).every((detail) => detail.querySelector(':scope > .trust-faq-answer > p'))).toBe(true)
     expect(Array.from(summaries, (summary) => summary.textContent)).toEqual([
       '¿Los productos son originales?',
       '¿Cómo realizan los envíos?',
