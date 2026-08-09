@@ -20,7 +20,7 @@ export default function Header() {
     const closeOnEscape = (event: KeyboardEvent) => {
       if (event.key === 'Escape') setOpen(false)
     }
-    const desktopMedia = window.matchMedia('(min-width: 768px)')
+    const desktopMedia = window.matchMedia('(min-width: 769px)')
     const closeOnDesktop = (event: MediaQueryListEvent) => {
       if (event.matches) setOpen(false)
     }

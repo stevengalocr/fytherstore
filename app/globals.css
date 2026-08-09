@@ -467,6 +467,19 @@ main { flex: 1; }
   .catalog-loading-grid { grid-template-columns: 1fr 1fr; }
 }
 
+@media (width: 768px) {
+  body[data-menu-open] { overflow: hidden; }
+  .header-inner { grid-template-columns: 44px minmax(0, 1fr) 44px; gap: 4px; }
+  .wordmark { grid-column: 2; grid-row: 1; min-width: 0; justify-self: center; }
+  .menu-button { grid-column: 1; grid-row: 1; display: inline-grid; }
+  .cart-link { grid-column: 3; grid-row: 1; }
+  .site-nav { position: absolute; top: calc(100% + 8px); left: 0; right: 0; display: none; align-items: stretch; gap: 0; padding: 8px 12px 12px; border: 1px solid rgba(234, 251, 251, 0.16); border-radius: 8px; background: rgba(5, 6, 8, 0.96); backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px); }
+  .site-nav.is-open { display: flex; flex-direction: column; }
+  .site-nav a { min-height: 48px; padding-inline: 8px; border-bottom: 1px solid rgba(234, 251, 251, 0.16); color: var(--color-ice); font-size: 1rem; }
+  .site-nav a:last-child { border-bottom: 0; }
+  .site-nav a::after { display: none; }
+}
+
 @media (max-width: 560px) {
   .catalog-controls { grid-template-columns: 1fr; }
   .catalog-grid { grid-template-columns: 1fr; }
