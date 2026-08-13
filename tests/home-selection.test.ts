@@ -1,5 +1,10 @@
 import { describe, expect, it } from 'vitest'
-import { normalizeCollectionCategory, selectHomeProducts, splitProductsByWorld } from '@/lib/home-selection'
+import {
+  normalizeCollectionCategory,
+  selectAccessoryTags,
+  selectHomeProducts,
+  splitProductsByWorld,
+} from '@/lib/home-selection'
 import type { CommerceProduct } from '@/lib/commerce/types'
 
 function product(id: string, featured = false, category: string | null = null): CommerceProduct {
@@ -74,5 +79,33 @@ describe('splitProductsByWorld', () => {
       ropa: [shirt, shorts],
       accesorios: [cap, bag],
     })
+  })
+})
+
+describe('selectAccessoryTags', () => {
+  it('trims and deduplicates tags while preserving first-seen order and capping the result at five', () => {
+    const first = product('first')
+    first.tags = ['  Gorras  ', 'Bolsos', 'gorras', ' Medias ']
+    const second = product('second')
+    second.tags = ['BOLSOS', 'Botellas', ' Llaveros ', 'Mu\u00f1equeras']
+
+    expect(selectAccessoryTags([first, second])).toEqual([
+      'Gorras',
+      'Bolsos',
+      'Medias',
+      'Botellas',
+      'Llaveros',
+    ])
+  })
+
+  it('returns an empty list for zero or one distinct non-empty tags', () => {
+    const empty = product('empty')
+    empty.tags = ['', '   ']
+    const repeated = product('repeated')
+    repeated.tags = [' Gorras ', 'GORRAS']
+
+    expect(selectAccessoryTags([])).toEqual([])
+    expect(selectAccessoryTags([empty])).toEqual([])
+    expect(selectAccessoryTags([empty, repeated])).toEqual([])
   })
 })

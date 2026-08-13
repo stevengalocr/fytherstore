@@ -37,3 +37,22 @@ export function selectHomeProducts(products: CommerceProduct[], limit = 3): Comm
 
   return selected
 }
+
+export function selectAccessoryTags(products: CommerceProduct[], limit = 5): string[] {
+  const boundedLimit = Math.max(0, limit)
+  const tags: string[] = []
+  const normalizedTags = new Set<string>()
+
+  for (const product of products) {
+    for (const rawTag of product.tags) {
+      const tag = rawTag.trim()
+      const normalized = tag.toLocaleLowerCase('es')
+      if (!tag || normalizedTags.has(normalized)) continue
+      normalizedTags.add(normalized)
+      tags.push(tag)
+      if (tags.length >= boundedLimit) return tags.length >= 2 ? tags : []
+    }
+  }
+
+  return tags.length >= 2 ? tags : []
+}
