@@ -50,9 +50,8 @@ export function selectAccessoryTags(products: CommerceProduct[], limit = 5): str
       if (!tag || normalizedTags.has(normalized)) continue
       normalizedTags.add(normalized)
       tags.push(tag)
-      if (tags.length >= boundedLimit) return tags.length >= 2 ? tags : []
     }
   }
 
-  return tags.length >= 2 ? tags : []
+  return tags.length >= 2 ? tags.slice(0, boundedLimit) : []
 }

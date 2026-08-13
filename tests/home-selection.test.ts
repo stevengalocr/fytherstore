@@ -108,4 +108,18 @@ describe('selectAccessoryTags', () => {
     expect(selectAccessoryTags([empty])).toEqual([])
     expect(selectAccessoryTags([empty, repeated])).toEqual([])
   })
+
+  it('returns the first tag for a limit of one when at least two distinct tags are available', () => {
+    const accessories = product('accessories')
+    accessories.tags = ['Gorras', 'Bolsos']
+
+    expect(selectAccessoryTags([accessories], 1)).toEqual(['Gorras'])
+  })
+
+  it('returns an empty list for a limit of zero', () => {
+    const accessories = product('accessories')
+    accessories.tags = ['Gorras', 'Bolsos']
+
+    expect(selectAccessoryTags([accessories], 0)).toEqual([])
+  })
 })
