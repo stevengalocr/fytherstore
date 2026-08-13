@@ -557,7 +557,7 @@ main { flex: 1; }
   .site-nav a::after { transition: none; }
   [data-reveal] { opacity: 1 !important; transform: none !important; transition: opacity 120ms ease-out; }
   .collection-world-panel[data-reveal],
-  .collection-world-panel[data-reveal]:not([data-reveal='on']) { opacity: 1 !important; clip-path: none !important; transform: none !important; }
+  .collection-world-panel[data-reveal]:not([data-reveal='on']) { opacity: 1 !important; clip-path: none !important; transform: none !important; transition-delay: 0ms !important; }
   .collection-world-media img,
   .collection-world-copy svg,
   .trust-faq-list summary svg,
