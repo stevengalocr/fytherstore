@@ -548,7 +548,6 @@ test('renders the final home without simulated commerce', async ({ page }, testI
 
     const firstProductCard = accessoryCards.nth(0).locator('.product-card')
     const firstProductAction = firstProductCard.locator('.product-action')
-    const firstProductImage = firstProductCard.locator('.product-image')
     const baselineCard = await firstProductCard.evaluate((element) => {
       const style = getComputedStyle(element)
       const bounds = element.getBoundingClientRect()
@@ -566,8 +565,21 @@ test('renders the final home without simulated commerce', async ({ page }, testI
     expect(await firstProductAction.evaluate((element) => element.matches(':focus-visible'))).toBe(true)
     await expect.poll(() => firstProductCard.evaluate((element) => getComputedStyle(element).borderTopColor)).toBe('rgb(240, 108, 203)')
     await expect.poll(() => firstProductAction.evaluate((element) => getComputedStyle(element).color)).toBe('rgb(110, 239, 242)')
-    await expect.poll(() => firstProductAction.evaluate((element) => getComputedStyle(element).transform)).not.toBe('none')
-    await expect.poll(() => firstProductImage.evaluate((element) => getComputedStyle(element).transform)).not.toBe('none')
+    await expect.poll(async () => {
+      const state = await readProductCardInteraction(firstProductCard)
+      return Math.abs((state.imageMatrix?.a ?? 0) - 1.025) <= 0.001
+        && Math.abs((state.actionMatrix?.e ?? 0) - 4.8) <= 0.15
+    }).toBe(true)
+
+    const focusedMotion = await readProductCardInteraction(firstProductCard)
+    expect(focusedMotion.imageMatrix).not.toBeNull()
+    expect(Math.abs((focusedMotion.imageMatrix?.a ?? 0) - 1.025)).toBeLessThanOrEqual(0.001)
+    expect(Math.abs((focusedMotion.imageMatrix?.d ?? 0) - 1.025)).toBeLessThanOrEqual(0.001)
+    expect(Math.abs(focusedMotion.imageMatrix?.b ?? 0)).toBeLessThanOrEqual(0.001)
+    expect(Math.abs(focusedMotion.imageMatrix?.c ?? 0)).toBeLessThanOrEqual(0.001)
+    expect(focusedMotion.actionMatrix).not.toBeNull()
+    expect(Math.abs((focusedMotion.actionMatrix?.e ?? 0) - 4.8)).toBeLessThanOrEqual(0.15)
+    expect(Math.abs(focusedMotion.actionMatrix?.f ?? 0)).toBeLessThanOrEqual(0.001)
 
     const focusedCard = await firstProductCard.evaluate((element) => {
       const cardStyle = getComputedStyle(element)
@@ -984,6 +996,7 @@ test('disables ambient motion when reduced motion is requested', async ({ page }
         actionColor: actionStyle?.color ?? null,
         actionTransform: actionStyle?.transform ?? null,
         borderColor: style.borderTopColor,
+        cardTransform: style.transform,
         cardTransitionDuration: style.transitionDuration,
         imageTransform: imageStyle?.transform ?? null,
         imageTransitionDuration: imageStyle?.transitionDuration ?? null,
@@ -993,6 +1006,7 @@ test('disables ambient motion when reduced motion is requested', async ({ page }
     expect(reducedFeedback.actionColor).not.toBe(baselineFeedback.actionColor)
     expect(reducedFeedback.actionColor).toBe('rgb(110, 239, 242)')
     expect(reducedFeedback.borderColor).toBe('rgb(240, 108, 203)')
+    expect(reducedFeedback.cardTransform).toBe('none')
     expect(reducedFeedback.actionTransform).toBe('none')
     expect(reducedFeedback.imageTransform).toBe('none')
     expect(longestDurationSeconds(reducedFeedback.cardTransitionDuration)).toBeLessThanOrEqual(0.12)
