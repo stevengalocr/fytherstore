@@ -50,6 +50,19 @@ async function expectHealthyPage(page: Page) {
   await expect.poll(() => page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth + 1)).toBe(true)
 }
 
+async function focusByKeyboard(page: Page, selector: string, maxPresses = 48) {
+  const target = page.locator(selector).first()
+  await expect(target).toBeVisible()
+  await page.evaluate(() => (document.activeElement as HTMLElement | null)?.blur())
+
+  for (let press = 0; press < maxPresses; press += 1) {
+    await page.keyboard.press('Tab')
+    if (await target.evaluate((element) => element === document.activeElement)) return target
+  }
+
+  throw new Error(`Could not reach ${selector} after ${maxPresses} Tab presses`)
+}
+
 async function expectNoOverlap(page: Page, selectors: string[]) {
   const boxes = await Promise.all(selectors.map((selector) => page.locator(selector).boundingBox()))
   boxes.forEach((box, index) => expect(box, `${selectors[index]} must be visible`).not.toBeNull())
@@ -500,6 +513,46 @@ test('renders the final home without simulated commerce', async ({ page }, testI
       }
     }
 
+    const firstProductCard = accessoryCards.nth(0).locator('.product-card')
+    const firstProductAction = firstProductCard.locator('.product-action')
+    const firstProductImage = firstProductCard.locator('.product-image')
+    const baselineCard = await firstProductCard.evaluate((element) => {
+      const style = getComputedStyle(element)
+      const bounds = element.getBoundingClientRect()
+      return { borderColor: style.borderTopColor, width: bounds.width, height: bounds.height }
+    })
+
+    await focusByKeyboard(page, '#accesorios .product-action')
+    await expect(firstProductAction).toBeFocused()
+    expect(await firstProductAction.evaluate((element) => element.matches(':focus-visible'))).toBe(true)
+    await expect.poll(() => firstProductCard.evaluate((element) => getComputedStyle(element).borderTopColor)).toBe('rgb(240, 108, 203)')
+    await expect.poll(() => firstProductAction.evaluate((element) => getComputedStyle(element).color)).toBe('rgb(110, 239, 242)')
+    await expect.poll(() => firstProductAction.evaluate((element) => getComputedStyle(element).transform)).not.toBe('none')
+    await expect.poll(() => firstProductImage.evaluate((element) => getComputedStyle(element).transform)).not.toBe('none')
+
+    const focusedCard = await firstProductCard.evaluate((element) => {
+      const cardStyle = getComputedStyle(element)
+      const action = element.querySelector('.product-action')
+      const actionStyle = action ? getComputedStyle(action) : null
+      const bounds = element.getBoundingClientRect()
+      return {
+        borderColor: cardStyle.borderTopColor,
+        actionColor: actionStyle?.color ?? null,
+        outlineStyle: actionStyle?.outlineStyle ?? null,
+        outlineWidth: actionStyle?.outlineWidth ?? null,
+        width: bounds.width,
+        height: bounds.height,
+      }
+    })
+    expect(focusedCard.borderColor).not.toBe(baselineCard.borderColor)
+    expect(focusedCard.actionColor).toBe('rgb(110, 239, 242)')
+    expect(focusedCard.outlineStyle).not.toBe('none')
+    expect(Number.parseFloat(focusedCard.outlineWidth ?? '0')).toBeGreaterThan(0)
+    expect(Math.abs(focusedCard.width - baselineCard.width)).toBeLessThanOrEqual(1)
+    expect(Math.abs(focusedCard.height - baselineCard.height)).toBeLessThanOrEqual(1)
+    await page.evaluate(() => (document.activeElement as HTMLElement | null)?.blur())
+    await revealFullPage(page)
+
     const configuredSections = [
       '.hero-section',
       '.current-rail',
@@ -749,6 +802,39 @@ test('disables ambient motion when reduced motion is requested', async ({ page }
   expect(longestDurationSeconds(worldMotion[1].transitionDelay)).toBe(0)
 
   if (projectMode(testInfo.project.name) === 'configured') {
+    const firstProductCard = page.locator('#accesorios .product-card').first()
+    const firstProductAction = firstProductCard.locator('.product-action')
+    const baselineFeedback = await firstProductCard.evaluate((element) => {
+      const action = element.querySelector('.product-action')
+      return {
+        borderColor: getComputedStyle(element).borderTopColor,
+        actionColor: action ? getComputedStyle(action).color : null,
+      }
+    })
+
+    await focusByKeyboard(page, '#accesorios .product-action')
+    await expect(firstProductAction).toBeFocused()
+    expect(await firstProductAction.evaluate((element) => element.matches(':focus-visible'))).toBe(true)
+    await expect.poll(() => firstProductCard.evaluate((element) => getComputedStyle(element).borderTopColor)).toBe('rgb(240, 108, 203)')
+    await expect.poll(() => firstProductAction.evaluate((element) => getComputedStyle(element).color)).toBe('rgb(110, 239, 242)')
+
+    const reducedFeedback = await firstProductCard.evaluate((element) => {
+      const style = getComputedStyle(element)
+      const action = element.querySelector('.product-action')
+      const actionStyle = action ? getComputedStyle(action) : null
+      return {
+        actionColor: actionStyle?.color ?? null,
+        actionTransform: actionStyle?.transform ?? null,
+        borderTransitionDuration: style.transitionDuration,
+        imageTransform: getComputedStyle(element.querySelector('.product-image') as Element).transform,
+      }
+    })
+    expect(reducedFeedback.actionColor).not.toBe(baselineFeedback.actionColor)
+    expect(reducedFeedback.actionColor).toBe('rgb(110, 239, 242)')
+    expect(reducedFeedback.actionTransform).toBe('none')
+    expect(reducedFeedback.imageTransform).toBe('none')
+    expect(longestDurationSeconds(reducedFeedback.borderTransitionDuration)).toBeLessThanOrEqual(0.12)
+
     const productMotion = await page.locator('#accesorios .collection-product-card').evaluateAll((elements) => elements.map((element) => {
       const style = getComputedStyle(element)
       const image = element.querySelector('.product-image')
