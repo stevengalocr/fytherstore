@@ -9,13 +9,25 @@ export const metadata: Metadata = {
   description: 'Explora la colección activa de Fyther Store.',
 }
 
-export default async function CatalogPage({ searchParams }: { searchParams: Promise<{ categoria?: string }> }) {
+type CatalogSearchParams = {
+  categoria?: string | string[]
+  buscar?: string | string[]
+}
+
+function firstParam(value: string | string[] | undefined, fallback = '') {
+  const selected = Array.isArray(value) ? value[0] : value
+  return (selected ?? fallback).trim().slice(0, 80)
+}
+
+export default async function CatalogPage({ searchParams }: { searchParams: Promise<CatalogSearchParams> }) {
   const params = await searchParams
+  const initialCategory = firstParam(params.categoria, 'Todos')
+  const initialQuery = firstParam(params.buscar)
   try {
     const products = await commerce.getProducts()
     if (commerceMode === 'unconfigured') return <><CatalogHeader /><CommerceState state="unconfigured" /></>
     if (products.length === 0) return <><CatalogHeader /><CommerceState state="empty" /></>
-    return <CatalogClient products={products} initialCategory={params.categoria ?? 'Todos'} />
+    return <CatalogClient products={products} initialCategory={initialCategory} initialQuery={initialQuery} />
   } catch {
     return <CommerceState state="error" />
   }

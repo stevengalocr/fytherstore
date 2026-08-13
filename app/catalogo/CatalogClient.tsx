@@ -14,18 +14,23 @@ function canonicalCategory(category: string): CatalogCategory {
   return CATEGORIES.find((candidate) => candidate === category) ?? 'Todos'
 }
 
-export default function CatalogClient({ products, initialCategory }: {
+export default function CatalogClient({ products, initialCategory, initialQuery }: {
   products: CommerceProduct[]
   initialCategory: string
+  initialQuery: string
 }) {
   const canonicalInitialCategory = canonicalCategory(initialCategory)
   const [category, setCategory] = useState<CatalogCategory>(canonicalInitialCategory)
-  const [query, setQuery] = useState('')
+  const [query, setQuery] = useState(initialQuery)
   const [sort, setSort] = useState('featured')
 
   useEffect(() => {
     setCategory(canonicalInitialCategory)
   }, [canonicalInitialCategory])
+
+  useEffect(() => {
+    setQuery(initialQuery)
+  }, [initialQuery])
 
   function clearFilters() {
     setCategory('Todos')
@@ -36,9 +41,13 @@ export default function CatalogClient({ products, initialCategory }: {
   const visible = useMemo(() => {
     const normalized = query.trim().toLocaleLowerCase('es')
     const normalizedCategory = category === 'Todos' ? '' : normalizeCollectionCategory(category)
-    const filtered = products.filter((product) =>
-      (category === 'Todos' || normalizeCollectionCategory(product.category) === normalizedCategory)
-      && (!normalized || `${product.name} ${product.shortDescription ?? ''}`.toLocaleLowerCase('es').includes(normalized)))
+    const filtered = products.filter((product) => {
+      const searchable = [product.name, product.shortDescription ?? '', ...product.tags]
+        .join(' ')
+        .toLocaleLowerCase('es')
+      return (category === 'Todos' || normalizeCollectionCategory(product.category) === normalizedCategory)
+        && (!normalized || searchable.includes(normalized))
+    })
     return [...filtered].sort((a, b) => {
       if (sort === 'price-asc') return a.price.amount - b.price.amount
       if (sort === 'price-desc') return b.price.amount - a.price.amount
