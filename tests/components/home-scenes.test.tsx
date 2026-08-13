@@ -212,6 +212,7 @@ describe('home commerce presentation', () => {
       product('uno', 'Accesorio Uno'),
       product('dos', 'Accesorio Dos'),
       product('tres', 'Accesorio Tres'),
+      product('cuatro', 'Accesorio Cuatro'),
     ]
     const { container } = render(
       <CollectionSection
@@ -227,14 +228,19 @@ describe('home commerce presentation', () => {
 
     const section = container.querySelector('section#accesorios') as HTMLElement
     const cardWrappers = section.querySelectorAll('.collection-product-card[data-reveal]')
-    expect(cardWrappers).toHaveLength(3)
+    const featuredWrappers = section.querySelectorAll('.collection-product-card-featured')
+    expect(cardWrappers).toHaveLength(4)
+    expect(featuredWrappers).toHaveLength(1)
+    expect(featuredWrappers[0]).toBe(cardWrappers[0])
     expect(cardWrappers[0]).toHaveClass('collection-product-card-featured')
     expect(cardWrappers[1]).not.toHaveClass('collection-product-card-featured')
     expect(cardWrappers[2]).not.toHaveClass('collection-product-card-featured')
+    expect(cardWrappers[3]).not.toHaveClass('collection-product-card-featured')
     expect(Array.from(cardWrappers, (wrapper) => within(wrapper as HTMLElement).getByRole('heading').textContent)).toEqual([
       'Accesorio Uno',
       'Accesorio Dos',
       'Accesorio Tres',
+      'Accesorio Cuatro',
     ])
     expect(within(section).getByRole('link', { name: 'Ver todos los accesorios' })).toHaveAttribute(
       'href',
