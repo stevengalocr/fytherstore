@@ -1,9 +1,25 @@
 import { readFileSync } from 'node:fs'
 import { resolve } from 'node:path'
+import sharp from 'sharp'
 import { describe, expect, it } from 'vitest'
 
 describe('test harness', () => {
   it('runs TypeScript tests', () => expect(true).toBe(true))
+
+  it('keeps both collection cover sources at the editorial asset contract', async () => {
+    const covers = await Promise.all([
+      'public/collection-ropa.webp',
+      'public/collection-accesorios.webp',
+    ].map(async (path) => {
+      const metadata = await sharp(resolve(process.cwd(), path)).metadata()
+      return { format: metadata.format, width: metadata.width, height: metadata.height }
+    }))
+
+    expect(covers).toEqual([
+      { format: 'webp', width: 1200, height: 1500 },
+      { format: 'webp', width: 1200, height: 1500 },
+    ])
+  })
 })
 
 describe('V0.2 foundation', () => {
@@ -149,5 +165,14 @@ describe('Task 5 deterministic browser matrix', () => {
     expect(storeE2e).toContain('projectMode')
     expect(storeE2e).not.toContain("endsWith('-live')")
     expect(storeE2e).not.toMatch(/if\s*\(await [^\n]*\.count\(\)/)
+  })
+
+  it('runs the isolated Next server directly and validates temp cleanup ownership', () => {
+    expect(playwrightConfig).toContain("const unconfiguredRootPrefix = 'fyther-store-e2e-unconfigured-'")
+    expect(playwrightConfig).toContain('resolvedTarget.startsWith(resolvedTempRoot + sep)')
+    expect(playwrightConfig).toContain('basename(resolvedTarget).startsWith(targetPrefix)')
+    expect(playwrightConfig).toContain("resolve(resolvedTarget, 'node_modules', 'next', 'dist', 'bin', 'next')")
+    expect(playwrightConfig).toMatch(/spawn\(process\.execPath,\s*\[nextCli, 'start'/)
+    expect(playwrightConfig).not.toContain("spawn('npm run start")
   })
 })

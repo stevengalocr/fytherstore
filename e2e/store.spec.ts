@@ -762,8 +762,8 @@ test('disables ambient motion when reduced motion is requested', async ({ page }
     for (const motion of productMotion) {
       expect(motion.transform).toBe('none')
       expect(motion.imageTransform).toBe('none')
+      expect(longestDurationSeconds(motion.transitionDelay)).toBe(0)
     }
-    expect(longestDurationSeconds(productMotion[1].transitionDelay)).toBe(0)
   }
   browser.expectClean()
 })
