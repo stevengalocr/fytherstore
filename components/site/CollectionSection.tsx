@@ -13,8 +13,8 @@ export interface CollectionSectionProps {
   emptyCopy: string
 }
 
-const COLLECTION_PRODUCT_IMAGE_SIZES = '(max-width: 767px) calc(100vw - 32px), (max-width: 1240px) 42vw, 500px'
-const FEATURED_COLLECTION_PRODUCT_IMAGE_SIZES = '(max-width: 767px) calc(100vw - 32px), (max-width: 1024px) 42vw, 820px'
+const COLLECTION_PRODUCT_IMAGE_SIZES = '(max-width: 560px) calc(100vw - 32px), (max-width: 1240px) 42vw, 500px'
+const FEATURED_COLLECTION_PRODUCT_IMAGE_SIZES = '(max-width: 560px) calc(100vw - 32px), (max-width: 1024px) 42vw, 820px'
 
 const categoryActions = {
   ropa: {

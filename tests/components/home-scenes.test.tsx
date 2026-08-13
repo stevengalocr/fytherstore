@@ -238,11 +238,11 @@ describe('home commerce presentation', () => {
     expect(cardWrappers[3]).not.toHaveClass('collection-product-card-featured')
     expect(within(cardWrappers[0] as HTMLElement).getByRole('img', { name: 'Accesorio Uno en uso' })).toHaveAttribute(
       'sizes',
-      '(max-width: 767px) calc(100vw - 32px), (max-width: 1024px) 42vw, 820px',
+      '(max-width: 560px) calc(100vw - 32px), (max-width: 1024px) 42vw, 820px',
     )
     expect(within(cardWrappers[1] as HTMLElement).getByRole('img', { name: 'Accesorio Dos en uso' })).toHaveAttribute(
       'sizes',
-      '(max-width: 767px) calc(100vw - 32px), (max-width: 1240px) 42vw, 500px',
+      '(max-width: 560px) calc(100vw - 32px), (max-width: 1240px) 42vw, 500px',
     )
     expect(Array.from(cardWrappers, (wrapper) => within(wrapper as HTMLElement).getByRole('heading').textContent)).toEqual([
       'Accesorio Uno',
@@ -287,7 +287,7 @@ describe('home commerce presentation', () => {
     expect(within(section).getByRole('link', { name: 'Ver todos los accesorios' })).toHaveAttribute('href', '/catalogo?categoria=Accesorios')
     expect(within(grid).getByRole('img', { name: 'Accesorio Uno en uso' })).toHaveAttribute(
       'sizes',
-      '(max-width: 767px) calc(100vw - 32px), (max-width: 1240px) 42vw, 500px',
+      '(max-width: 560px) calc(100vw - 32px), (max-width: 1240px) 42vw, 500px',
     )
   })
 
