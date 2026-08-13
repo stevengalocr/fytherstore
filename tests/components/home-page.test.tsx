@@ -56,7 +56,7 @@ describe('HomePage', () => {
 
   it('splits exact worlds and renders the requested anchored scene order', async () => {
     commerceMock.getProducts.mockResolvedValue([
-      product('ropa-real', 'Ropa Real', 'Ropa'),
+      product('ropa-real', 'Ropa Real', 'Ropa', ['Leggings', 'Training']),
       product('accesorio-real', 'Accesorio Real', 'Accesórios', ['Botellas', 'Gym']),
       product('calzado', 'Calzado Ignorado', 'Calzado'),
     ])
@@ -79,6 +79,12 @@ describe('HomePage', () => {
       'href',
       '/catalogo?categoria=Accesorios&buscar=Botellas',
     )
+    expect(screen.getByRole('link', { name: 'Explorar accesorios con la etiqueta Gym' })).toHaveAttribute(
+      'href',
+      '/catalogo?categoria=Accesorios&buscar=Gym',
+    )
+    expect(screen.queryByRole('link', { name: 'Explorar accesorios con la etiqueta Leggings' })).not.toBeInTheDocument()
+    expect(screen.queryByRole('link', { name: 'Explorar accesorios con la etiqueta Training' })).not.toBeInTheDocument()
     expect(within(ropa).getByRole('heading', { name: 'Ropa para sentirte tú.' })).toBeInTheDocument()
     expect(within(ropa).getByText('Prendas elegidas para entrenar, caminar y compartir tu ritmo.')).toBeInTheDocument()
     expect(within(ropa).getByRole('heading', { name: 'Ropa Real' })).toBeInTheDocument()
@@ -132,7 +138,9 @@ describe('HomePage', () => {
 
   it('keeps truthful anchors and one preparing state when commerce is unconfigured', async () => {
     commerceMock.mode = 'unconfigured'
-    commerceMock.getProducts.mockResolvedValue([])
+    commerceMock.getProducts.mockResolvedValue([
+      product('accesorio-tagged', 'Accesorio Tagged', 'Accesorios', ['Botellas', 'Gym']),
+    ])
 
     const { container } = render(await HomePage())
 
@@ -143,5 +151,7 @@ describe('HomePage', () => {
     expect(screen.getByRole('heading', { name: 'Estamos preparando la colección.' })).toBeInTheDocument()
     expect(screen.queryByText('Próximamente')).not.toBeInTheDocument()
     expect(screen.getAllByText('Explorar')).toHaveLength(2)
+    expect(container.querySelector('.collection-world-filters')).not.toBeInTheDocument()
+    expect(screen.queryByRole('link', { name: 'Explorar accesorios con la etiqueta Botellas' })).not.toBeInTheDocument()
   })
 })
