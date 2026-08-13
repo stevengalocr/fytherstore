@@ -79,39 +79,68 @@ describe('home scene contracts', () => {
 
 describe('home commerce presentation', () => {
   it('presents two stable collection worlds and marks only unavailable Ropa as upcoming', () => {
-    const { container } = render(<CollectionWorlds ropaAvailable={false} accesoriosAvailable />)
+    const { container } = render(
+      <CollectionWorlds
+        ropaAvailable={false}
+        accesoriosAvailable
+        accessoryTags={['Botellas', 'Gym & Viaje']}
+      />,
+    )
 
     expect(container.querySelector('section.collection-worlds')).toBeInTheDocument()
-    expect(screen.getByRole('heading', { name: 'Dos formas de acompañar tu movimiento.' })).toBeInTheDocument()
+    expect(screen.getByText('EXPLORA')).toBeInTheDocument()
+    expect(screen.getByRole('heading', { name: 'Encuentra tu movimiento.' })).toBeInTheDocument()
+    expect(screen.getByText('Dos formas de explorar piezas elegidas para acompañarte.')).toBeInTheDocument()
 
-    const ropaLink = screen.getByRole('link', { name: /descubrir ropa/i })
-    const accesoriosLink = screen.getByRole('link', { name: /ver accesorios/i })
+    const ropaLink = screen.getByRole('link', { name: 'Descubrir ropa' })
+    const accesoriosLink = screen.getByRole('link', { name: 'Ver accesorios' })
+    expect(container.querySelectorAll('a.collection-world-panel')).toHaveLength(2)
     expect(ropaLink).toHaveAttribute('href', '#ropa')
     expect(accesoriosLink).toHaveAttribute('href', '#accesorios')
     expect(ropaLink).toHaveAttribute('data-reveal')
     expect(accesoriosLink).toHaveAttribute('data-reveal')
     expect(within(ropaLink).getByText('Próximamente')).toBeInTheDocument()
     expect(within(accesoriosLink).queryByText('Próximamente')).not.toBeInTheDocument()
+    expect(accesoriosLink.querySelector('.collection-world-status')).not.toBeInTheDocument()
     expect(ropaLink).toHaveAccessibleDescription('Próximamente')
     expect(accesoriosLink).not.toHaveAccessibleDescription('Próximamente')
     expect(ropaLink).toHaveAttribute('aria-describedby', 'collection-world-ropa-status')
     expect(accesoriosLink).not.toHaveAttribute('aria-describedby')
 
-    expect(within(ropaLink).getByRole('img', { name: /ropa/i })).toHaveAttribute('src', expect.stringContaining('ropa'))
-    expect(within(accesoriosLink).getByRole('img', { name: /accesorios/i })).toHaveAttribute('src', expect.stringContaining('modelo2'))
+    expect(within(ropaLink).getByRole('img', { name: /selección editorial de ropa/i })).toHaveAttribute(
+      'src',
+      expect.stringContaining('collection-ropa'),
+    )
+    expect(within(accesoriosLink).getByRole('img', { name: /selección editorial de accesorios/i })).toHaveAttribute(
+      'src',
+      expect.stringContaining('collection-accesorios'),
+    )
     for (const image of screen.getAllByRole('img')) {
-      expect(image).toHaveAttribute('sizes', '(max-width: 767px) calc(100vw - 32px), 50vw')
+      expect(image).toHaveAttribute('sizes', '(max-width: 1024px) 82vw, 50vw')
     }
     expect(container.querySelectorAll('.collection-world-media')).toHaveLength(2)
+
+    const filters = screen.getByRole('navigation', { name: 'Explorar accesorios por etiqueta' })
+    expect(filters).toHaveClass('collection-world-filters')
+    expect(within(filters).getAllByRole('link')).toHaveLength(2)
+    expect(within(filters).getByRole('link', { name: 'Explorar accesorios con la etiqueta Botellas' })).toHaveAttribute(
+      'href',
+      '/catalogo?categoria=Accesorios&buscar=Botellas',
+    )
+    expect(within(filters).getByRole('link', { name: 'Explorar accesorios con la etiqueta Gym & Viaje' })).toHaveAttribute(
+      'href',
+      '/catalogo?categoria=Accesorios&buscar=Gym%20%26%20Viaje',
+    )
   })
 
   it('marks only unavailable Accesorios as upcoming and gives both world links a direction icon', () => {
-    render(<CollectionWorlds ropaAvailable accesoriosAvailable={false} />)
+    render(<CollectionWorlds ropaAvailable accesoriosAvailable={false} accessoryTags={[]} />)
 
-    const ropaLink = screen.getByRole('link', { name: /descubrir ropa/i })
-    const accesoriosLink = screen.getByRole('link', { name: /ver accesorios/i })
+    const ropaLink = screen.getByRole('link', { name: 'Descubrir ropa' })
+    const accesoriosLink = screen.getByRole('link', { name: 'Ver accesorios' })
     expect(within(ropaLink).queryByText('Próximamente')).not.toBeInTheDocument()
     expect(within(accesoriosLink).getByText('Próximamente')).toBeInTheDocument()
+    expect(ropaLink.querySelector('.collection-world-status')).not.toBeInTheDocument()
     expect(ropaLink).not.toHaveAccessibleDescription('Próximamente')
     expect(accesoriosLink).toHaveAccessibleDescription('Próximamente')
     expect(ropaLink).not.toHaveAttribute('aria-describedby')
@@ -125,10 +154,10 @@ describe('home commerce presentation', () => {
   })
 
   it('uses neutral statuses without unavailable descriptions when availability is unknown', () => {
-    render(<CollectionWorlds ropaAvailable={null} accesoriosAvailable={null} />)
+    render(<CollectionWorlds ropaAvailable={null} accesoriosAvailable={null} accessoryTags={[]} />)
 
-    const ropaLink = screen.getByRole('link', { name: /descubrir ropa/i })
-    const accesoriosLink = screen.getByRole('link', { name: /ver accesorios/i })
+    const ropaLink = screen.getByRole('link', { name: 'Descubrir ropa' })
+    const accesoriosLink = screen.getByRole('link', { name: 'Ver accesorios' })
 
     expect(within(ropaLink).getByText('Explorar')).toBeInTheDocument()
     expect(within(accesoriosLink).getByText('Explorar')).toBeInTheDocument()
@@ -137,6 +166,19 @@ describe('home commerce presentation', () => {
     expect(accesoriosLink).not.toHaveAttribute('aria-describedby')
     expect(ropaLink).not.toHaveAccessibleDescription()
     expect(accesoriosLink).not.toHaveAccessibleDescription()
+  })
+
+  it.each([
+    ['zero', []],
+    ['one', ['Gym']],
+  ])('does not render accessory filters for %s tag', (_label, accessoryTags) => {
+    const { container } = render(
+      <CollectionWorlds ropaAvailable={false} accesoriosAvailable accessoryTags={accessoryTags} />,
+    )
+
+    expect(container.querySelector('.collection-world-filters')).not.toBeInTheDocument()
+    expect(screen.queryByRole('navigation', { name: 'Explorar accesorios por etiqueta' })).not.toBeInTheDocument()
+    expect(screen.getByRole('link', { name: 'Descubrir ropa' })).toHaveAccessibleDescription('Próximamente')
   })
 
   it('renders supplied empty Ropa messaging without products, prices, or a category link', () => {

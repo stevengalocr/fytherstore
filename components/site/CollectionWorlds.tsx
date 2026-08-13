@@ -5,20 +5,28 @@ import { ArrowDownRight } from 'lucide-react'
 interface CollectionWorldsProps {
   ropaAvailable: boolean | null
   accesoriosAvailable: boolean | null
+  accessoryTags: string[]
 }
 
-const COLLECTION_IMAGE_SIZES = '(max-width: 767px) calc(100vw - 32px), 50vw'
+const COLLECTION_IMAGE_SIZES = '(max-width: 1024px) 82vw, 50vw'
 const ROPA_STATUS_ID = 'collection-world-ropa-status'
 const ACCESORIOS_STATUS_ID = 'collection-world-accesorios-status'
 
-export default function CollectionWorlds({ ropaAvailable, accesoriosAvailable }: CollectionWorldsProps) {
+export default function CollectionWorlds({
+  ropaAvailable,
+  accesoriosAvailable,
+  accessoryTags,
+}: CollectionWorldsProps) {
   return (
     <section className="collection-worlds container" aria-labelledby="collection-worlds-title">
       <div className="collection-world-heading">
-        <p className="collection-world-eyebrow section-label">COLECCIONES</p>
+        <p className="collection-world-eyebrow section-label">EXPLORA</p>
         <h2 id="collection-worlds-title" className="collection-world-title display">
-          Dos formas de acompañar tu movimiento.
+          Encuentra tu movimiento.
         </h2>
+        <p className="collection-world-description">
+          Dos formas de explorar piezas elegidas para acompañarte.
+        </p>
       </div>
       <div className="collection-world-grid">
         <Link
@@ -30,8 +38,8 @@ export default function CollectionWorlds({ ropaAvailable, accesoriosAvailable }:
         >
           <span className="collection-world-media">
             <Image
-              src="/ropa.png"
-              alt="Conjunto de ropa Fyther para acompañar el movimiento"
+              src="/collection-ropa.webp"
+              alt="Selección editorial de ropa Fyther"
               fill
               sizes={COLLECTION_IMAGE_SIZES}
             />
@@ -58,8 +66,8 @@ export default function CollectionWorlds({ ropaAvailable, accesoriosAvailable }:
         >
           <span className="collection-world-media">
             <Image
-              src="/modelo2.png"
-              alt="Accesorios Fyther elegidos para acompañar el movimiento"
+              src="/collection-accesorios.webp"
+              alt="Selección editorial de accesorios Fyther"
               fill
               sizes={COLLECTION_IMAGE_SIZES}
             />
@@ -78,6 +86,19 @@ export default function CollectionWorlds({ ropaAvailable, accesoriosAvailable }:
           </span>
         </Link>
       </div>
+      {accessoryTags.length >= 2 && (
+        <nav className="collection-world-filters" aria-label="Explorar accesorios por etiqueta">
+          {accessoryTags.map((tag) => (
+            <Link
+              key={tag.toLocaleLowerCase('es')}
+              href={`/catalogo?categoria=Accesorios&buscar=${encodeURIComponent(tag)}`}
+              aria-label={`Explorar accesorios con la etiqueta ${tag}`}
+            >
+              {tag}
+            </Link>
+          ))}
+        </nav>
+      )}
     </section>
   )
 }
