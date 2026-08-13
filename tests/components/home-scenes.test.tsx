@@ -207,6 +207,41 @@ describe('home commerce presentation', () => {
     expect(within(section as HTMLElement).queryByRole('link', { name: 'Ver toda la ropa' })).not.toBeInTheDocument()
   })
 
+  it('features only the first card when Accesorios has at least three products', () => {
+    const products = [
+      product('uno', 'Accesorio Uno'),
+      product('dos', 'Accesorio Dos'),
+      product('tres', 'Accesorio Tres'),
+    ]
+    const { container } = render(
+      <CollectionSection
+        id="accesorios"
+        eyebrow="ACCESORIOS"
+        title="Detalles que acompañan."
+        description="Útiles, cercanos y tuyos."
+        products={products}
+        emptyTitle="Más detalles muy pronto."
+        emptyCopy="Estamos preparando nuevos accesorios."
+      />,
+    )
+
+    const section = container.querySelector('section#accesorios') as HTMLElement
+    const cardWrappers = section.querySelectorAll('.collection-product-card[data-reveal]')
+    expect(cardWrappers).toHaveLength(3)
+    expect(cardWrappers[0]).toHaveClass('collection-product-card-featured')
+    expect(cardWrappers[1]).not.toHaveClass('collection-product-card-featured')
+    expect(cardWrappers[2]).not.toHaveClass('collection-product-card-featured')
+    expect(Array.from(cardWrappers, (wrapper) => within(wrapper as HTMLElement).getByRole('heading').textContent)).toEqual([
+      'Accesorio Uno',
+      'Accesorio Dos',
+      'Accesorio Tres',
+    ])
+    expect(within(section).getByRole('link', { name: 'Ver todos los accesorios' })).toHaveAttribute(
+      'href',
+      '/catalogo?categoria=Accesorios',
+    )
+  })
+
   it('renders exactly the supplied Accesorios ProductCard articles and category action', () => {
     const products = [
       { ...product('uno', 'Accesorio Uno'), images: [{ src: '/uno.png', alt: 'Accesorio Uno en uso' }] },
@@ -230,6 +265,7 @@ describe('home commerce presentation', () => {
     const cards = within(grid).getAllByRole('article')
     expect(cards).toHaveLength(products.length)
     expect(cardWrappers).toHaveLength(products.length)
+    expect(grid.querySelector('.collection-product-card-featured')).not.toBeInTheDocument()
     expect(Array.from(cardWrappers).every((wrapper) => wrapper.querySelector(':scope > article.product-card'))).toBe(true)
     expect(within(grid).getByRole('heading', { name: 'Accesorio Uno' })).toBeInTheDocument()
     expect(within(grid).getByRole('heading', { name: 'Accesorio Dos' })).toBeInTheDocument()
@@ -248,13 +284,19 @@ describe('home commerce presentation', () => {
         eyebrow="ROPA"
         title="Ropa para moverte contigo."
         description="Capas cómodas para todos tus ritmos."
-        products={[product('ropa-uno', 'Ropa Uno')]}
+        products={[
+          product('ropa-uno', 'Ropa Uno'),
+          product('ropa-dos', 'Ropa Dos'),
+          product('ropa-tres', 'Ropa Tres'),
+        ]}
         emptyTitle="La ropa viene en camino."
         emptyCopy="Estamos preparando esta selección para ti."
       />,
     )
 
     const section = container.querySelector('section#ropa') as HTMLElement
+    expect(section.querySelectorAll('.collection-product-card')).toHaveLength(3)
+    expect(section.querySelector('.collection-product-card-featured')).not.toBeInTheDocument()
     expect(within(section).getByRole('link', { name: 'Ver toda la ropa' })).toHaveAttribute(
       'href',
       '/catalogo?categoria=Ropa',

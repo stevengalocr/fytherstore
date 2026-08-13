@@ -37,6 +37,7 @@ export default function CollectionSection({
 }: CollectionSectionProps) {
   const titleId = `${id}-collection-title`
   const categoryAction = categoryActions[id]
+  const usesFeaturedLayout = id === 'accesorios' && products.length >= 3
 
   return (
     <section id={id} className={`collection-section collection-section-${id} container`} data-reveal aria-labelledby={titleId}>
@@ -54,8 +55,12 @@ export default function CollectionSection({
       ) : (
         <>
           <div className="collection-product-grid">
-            {products.map((product) => (
-              <div key={product.id} className="collection-product-card" data-reveal>
+            {products.map((product, index) => (
+              <div
+                key={product.id}
+                className={`collection-product-card${usesFeaturedLayout && index === 0 ? ' collection-product-card-featured' : ''}`}
+                data-reveal
+              >
                 <ProductCard product={product} imageSizes={COLLECTION_PRODUCT_IMAGE_SIZES} />
               </div>
             ))}
