@@ -1,4 +1,4 @@
-import { expect, test, type Page, type Request } from '@playwright/test'
+import { expect, test, type Locator, type Page, type Request } from '@playwright/test'
 
 const forbiddenCommerceCopy = /modo demo|productos de demostraci[oó]n|simulaci[oó]n|Motion Tee|Training Layer|Daily Bag|Recovery Cap/i
 const exposedConfiguration = /Supabase|service_role|\bkey\b|endpoint|\bdemo\b|simulaci/i
@@ -354,6 +354,39 @@ function longestDurationSeconds(value: string) {
   }))
 }
 
+async function readProductCardInteraction(card: Locator) {
+  return card.evaluate((element) => {
+    const style = getComputedStyle(element)
+    const image = element.querySelector('.product-image')
+    const action = element.querySelector('.product-action')
+    const imageStyle = image ? getComputedStyle(image) : null
+    const actionStyle = action ? getComputedStyle(action) : null
+    const bounds = element.getBoundingClientRect()
+    const matrix = (transform: string | null) => {
+      if (!transform || transform === 'none') return null
+      const value = new DOMMatrixReadOnly(transform)
+      return { a: value.a, b: value.b, c: value.c, d: value.d, e: value.e, f: value.f }
+    }
+
+    return {
+      actionColor: actionStyle?.color ?? null,
+      actionMatrix: matrix(actionStyle?.transform ?? null),
+      actionTransform: actionStyle?.transform ?? null,
+      borderColor: style.borderTopColor,
+      cardTransform: style.transform,
+      documentX: bounds.x + window.scrollX,
+      documentY: bounds.y + window.scrollY,
+      focusWithin: element.matches(':focus-within'),
+      height: bounds.height,
+      imageMatrix: matrix(imageStyle?.transform ?? null),
+      imageTransform: imageStyle?.transform ?? null,
+      viewportX: bounds.x,
+      viewportY: bounds.y,
+      width: bounds.width,
+    }
+  })
+}
+
 test('renders the final home without simulated commerce', async ({ page }, testInfo) => {
   const browser = watchBrowserErrors(page)
   const isDesktop = testInfo.project.name.startsWith('desktop')
@@ -519,7 +552,13 @@ test('renders the final home without simulated commerce', async ({ page }, testI
     const baselineCard = await firstProductCard.evaluate((element) => {
       const style = getComputedStyle(element)
       const bounds = element.getBoundingClientRect()
-      return { borderColor: style.borderTopColor, width: bounds.width, height: bounds.height }
+      return {
+        borderColor: style.borderTopColor,
+        documentX: bounds.x + window.scrollX,
+        documentY: bounds.y + window.scrollY,
+        width: bounds.width,
+        height: bounds.height,
+      }
     })
 
     await focusByKeyboard(page, '#accesorios .product-action')
@@ -540,6 +579,8 @@ test('renders the final home without simulated commerce', async ({ page }, testI
         actionColor: actionStyle?.color ?? null,
         outlineStyle: actionStyle?.outlineStyle ?? null,
         outlineWidth: actionStyle?.outlineWidth ?? null,
+        documentX: bounds.x + window.scrollX,
+        documentY: bounds.y + window.scrollY,
         width: bounds.width,
         height: bounds.height,
       }
@@ -548,6 +589,8 @@ test('renders the final home without simulated commerce', async ({ page }, testI
     expect(focusedCard.actionColor).toBe('rgb(110, 239, 242)')
     expect(focusedCard.outlineStyle).not.toBe('none')
     expect(Number.parseFloat(focusedCard.outlineWidth ?? '0')).toBeGreaterThan(0)
+    expect(Math.abs(focusedCard.documentX - baselineCard.documentX)).toBeLessThanOrEqual(1)
+    expect(Math.abs(focusedCard.documentY - baselineCard.documentY)).toBeLessThanOrEqual(1)
     expect(Math.abs(focusedCard.width - baselineCard.width)).toBeLessThanOrEqual(1)
     expect(Math.abs(focusedCard.height - baselineCard.height)).toBeLessThanOrEqual(1)
     await page.evaluate(() => (document.activeElement as HTMLElement | null)?.blur())
@@ -576,6 +619,119 @@ test('renders the final home without simulated commerce', async ({ page }, testI
     : `home-v02-${testInfo.project.name}.png`
   await stabilizeForScreenshot(page)
   await page.screenshot({ path: testInfo.outputPath(screenshotName), fullPage: true })
+  browser.expectClean()
+})
+
+test('covers product card hover feedback on fine pointers', async ({ page }, testInfo) => {
+  test.skip(testInfo.project.name !== 'desktop-configured', 'Fine-pointer hover runs only in desktop-configured')
+  const browser = watchBrowserErrors(page)
+
+  await page.goto('/')
+  const card = page.locator('#accesorios .product-card').first()
+  await expect(card).toBeVisible()
+  expect(await page.evaluate(() => matchMedia('(hover: hover) and (pointer: fine)').matches)).toBe(true)
+
+  await card.hover()
+  await page.mouse.move(1, 1)
+  await expect.poll(async () => {
+    const state = await readProductCardInteraction(card)
+    return state.borderColor === 'rgba(234, 251, 251, 0.16)'
+      && state.actionColor === 'rgb(234, 251, 251)'
+      && state.imageTransform === 'none'
+      && state.actionTransform === 'none'
+  }).toBe(true)
+  await card.evaluate((element) => {
+    const root = document.documentElement
+    const previousBehavior = root.style.scrollBehavior
+    root.style.scrollBehavior = 'auto'
+    element.scrollIntoView({ block: 'center' })
+    root.style.scrollBehavior = previousBehavior
+  })
+  await page.evaluate(() => new Promise<void>((resolve) => requestAnimationFrame(() => requestAnimationFrame(() => resolve()))))
+
+  let previousGeometry: Awaited<ReturnType<typeof readProductCardInteraction>> | null = null
+  let stableGeometrySamples = 0
+  await expect.poll(async () => {
+    const current = await readProductCardInteraction(card)
+    const stable = previousGeometry !== null
+      && Math.abs(current.viewportX - previousGeometry.viewportX) <= 0.1
+      && Math.abs(current.viewportY - previousGeometry.viewportY) <= 0.1
+      && Math.abs(current.documentX - previousGeometry.documentX) <= 0.1
+      && Math.abs(current.documentY - previousGeometry.documentY) <= 0.1
+      && Math.abs(current.width - previousGeometry.width) <= 0.1
+      && Math.abs(current.height - previousGeometry.height) <= 0.1
+    stableGeometrySamples = stable ? stableGeometrySamples + 1 : 0
+    previousGeometry = current
+    return stableGeometrySamples >= 2
+  }, { intervals: [100], timeout: 5_000 }).toBe(true)
+
+  const baseline = await readProductCardInteraction(card)
+  expect(baseline.focusWithin).toBe(false)
+  expect(baseline.cardTransform).toBe('none')
+  expect(baseline.imageTransform).toBe('none')
+  expect(baseline.actionTransform).toBe('none')
+
+  await card.hover()
+  await expect.poll(async () => {
+    const state = await readProductCardInteraction(card)
+    return state.borderColor === 'rgb(240, 108, 203)'
+      && state.actionColor === 'rgb(110, 239, 242)'
+      && Math.abs((state.imageMatrix?.a ?? 0) - 1.025) <= 0.001
+      && Math.abs((state.actionMatrix?.e ?? 0) - 4.8) <= 0.15
+  }).toBe(true)
+
+  const hovered = await readProductCardInteraction(card)
+  expect(hovered.borderColor).not.toBe(baseline.borderColor)
+  expect(hovered.actionColor).not.toBe(baseline.actionColor)
+  expect(hovered.actionColor).toBe('rgb(110, 239, 242)')
+  expect(hovered.imageTransform).not.toBe('none')
+  expect(hovered.imageMatrix).not.toBeNull()
+  expect(Math.abs((hovered.imageMatrix?.a ?? 0) - 1.025)).toBeLessThanOrEqual(0.001)
+  expect(Math.abs((hovered.imageMatrix?.d ?? 0) - 1.025)).toBeLessThanOrEqual(0.001)
+  expect(Math.abs(hovered.imageMatrix?.b ?? 0)).toBeLessThanOrEqual(0.001)
+  expect(Math.abs(hovered.imageMatrix?.c ?? 0)).toBeLessThanOrEqual(0.001)
+  expect(hovered.actionTransform).not.toBe('none')
+  expect(hovered.actionMatrix).not.toBeNull()
+  expect(Math.abs((hovered.actionMatrix?.e ?? 0) - 4.8)).toBeLessThanOrEqual(0.15)
+  expect(Math.abs(hovered.actionMatrix?.f ?? 0)).toBeLessThanOrEqual(0.001)
+  expect(Math.abs(hovered.viewportX - baseline.viewportX)).toBeLessThanOrEqual(1)
+  expect(Math.abs(hovered.viewportY - baseline.viewportY)).toBeLessThanOrEqual(1)
+  expect(Math.abs(hovered.documentX - baseline.documentX)).toBeLessThanOrEqual(1)
+  expect(Math.abs(hovered.documentY - baseline.documentY)).toBeLessThanOrEqual(1)
+  expect(Math.abs(hovered.width - baseline.width)).toBeLessThanOrEqual(1)
+  expect(Math.abs(hovered.height - baseline.height)).toBeLessThanOrEqual(1)
+
+  await page.mouse.move(1, 1)
+  await expect.poll(async () => {
+    const state = await readProductCardInteraction(card)
+    return state.borderColor === baseline.borderColor
+      && state.actionColor === baseline.actionColor
+      && state.imageTransform === 'none'
+      && state.actionTransform === 'none'
+  }).toBe(true)
+  browser.expectClean()
+})
+
+test('covers product card baseline on configured touch viewports', async ({ page }, testInfo) => {
+  test.skip(!['tablet-configured', 'mobile-configured'].includes(testInfo.project.name), 'Touch baseline runs only in configured touch projects')
+  const browser = watchBrowserErrors(page)
+
+  await page.goto('/')
+  const card = page.locator('#accesorios .product-card').first()
+  await expect(card).toBeVisible()
+  await card.scrollIntoViewIfNeeded()
+  await page.evaluate(() => (document.activeElement as HTMLElement | null)?.blur())
+
+  expect(await page.evaluate(() => matchMedia('(hover: hover) and (pointer: fine)').matches)).toBe(false)
+  const baseline = await readProductCardInteraction(card)
+  expect(baseline.focusWithin).toBe(false)
+  expect(baseline.cardTransform).toBe('none')
+  expect(baseline.borderColor).toBe('rgba(234, 251, 251, 0.16)')
+  expect(baseline.imageTransform).toBe('none')
+  expect(baseline.imageMatrix).toBeNull()
+  expect(baseline.actionTransform).toBe('none')
+  expect(baseline.actionMatrix).toBeNull()
+  expect(baseline.actionColor).toBe('rgb(234, 251, 251)')
   browser.expectClean()
 })
 
@@ -821,19 +977,27 @@ test('disables ambient motion when reduced motion is requested', async ({ page }
     const reducedFeedback = await firstProductCard.evaluate((element) => {
       const style = getComputedStyle(element)
       const action = element.querySelector('.product-action')
+      const image = element.querySelector('.product-image')
       const actionStyle = action ? getComputedStyle(action) : null
+      const imageStyle = image ? getComputedStyle(image) : null
       return {
         actionColor: actionStyle?.color ?? null,
         actionTransform: actionStyle?.transform ?? null,
-        borderTransitionDuration: style.transitionDuration,
-        imageTransform: getComputedStyle(element.querySelector('.product-image') as Element).transform,
+        borderColor: style.borderTopColor,
+        cardTransitionDuration: style.transitionDuration,
+        imageTransform: imageStyle?.transform ?? null,
+        imageTransitionDuration: imageStyle?.transitionDuration ?? null,
+        actionTransitionDuration: actionStyle?.transitionDuration ?? null,
       }
     })
     expect(reducedFeedback.actionColor).not.toBe(baselineFeedback.actionColor)
     expect(reducedFeedback.actionColor).toBe('rgb(110, 239, 242)')
+    expect(reducedFeedback.borderColor).toBe('rgb(240, 108, 203)')
     expect(reducedFeedback.actionTransform).toBe('none')
     expect(reducedFeedback.imageTransform).toBe('none')
-    expect(longestDurationSeconds(reducedFeedback.borderTransitionDuration)).toBeLessThanOrEqual(0.12)
+    expect(longestDurationSeconds(reducedFeedback.cardTransitionDuration)).toBeLessThanOrEqual(0.12)
+    expect(longestDurationSeconds(reducedFeedback.imageTransitionDuration ?? '')).toBeLessThanOrEqual(0.12)
+    expect(longestDurationSeconds(reducedFeedback.actionTransitionDuration ?? '')).toBeLessThanOrEqual(0.12)
 
     const productMotion = await page.locator('#accesorios .collection-product-card').evaluateAll((elements) => elements.map((element) => {
       const style = getComputedStyle(element)
