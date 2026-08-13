@@ -40,7 +40,11 @@ describe('configured E2E commerce fixture', () => {
     ])
     expect(products.every(({ category }) => category === 'Accesorios')).toBe(true)
     expect(products.some(({ category }) => category === 'Ropa')).toBe(false)
-    expect(products.every(({ price }) => price.currency === 'CRC' && price.amount > 0)).toBe(true)
+    expect(products.map(({ price }) => price)).toEqual([
+      { amount: 15000, currency: 'CRC' },
+      { amount: 18000, currency: 'CRC' },
+      { amount: 12000, currency: 'CRC' },
+    ])
     expect(products.flatMap(({ images }) => images.map(({ src }) => src))).toEqual(['/ropa.png', '/modelo2.png', '/home.jpeg'])
     expect(products.map(({ tags }) => tags)).toEqual([
       ['Botellas', 'Gym'],

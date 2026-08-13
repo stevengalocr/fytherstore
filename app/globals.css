@@ -499,7 +499,9 @@ main { flex: 1; }
 @media (max-width: 560px) {
   body { overflow-x: clip; }
   .collection-worlds, .collection-section, .trust-faq { padding-block: 3.75rem; }
-  .collection-world-title { margin-bottom: 2rem; font-size: min(2.75rem, 4.25em); }
+  .collection-world-heading, .trust-faq-heading { min-width: 0; max-width: 100%; }
+  .collection-world-title { margin-bottom: 2rem; font-size: 2.75rem; }
+  .collection-world-title, .trust-faq-heading h2 { max-width: 100%; overflow-wrap: anywhere; }
   .collection-world-panel { flex-basis: 84vw; }
   .collection-world-copy { gap: 0.6rem; }
   .collection-world-name { font-size: 1.35rem; }
@@ -512,7 +514,7 @@ main { flex: 1; }
   .collection-empty h3 { font-size: 2.35rem; }
   .editorial-story-copy { left: 0.75rem; bottom: 0.75rem; width: calc(100% - 1.5rem); padding: 1rem; }
   .editorial-story-copy h2 { font-size: 2.35rem; }
-  .trust-faq-heading h2 { font-size: min(2.65rem, 5em); }
+  .trust-faq-heading h2 { font-size: 2.65rem; }
   .trust-faq-list summary { padding-inline: 0.875rem; }
   .trust-faq-answer { padding: 0 0.875rem 1rem; }
   .catalog-controls { grid-template-columns: 1fr; }

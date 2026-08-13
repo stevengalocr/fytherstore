@@ -251,6 +251,87 @@ async function revealFullPage(page: Page) {
   ))).toBe(true)
 }
 
+async function stabilizeForScreenshot(page: Page) {
+  await page.evaluate(async () => {
+    const stabilityStyleId = 'e2e-screenshot-stability'
+    if (!document.getElementById(stabilityStyleId)) {
+      const style = document.createElement('style')
+      style.id = stabilityStyleId
+      style.textContent = `
+        *, *::before, *::after { animation: none !important; transition: none !important; caret-color: transparent !important; }
+        .hero-media video { visibility: hidden !important; }
+      `
+      document.head.append(style)
+    }
+
+    const videoSeeks: Promise<void>[] = []
+    for (const video of document.querySelectorAll('video')) {
+      video.pause()
+      if (video.readyState >= HTMLMediaElement.HAVE_METADATA && video.seekable.length > 0) {
+        if (Math.abs(video.currentTime) > 0.001) {
+          videoSeeks.push(new Promise<void>((resolve) => {
+            video.addEventListener('seeked', () => resolve(), { once: true })
+            video.currentTime = 0
+          }))
+        } else {
+          video.currentTime = 0
+        }
+      }
+    }
+    await Promise.all(videoSeeks)
+
+    await document.fonts.ready
+    const visibleImages = [...document.images].filter((image) => {
+      const style = getComputedStyle(image)
+      return style.display !== 'none' && style.visibility !== 'hidden' && image.getClientRects().length > 0
+    })
+    await Promise.all(visibleImages.map(async (image) => {
+      if (!image.complete) {
+        await new Promise<void>((resolve) => {
+          image.addEventListener('load', () => resolve(), { once: true })
+          image.addEventListener('error', () => resolve(), { once: true })
+        })
+      }
+      await image.decode().catch(() => undefined)
+    }))
+
+    document.querySelectorAll<HTMLElement>('.collection-world-grid, .collection-world-filters')
+      .forEach((rail) => { rail.scrollLeft = 0 })
+    await new Promise<void>((resolve) => requestAnimationFrame(() => requestAnimationFrame(() => resolve())))
+  })
+
+  const visibleImages = page.locator('img:visible')
+  await expect.poll(() => visibleImages.evaluateAll((images) => images.every((image) => {
+    const media = image as HTMLImageElement
+    return media.complete && media.naturalWidth > 0 && media.naturalHeight > 0
+  }))).toBe(true)
+
+  let previousLayout = ''
+  let consecutiveMatches = 0
+  await expect.poll(async () => {
+    const layout = await page.evaluate(() => JSON.stringify({
+      document: {
+        width: document.documentElement.scrollWidth,
+        height: document.documentElement.scrollHeight,
+      },
+      rails: [...document.querySelectorAll<HTMLElement>('.collection-world-grid, .collection-world-filters')]
+        .map((rail) => ({ scrollLeft: rail.scrollLeft, scrollWidth: rail.scrollWidth, clientWidth: rail.clientWidth })),
+      sections: [...document.querySelectorAll<HTMLElement>('main > section, main > .current-rail')]
+        .map((section) => {
+          const rect = section.getBoundingClientRect()
+          return [rect.x, rect.y, rect.width, rect.height]
+        }),
+    }))
+    consecutiveMatches = layout === previousLayout ? consecutiveMatches + 1 : 0
+    previousLayout = layout
+    return consecutiveMatches >= 2
+  }, { timeout: 10_000 }).toBe(true)
+
+  await expect.poll(() => page.locator('.collection-world-grid, .collection-world-filters').evaluateAll((rails) => (
+    rails.every((rail) => Math.abs((rail as HTMLElement).scrollLeft) <= 1)
+  ))).toBe(true)
+}
+
 function longestDurationSeconds(value: string) {
   return Math.max(0, ...value.split(',').map((part) => {
     const duration = part.trim()
@@ -440,6 +521,7 @@ test('renders the final home without simulated commerce', async ({ page }, testI
   const screenshotName = isConfigured
     ? `home-configured-${testInfo.project.name.replace('-configured', '')}.png`
     : `home-v02-${testInfo.project.name}.png`
+  await stabilizeForScreenshot(page)
   await page.screenshot({ path: testInfo.outputPath(screenshotName), fullPage: true })
   browser.expectClean()
 })
