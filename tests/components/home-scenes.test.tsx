@@ -209,8 +209,8 @@ describe('home commerce presentation', () => {
 
   it('features only the first card when Accesorios has at least three products', () => {
     const products = [
-      product('uno', 'Accesorio Uno'),
-      product('dos', 'Accesorio Dos'),
+      { ...product('uno', 'Accesorio Uno'), images: [{ src: '/uno.png', alt: 'Accesorio Uno en uso' }] },
+      { ...product('dos', 'Accesorio Dos'), images: [{ src: '/dos.png', alt: 'Accesorio Dos en uso' }] },
       product('tres', 'Accesorio Tres'),
       product('cuatro', 'Accesorio Cuatro'),
     ]
@@ -236,6 +236,14 @@ describe('home commerce presentation', () => {
     expect(cardWrappers[1]).not.toHaveClass('collection-product-card-featured')
     expect(cardWrappers[2]).not.toHaveClass('collection-product-card-featured')
     expect(cardWrappers[3]).not.toHaveClass('collection-product-card-featured')
+    expect(within(cardWrappers[0] as HTMLElement).getByRole('img', { name: 'Accesorio Uno en uso' })).toHaveAttribute(
+      'sizes',
+      '(max-width: 767px) calc(100vw - 32px), (max-width: 1024px) 42vw, 820px',
+    )
+    expect(within(cardWrappers[1] as HTMLElement).getByRole('img', { name: 'Accesorio Dos en uso' })).toHaveAttribute(
+      'sizes',
+      '(max-width: 767px) calc(100vw - 32px), (max-width: 1240px) 42vw, 500px',
+    )
     expect(Array.from(cardWrappers, (wrapper) => within(wrapper as HTMLElement).getByRole('heading').textContent)).toEqual([
       'Accesorio Uno',
       'Accesorio Dos',

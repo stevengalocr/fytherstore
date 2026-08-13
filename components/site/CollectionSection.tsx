@@ -14,6 +14,7 @@ export interface CollectionSectionProps {
 }
 
 const COLLECTION_PRODUCT_IMAGE_SIZES = '(max-width: 767px) calc(100vw - 32px), (max-width: 1240px) 42vw, 500px'
+const FEATURED_COLLECTION_PRODUCT_IMAGE_SIZES = '(max-width: 767px) calc(100vw - 32px), (max-width: 1024px) 42vw, 820px'
 
 const categoryActions = {
   ropa: {
@@ -55,15 +56,22 @@ export default function CollectionSection({
       ) : (
         <>
           <div className="collection-product-grid">
-            {products.map((product, index) => (
-              <div
-                key={product.id}
-                className={`collection-product-card${usesFeaturedLayout && index === 0 ? ' collection-product-card-featured' : ''}`}
-                data-reveal
-              >
-                <ProductCard product={product} imageSizes={COLLECTION_PRODUCT_IMAGE_SIZES} />
-              </div>
-            ))}
+            {products.map((product, index) => {
+              const isFeatured = usesFeaturedLayout && index === 0
+
+              return (
+                <div
+                  key={product.id}
+                  className={`collection-product-card${isFeatured ? ' collection-product-card-featured' : ''}`}
+                  data-reveal
+                >
+                  <ProductCard
+                    product={product}
+                    imageSizes={isFeatured ? FEATURED_COLLECTION_PRODUCT_IMAGE_SIZES : COLLECTION_PRODUCT_IMAGE_SIZES}
+                  />
+                </div>
+              )
+            })}
           </div>
           <Link className="collection-section-link text-link" href={categoryAction.href}>
             {categoryAction.label}

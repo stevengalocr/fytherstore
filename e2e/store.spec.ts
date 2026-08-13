@@ -257,7 +257,22 @@ test('renders the final home without simulated commerce', async ({ page }, testI
     expect(Math.abs(firstWorld.y - secondWorld.y)).toBeLessThanOrEqual(1)
     expect(firstWorld.x + firstWorld.width).toBeLessThanOrEqual(secondWorld.x + 1)
   } else if (isConfigured && !isDesktop && firstWorld && secondWorld) {
-    expect(firstWorld.y + firstWorld.height).toBeLessThanOrEqual(secondWorld.y + 1)
+    expect(Math.abs(firstWorld.y - secondWorld.y)).toBeLessThanOrEqual(1)
+    expect(firstWorld.x + firstWorld.width).toBeLessThanOrEqual(secondWorld.x + 1)
+
+    const railLayout = await page.locator('.collection-world-grid').evaluate((element) => {
+      const rail = element as HTMLElement
+      const style = getComputedStyle(rail)
+      return {
+        clientWidth: rail.clientWidth,
+        scrollWidth: rail.scrollWidth,
+        overflowX: style.overflowX,
+        scrollSnapType: style.scrollSnapType,
+      }
+    })
+    expect(railLayout.scrollWidth).toBeGreaterThan(railLayout.clientWidth)
+    expect(['auto', 'scroll']).toContain(railLayout.overflowX)
+    expect(railLayout.scrollSnapType).toContain('mandatory')
   }
 
   const worldRadii = await page.locator('.collection-world-media').evaluateAll((elements) => elements.map((element) => {

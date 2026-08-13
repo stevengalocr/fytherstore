@@ -397,6 +397,7 @@ main { flex: 1; }
   .collection-world-grid { display: flex; gap: 1rem; overflow-x: auto; overscroll-behavior-inline: contain; scroll-snap-type: inline mandatory; scrollbar-width: none; }
   .collection-world-grid::-webkit-scrollbar { display: none; }
   .collection-world-panel { flex: 0 0 min(78vw, 520px); scroll-snap-align: start; }
+  .collection-world-panel:focus-visible { outline-offset: -3px; }
   .collection-product-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: clamp(1rem, 3vw, 2rem); }
   .collection-product-card-featured { grid-column: auto; }
   .collection-product-card-featured .product-media { aspect-ratio: 4 / 5; }
@@ -505,6 +506,7 @@ main { flex: 1; }
   .collection-world-status { font-size: 0.63rem; }
   .collection-world-filters { max-width: 100%; flex-wrap: nowrap; overflow-x: auto; overscroll-behavior-inline: contain; scrollbar-width: none; }
   .collection-world-filters::-webkit-scrollbar { display: none; }
+  .collection-world-filters a:focus-visible { outline-offset: -3px; }
   .collection-product-grid { grid-template-columns: 1fr; gap: 2.5rem; }
   .collection-section-title { font-size: 2.65rem; }
   .collection-empty h3 { font-size: 2.35rem; }
