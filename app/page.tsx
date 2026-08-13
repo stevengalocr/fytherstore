@@ -7,7 +7,7 @@ import CommerceState from '@/components/commerce/CommerceState'
 import EditorialStory from '@/components/site/EditorialStory'
 import TrustFaq from '@/components/site/TrustFaq'
 import type { CommerceProduct } from '@/lib/commerce/types'
-import { splitProductsByWorld } from '@/lib/home-selection'
+import { selectAccessoryTags, splitProductsByWorld } from '@/lib/home-selection'
 
 export const revalidate = 60
 
@@ -20,6 +20,7 @@ export default async function HomePage() {
     failed = true
   }
   const { ropa, accesorios } = splitProductsByWorld(products)
+  const accessoryTags = selectAccessoryTags(accesorios)
   const commerceUnavailable = commerceMode === 'unconfigured' || failed
 
   return (
@@ -29,6 +30,7 @@ export default async function HomePage() {
       <CollectionWorlds
         ropaAvailable={commerceUnavailable ? null : ropa.length > 0}
         accesoriosAvailable={commerceUnavailable ? null : accesorios.length > 0}
+        accessoryTags={commerceUnavailable ? [] : accessoryTags}
       />
       {commerceUnavailable ? (
         <div id="ropa">
@@ -51,8 +53,8 @@ export default async function HomePage() {
       {!commerceUnavailable && (
         <CollectionSection
           id="accesorios"
-          eyebrow="ACCESORIOS"
-          title="Detalles que siguen tu ritmo."
+          eyebrow="SELECCIÓN ACTUAL"
+          title="Lo que se está llevando."
           description="Accesorios originales y útiles para organizar, celebrar y acompañar cada meta."
           products={accesorios}
           emptyTitle="Estamos preparando los detalles."

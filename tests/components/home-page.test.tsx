@@ -18,7 +18,7 @@ vi.mock('next/navigation', () => ({
 
 import HomePage from '@/app/page'
 
-function product(id: string, name: string, category: string): CommerceProduct {
+function product(id: string, name: string, category: string, tags: string[] = []): CommerceProduct {
   return {
     id,
     slug: id,
@@ -32,7 +32,7 @@ function product(id: string, name: string, category: string): CommerceProduct {
     stockQuantity: 3,
     variants: [],
     category,
-    tags: [],
+    tags,
     featured: false,
   }
 }
@@ -57,7 +57,7 @@ describe('HomePage', () => {
   it('splits exact worlds and renders the requested anchored scene order', async () => {
     commerceMock.getProducts.mockResolvedValue([
       product('ropa-real', 'Ropa Real', 'Ropa'),
-      product('accesorio-real', 'Accesorio Real', 'Accesórios'),
+      product('accesorio-real', 'Accesorio Real', 'Accesórios', ['Botellas', 'Gym']),
       product('calzado', 'Calzado Ignorado', 'Calzado'),
     ])
 
@@ -74,11 +74,17 @@ describe('HomePage', () => {
       'accesorios',
       'preguntas',
     ])
+    expect(screen.getByRole('heading', { name: 'Encuentra tu movimiento.' })).toBeInTheDocument()
+    expect(screen.getByRole('link', { name: 'Explorar accesorios con la etiqueta Botellas' })).toHaveAttribute(
+      'href',
+      '/catalogo?categoria=Accesorios&buscar=Botellas',
+    )
     expect(within(ropa).getByRole('heading', { name: 'Ropa para sentirte tú.' })).toBeInTheDocument()
     expect(within(ropa).getByText('Prendas elegidas para entrenar, caminar y compartir tu ritmo.')).toBeInTheDocument()
     expect(within(ropa).getByRole('heading', { name: 'Ropa Real' })).toBeInTheDocument()
     expect(within(ropa).queryByText('Accesorio Real')).not.toBeInTheDocument()
-    expect(within(accesorios).getByRole('heading', { name: 'Detalles que siguen tu ritmo.' })).toBeInTheDocument()
+    expect(within(accesorios).getByText('SELECCIÓN ACTUAL')).toBeInTheDocument()
+    expect(within(accesorios).getByRole('heading', { name: 'Lo que se está llevando.' })).toBeInTheDocument()
     expect(within(accesorios).getByText('Accesorios originales y útiles para organizar, celebrar y acompañar cada meta.')).toBeInTheDocument()
     expect(within(accesorios).getByRole('heading', { name: 'Accesorio Real' })).toBeInTheDocument()
     expect(within(accesorios).queryByText('Ropa Real')).not.toBeInTheDocument()
