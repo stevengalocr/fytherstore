@@ -18,7 +18,7 @@ const products: CommerceProduct[] = [
     stockQuantity: 8,
     variants: [],
     category: 'Ropa',
-    tags: ['Gym'],
+    tags: [],
     featured: false,
   },
   {
@@ -34,7 +34,7 @@ const products: CommerceProduct[] = [
     stockQuantity: 5,
     variants: [],
     category: 'Accesórios',
-    tags: [],
+    tags: ['Gym'],
     featured: true,
   },
 ]
@@ -71,11 +71,12 @@ describe('CatalogClient', () => {
   })
 
   it('starts with a tag query from the URL', () => {
-    render(<CatalogClient products={products} initialCategory="Todos" initialQuery="gym" />)
+    render(<CatalogClient products={products} initialCategory="Accesorios" initialQuery="Gym" />)
 
-    expect(screen.getByRole('textbox', { name: 'Buscar productos' })).toHaveValue('gym')
-    expect(within(productList()).getByText('Legging Flujo')).toBeInTheDocument()
-    expect(within(productList()).queryByText('Top Brisa')).not.toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Accesorios' })).toHaveAttribute('aria-pressed', 'true')
+    expect(screen.getByRole('textbox', { name: 'Buscar productos' })).toHaveValue('Gym')
+    expect(within(productList()).getByText('Top Brisa')).toBeInTheDocument()
+    expect(within(productList()).queryByText('Legging Flujo')).not.toBeInTheDocument()
   })
 
   it('shows only the canonical category filters and normalizes category accents', async () => {

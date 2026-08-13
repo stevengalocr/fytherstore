@@ -6,7 +6,6 @@ import NotFound from '@/app/not-found'
 import type { CommerceProduct } from '@/lib/commerce/types'
 
 const getProducts = vi.hoisted(() => vi.fn())
-const catalogClient = vi.hoisted(() => vi.fn((_props: unknown) => null))
 const catalogProduct: CommerceProduct = {
   id: 'band-1',
   slug: 'banda-fuerza',
@@ -30,7 +29,13 @@ vi.mock('@/lib/commerce', () => ({
 }))
 
 vi.mock('@/app/catalogo/CatalogClient', () => ({
-  default: catalogClient,
+  default: ({ initialCategory, initialQuery }: { initialCategory: string; initialQuery: string }) => (
+    <div
+      data-testid="catalog-client"
+      data-initial-category={initialCategory}
+      data-initial-query={initialQuery}
+    />
+  ),
 }))
 
 import CatalogPage from '@/app/catalogo/page'
@@ -38,7 +43,6 @@ import CatalogPage from '@/app/catalogo/page'
 describe('recovery pages', () => {
   beforeEach(() => {
     getProducts.mockReset()
-    catalogClient.mockClear()
   })
 
   afterEach(() => {
@@ -80,12 +84,8 @@ describe('recovery pages', () => {
       searchParams: Promise.resolve({ categoria: 'Accesorios', buscar: ['Gym', 'ignored'] }),
     }))
 
-    expect(catalogClient).toHaveBeenCalled()
-    expect(catalogClient.mock.calls[0]?.[0]).toEqual({
-      products: [catalogProduct],
-      initialCategory: 'Accesorios',
-      initialQuery: 'Gym',
-    })
+    expect(screen.getByTestId('catalog-client')).toHaveAttribute('data-initial-category', 'Accesorios')
+    expect(screen.getByTestId('catalog-client')).toHaveAttribute('data-initial-query', 'Gym')
   })
 
   it('uses default catalog filters when URL parameters are omitted', async () => {
@@ -93,10 +93,8 @@ describe('recovery pages', () => {
 
     render(await CatalogPage({ searchParams: Promise.resolve({}) }))
 
-    expect(catalogClient.mock.calls[0]?.[0]).toMatchObject({
-      initialCategory: 'Todos',
-      initialQuery: '',
-    })
+    expect(screen.getByTestId('catalog-client')).toHaveAttribute('data-initial-category', 'Todos')
+    expect(screen.getByTestId('catalog-client')).toHaveAttribute('data-initial-query', '')
   })
 
   it('trims and caps the first value of each catalog filter', async () => {
@@ -110,9 +108,7 @@ describe('recovery pages', () => {
       }),
     }))
 
-    expect(catalogClient.mock.calls[0]?.[0]).toMatchObject({
-      initialCategory: 'Ropa',
-      initialQuery: 'g'.repeat(80),
-    })
+    expect(screen.getByTestId('catalog-client')).toHaveAttribute('data-initial-category', 'Ropa')
+    expect(screen.getByTestId('catalog-client')).toHaveAttribute('data-initial-query', 'g'.repeat(80))
   })
 })
