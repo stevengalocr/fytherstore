@@ -36,11 +36,26 @@ describe('configured E2E commerce fixture', () => {
     expect(products.map(({ id, slug }) => ({ id, slug }))).toEqual([
       { id: 'fyther-e2e-accesorio-01', slug: 'accesorio-fyther-uno' },
       { id: 'fyther-e2e-accesorio-02', slug: 'accesorio-fyther-dos' },
+      { id: 'fyther-e2e-accesorio-03', slug: 'accesorio-fyther-tres' },
     ])
     expect(products.every(({ category }) => category === 'Accesorios')).toBe(true)
     expect(products.some(({ category }) => category === 'Ropa')).toBe(false)
     expect(products.every(({ price }) => price.currency === 'CRC' && price.amount > 0)).toBe(true)
-    expect(products.flatMap(({ images }) => images.map(({ src }) => src))).toEqual(['/ropa.png', '/modelo2.png'])
+    expect(products.flatMap(({ images }) => images.map(({ src }) => src))).toEqual(['/ropa.png', '/modelo2.png', '/home.jpeg'])
+    expect(products.map(({ tags }) => tags)).toEqual([
+      ['Botellas', 'Gym'],
+      ['Gym', 'Organización'],
+      ['Regalos'],
+    ])
+    expect(products[2]).toMatchObject({
+      name: 'Accesorio Fyther Tres',
+      shortDescription: 'Un detalle para tu rutina diaria',
+      price: { amount: 12000, currency: 'CRC' },
+      images: [{ src: '/home.jpeg', alt: 'Accesorio Fyther Tres' }],
+      availability: 'in_stock',
+      stockQuantity: 2,
+      featured: false,
+    })
 
     await expect(commerce.getProductBySlug('accesorio-fyther-dos')).resolves.toEqual(products[1])
     await expect(commerce.getProductBySlug('no-existe')).resolves.toBeNull()
