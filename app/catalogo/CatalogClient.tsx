@@ -4,24 +4,33 @@ import { useEffect, useMemo, useState } from 'react'
 import { ArrowDownUp, Search } from 'lucide-react'
 import ProductCard from '@/components/ProductCard'
 import type { CommerceProduct } from '@/lib/commerce/types'
+import { normalizeCollectionCategory } from '@/lib/home-selection'
 
 const CATALOG_PRODUCT_IMAGE_SIZES = '(max-width: 560px) calc(100vw - 32px), (max-width: 1100px) calc(50vw - 32px), 380px'
+const CATEGORIES = ['Todos', 'Ropa', 'Accesorios'] as const
+type CatalogCategory = (typeof CATEGORIES)[number]
 
-export default function CatalogClient({ products, initialCategory }: {
+function canonicalCategory(category: string): CatalogCategory {
+  return CATEGORIES.find((candidate) => candidate === category) ?? 'Todos'
+}
+
+export default function CatalogClient({ products, initialCategory, initialQuery }: {
   products: CommerceProduct[]
   initialCategory: string
+  initialQuery: string
 }) {
-  const categories = useMemo(
-    () => ['Todos', ...new Set(products.map((product) => product.category).filter((value): value is string => Boolean(value)))],
-    [products],
-  )
-  const [category, setCategory] = useState(categories.includes(initialCategory) ? initialCategory : 'Todos')
-  const [query, setQuery] = useState('')
+  const canonicalInitialCategory = canonicalCategory(initialCategory)
+  const [category, setCategory] = useState<CatalogCategory>(canonicalInitialCategory)
+  const [query, setQuery] = useState(initialQuery)
   const [sort, setSort] = useState('featured')
 
   useEffect(() => {
-    if (!categories.includes(category)) setCategory('Todos')
-  }, [categories, category])
+    setCategory(canonicalInitialCategory)
+  }, [canonicalInitialCategory])
+
+  useEffect(() => {
+    setQuery(initialQuery)
+  }, [initialQuery])
 
   function clearFilters() {
     setCategory('Todos')
@@ -31,9 +40,14 @@ export default function CatalogClient({ products, initialCategory }: {
 
   const visible = useMemo(() => {
     const normalized = query.trim().toLocaleLowerCase('es')
-    const filtered = products.filter((product) =>
-      (category === 'Todos' || product.category === category)
-      && (!normalized || `${product.name} ${product.shortDescription ?? ''}`.toLocaleLowerCase('es').includes(normalized)))
+    const normalizedCategory = category === 'Todos' ? '' : normalizeCollectionCategory(category)
+    const filtered = products.filter((product) => {
+      const searchable = [product.name, product.shortDescription ?? '', ...product.tags]
+        .join(' ')
+        .toLocaleLowerCase('es')
+      return (category === 'Todos' || normalizeCollectionCategory(product.category) === normalizedCategory)
+        && (!normalized || searchable.includes(normalized))
+    })
     return [...filtered].sort((a, b) => {
       if (sort === 'price-asc') return a.price.amount - b.price.amount
       if (sort === 'price-desc') return b.price.amount - a.price.amount
@@ -47,11 +61,11 @@ export default function CatalogClient({ products, initialCategory }: {
       <header className="catalog-hero container">
         <p className="section-label">FYTHER / COLECCIÓN</p>
         <h1 className="display">Encuentra algo para ti.</h1>
-        <p>Ropa activa para entrenar, caminar y compartir tu ritmo.</p>
+        <p>Ropa y accesorios elegidos para moverte y disfrutar cada día.</p>
       </header>
       <div className="catalog-tools container">
         <div className="category-filters" role="group" aria-label="Filtrar por categoría">
-          {categories.map((item) => (
+          {CATEGORIES.map((item) => (
             <button key={item} type="button" aria-pressed={category === item} onClick={() => setCategory(item)}>{item}</button>
           ))}
         </div>

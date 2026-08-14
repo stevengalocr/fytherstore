@@ -1,9 +1,25 @@
 import { readFileSync } from 'node:fs'
 import { resolve } from 'node:path'
+import sharp from 'sharp'
 import { describe, expect, it } from 'vitest'
 
 describe('test harness', () => {
   it('runs TypeScript tests', () => expect(true).toBe(true))
+
+  it('keeps both collection cover sources at the editorial asset contract', async () => {
+    const covers = await Promise.all([
+      'public/collection-ropa.webp',
+      'public/collection-accesorios.webp',
+    ].map(async (path) => {
+      const metadata = await sharp(resolve(process.cwd(), path)).metadata()
+      return { format: metadata.format, width: metadata.width, height: metadata.height }
+    }))
+
+    expect(covers).toEqual([
+      { format: 'webp', width: 1200, height: 1500 },
+      { format: 'webp', width: 1200, height: 1500 },
+    ])
+  })
 })
 
 describe('V0.2 foundation', () => {
@@ -35,5 +51,128 @@ describe('V0.2 foundation', () => {
     expect(reducedMotionCss).toMatch(/\.motion-track > div,[\s\S]*\.spinner,[\s\S]*\.catalog-loading span\s*\{[^}]*animation:\s*none !important/)
     expect(reducedMotionCss).toMatch(/transition-property:\s*background-color, border-color, color, opacity;/)
     expect(reducedMotionCss).toMatch(/transition-duration:\s*120ms;/)
+  })
+})
+
+describe('Task 5 flagship home styling', () => {
+  const globalsCss = readFileSync(resolve(process.cwd(), 'app/globals.css'), 'utf8')
+  const reducedMotionCss = globalsCss.match(/@media \(prefers-reduced-motion: reduce\) \{([\s\S]*?)\n\}\s*$/)?.[1] ?? ''
+
+  it('removes every retired home styling system while preserving shared commerce selectors', () => {
+    for (const retiredSelector of [
+      'category-section',
+      'category-rail',
+      'category-link',
+      'product-section',
+      'product-grid',
+      'trust-chips',
+      'final-glow',
+    ]) {
+      expect(globalsCss).not.toMatch(new RegExp(`\\.${retiredSelector}(?:\\b|[-_])`))
+    }
+
+    expect(globalsCss).toMatch(/\.text-link\s*\{/)
+    expect(globalsCss).toMatch(/\.product-card\s*\{/)
+    expect(globalsCss).toMatch(/\.catalog-grid\s*\{/)
+  })
+
+  it('builds two stable photographic collection worlds with restrained accents', () => {
+    expect(globalsCss).toMatch(/\.collection-worlds\s*\{[^}]*padding-(?:block|top):/)
+    expect(globalsCss).toMatch(/\.collection-world-title\s*\{[^}]*font-size:\s*clamp\([^;]+\)/)
+    expect(globalsCss).toMatch(/\.collection-world-grid\s*\{[^}]*display:\s*grid;[^}]*grid-template-columns:\s*repeat\(2,\s*minmax\(0,\s*1fr\)\)/)
+    expect(globalsCss).toMatch(/\.collection-world-panel\s*\{[^}]*min-width:\s*0;[^}]*min-height:\s*44px/)
+    expect(globalsCss).toMatch(/\.collection-world-media\s*\{[^}]*aspect-ratio:\s*4\s*\/\s*5;[^}]*overflow:\s*hidden;[^}]*border-radius:\s*(?:[0-8](?:px)?|var\([^)]*\))/)
+    expect(globalsCss).toMatch(/\.collection-world-panel:first-child\s*\{[^}]*--world-accent:\s*var\(--color-cyan\)/)
+    expect(globalsCss).toMatch(/\.collection-world-panel:last-child\s*\{[^}]*--world-accent:\s*var\(--color-pink\)/)
+    expect(globalsCss).toMatch(/\.collection-world-copy\s*\{[^}]*min-height:\s*(?:6[4-9]|7[0-2])px/)
+    expect(globalsCss).toMatch(/\.collection-world-panel\[data-reveal\]:not\(\[data-reveal='on'\]\)\s*\{[^}]*opacity:\s*0;[^}]*clip-path:/)
+    expect(globalsCss).toMatch(/\.collection-world-panel:nth-child\(2\)\[data-reveal\]:not\(\[data-reveal='on'\]\)\s*\{[^}]*transition-delay:\s*90ms/)
+    expect(globalsCss).not.toMatch(/\.collection-world-panel:nth-child\(2\)\[data-reveal\]\s*\{[^}]*transition-delay:\s*90ms/)
+  })
+
+  it('gives collection sections stable responsive product grids and truthful empty bands', () => {
+    expect(globalsCss).toMatch(/\.collection-section\s*\{[^}]*scroll-margin-top:\s*[^;]+;[^}]*padding-block:/)
+    expect(globalsCss).toMatch(/\.collection-section-intro\s*\{[^}]*display:\s*grid/)
+    expect(globalsCss).toMatch(/\.collection-product-grid\s*\{[^}]*display:\s*grid;[^}]*grid-template-columns:\s*repeat\(3,\s*minmax\(0,\s*1fr\)\)/)
+    expect(globalsCss).toMatch(/\.collection-empty\s*\{[^}]*width:\s*100%;[^}]*border-(?:block|top):/)
+    expect(globalsCss).toMatch(/\.collection-section-ropa\s*\{[^}]*--collection-accent:\s*var\(--color-cyan\)/)
+    expect(globalsCss).toMatch(/\.collection-section-accesorios\s*\{[^}]*--collection-accent:\s*var\(--color-pink\)/)
+    expect(globalsCss).toMatch(/@media \(max-width:\s*1024px\)[\s\S]*?\.collection-product-grid\s*\{[^}]*grid-template-columns:\s*repeat\(2,\s*minmax\(0,\s*1fr\)\)/)
+    expect(globalsCss).toMatch(/@media \(max-width:\s*1024px\)[\s\S]*?\.collection-world-grid\s*\{[^}]*display:\s*flex;[^}]*overflow-x:\s*auto;[^}]*scroll-snap-type:\s*inline mandatory/)
+    expect(globalsCss).toMatch(/@media \(max-width:\s*1024px\)[\s\S]*?\.collection-world-panel\s*\{[^}]*flex:\s*0 0 min\(78vw,\s*520px\)/)
+    expect(globalsCss).toMatch(/@media \(max-width:\s*1024px\)[\s\S]*?\.collection-world-panel:focus-visible\s*\{[^}]*outline-offset:\s*-3px/)
+    expect(globalsCss).toMatch(/@media \(max-width:\s*560px\)[\s\S]*?body\s*\{[^}]*overflow-x:\s*clip/)
+    expect(globalsCss).toMatch(/@media \(max-width:\s*560px\)[\s\S]*?\.collection-world-panel\s*\{[^}]*flex-basis:\s*84vw/)
+    expect(globalsCss).toMatch(/@media \(max-width:\s*560px\)[\s\S]*?\.collection-world-filters a:focus-visible\s*\{[^}]*outline-offset:\s*-3px/)
+    expect(globalsCss).toMatch(/@media \(max-width:\s*560px\)[\s\S]*?\.collection-product-grid\s*\{[^}]*grid-template-columns:\s*1fr/)
+  })
+
+  it('lets the service ribbon wrap and grow without clipping its centered separators', () => {
+    const railCss = globalsCss.match(/\.current-rail\s*\{([^}]*)\}/)?.[1] ?? ''
+    const copyCss = globalsCss.match(/\.current-rail p\s*\{([^}]*)\}/)?.[1] ?? ''
+
+    expect(railCss).not.toMatch(/overflow(?:-[xy])?:\s*hidden/)
+    expect(copyCss).not.toMatch(/overflow(?:-[xy])?:\s*hidden/)
+    expect(copyCss).toMatch(/white-space:\s*normal/)
+    expect(copyCss).toMatch(/text-align:\s*center/)
+    expect(globalsCss).toMatch(/\.current-rail p span\s*\{[^}]*padding-inline:[^}]*color:\s*var\(--color-pink\)/)
+  })
+
+  it('keeps editorial media restrained and presents a centered one-column FAQ', () => {
+    expect(globalsCss).toMatch(/\.editorial-story-media\s*\{[^}]*border-radius:\s*8px/)
+    expect(globalsCss).toMatch(/\.trust-faq-layout\s*\{[^}]*display:\s*block/)
+    expect(globalsCss).toMatch(/\.trust-faq-heading\s*\{[^}]*text-align:\s*center/)
+    expect(globalsCss).toMatch(/\.trust-faq-list\s*\{[^}]*width:\s*min\(100%,\s*900px\);[^}]*margin-inline:\s*auto;[^}]*display:\s*grid/)
+    expect(globalsCss).toMatch(/\.trust-faq-list details\s*\{[^}]*background:\s*var\(--color-night-raised\);[^}]*border-radius:\s*8px/)
+    expect(globalsCss).toMatch(/\.trust-faq-list summary\s*\{[^}]*min-height:\s*(?:6[4-9]|7[0-2])px/)
+    expect(globalsCss).toMatch(/\.trust-faq-list details\[open\] summary svg\s*\{[^}]*transform:\s*rotate\(180deg\)/)
+    expect(globalsCss).toMatch(/\.trust-faq-list details\[open\] \.trust-faq-answer\s*\{[^}]*animation:\s*faq-answer-in\s+(?:1[89]\d|2\d\d|300)ms/)
+  })
+
+  it('removes spatial collection and FAQ motion under reduced motion', () => {
+    expect(reducedMotionCss).toMatch(/\.collection-world-panel\[data-reveal\],[\s\S]*\.collection-world-panel\[data-reveal\]:not\(\[data-reveal='on'\]\)\s*\{[^}]*clip-path:\s*none !important;[^}]*transform:\s*none !important/)
+    expect(reducedMotionCss).toMatch(/\.collection-world-media img,[\s\S]*\.collection-world-copy svg,[\s\S]*\.trust-faq-list summary svg,[\s\S]*\.trust-faq-answer\s*\{[^}]*transform:\s*none !important;[^}]*animation:\s*none !important/)
+    expect(reducedMotionCss).toMatch(/\.collection-world-panel,[\s\S]*\.trust-faq-list details\s*\{[^}]*transition-property:\s*background-color, border-color, color, opacity;[^}]*transition-duration:\s*120ms/)
+  })
+})
+
+describe('Task 5 deterministic browser matrix', () => {
+  const playwrightConfig = readFileSync(resolve(process.cwd(), 'playwright.config.ts'), 'utf8')
+  const storeE2e = readFileSync(resolve(process.cwd(), 'e2e/store.spec.ts'), 'utf8')
+
+  it('defines configured responsive projects and a separate unconfigured desktop project', () => {
+    for (const projectName of ['desktop-configured', 'tablet-configured', 'mobile-configured', 'desktop-unconfigured']) {
+      expect(playwrightConfig).toContain(`name: '${projectName}'`)
+    }
+    expect(playwrightConfig.match(/webServer:\s*\[/)).not.toBeNull()
+    expect(playwrightConfig).toContain('http://127.0.0.1:3197')
+    expect(playwrightConfig).toContain('http://127.0.0.1:3198')
+    expect(playwrightConfig).toMatch(/NEXT_PUBLIC_SUPABASE_URL:\s*''/)
+    expect(playwrightConfig).toMatch(/NEXT_PUBLIC_SUPABASE_ANON_KEY:\s*''/)
+    expect(playwrightConfig).toMatch(/NEXT_PUBLIC_BUSINESS_ID:\s*''/)
+    expect(playwrightConfig).toMatch(/SUPABASE_SERVICE_ROLE_KEY:\s*''/)
+    expect(playwrightConfig).toMatch(/FYTHER_E2E_COMMERCE_FIXTURE:\s*'live'/)
+    expect(playwrightConfig).toMatch(/FYTHER_E2E_COMMERCE_FIXTURE:\s*''/)
+    expect(playwrightConfig).not.toContain('-live')
+    expect(playwrightConfig).toMatch(/workers:\s*1/)
+    expect(playwrightConfig).toMatch(/retries:\s*0/)
+  })
+
+  it('derives browser expectations from project mode instead of rendered locator counts', () => {
+    expect(storeE2e).toContain("startsWith('desktop')")
+    expect(storeE2e).toContain("endsWith('-configured')")
+    expect(storeE2e).toContain("endsWith('-unconfigured')")
+    expect(storeE2e).toContain('projectMode')
+    expect(storeE2e).not.toContain("endsWith('-live')")
+    expect(storeE2e).not.toMatch(/if\s*\(await [^\n]*\.count\(\)/)
+  })
+
+  it('runs the isolated Next server directly and validates temp cleanup ownership', () => {
+    expect(playwrightConfig).toContain("const unconfiguredRootPrefix = 'fyther-store-e2e-unconfigured-'")
+    expect(playwrightConfig).toContain('resolvedTarget.startsWith(resolvedTempRoot + sep)')
+    expect(playwrightConfig).toContain('basename(resolvedTarget).startsWith(targetPrefix)')
+    expect(playwrightConfig).toContain("resolve(resolvedTarget, 'node_modules', 'next', 'dist', 'bin', 'next')")
+    expect(playwrightConfig).toMatch(/spawn\(process\.execPath,\s*\[nextCli, 'start'/)
+    expect(playwrightConfig).not.toContain("spawn('npm run start")
   })
 })

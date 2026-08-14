@@ -14,12 +14,13 @@ export default function Footer() {
         <div className="footer-links" aria-label="Enlaces del pie de página">
           <div>
             <strong>Tienda</strong>
-            <Link href="/catalogo">Colección</Link>
+            <Link href="/catalogo?categoria=Ropa">Ropa</Link>
+            <Link href="/catalogo?categoria=Accesorios">Accesorios</Link>
             <Link href="/carrito">Carrito</Link>
           </div>
           <div>
             <strong>Información</strong>
-            <Link href="/envios-cambios">Envíos y cambios</Link>
+            <Link href="/envios-apartados">Envíos y apartados</Link>
             <Link href="/privacidad">Privacidad</Link>
             <Link href="/terminos">Términos</Link>
           </div>

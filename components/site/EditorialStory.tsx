@@ -1,6 +1,4 @@
 import Image from 'next/image'
-import Link from 'next/link'
-import { ArrowUpRight } from 'lucide-react'
 
 export default function EditorialStory() {
   return (
@@ -13,10 +11,9 @@ export default function EditorialStory() {
           sizes="(max-width: 767px) calc(100vw - 32px), 100vw"
         />
         <div className="editorial-story-copy">
-          <p className="section-label">A TU RITMO</p>
-          <h2 id="editorial-story-title" className="display">Sentirte bien también cuenta.</h2>
-          <p>Prendas para acompañar tu rutina sin dictarla.</p>
-          <Link className="text-link" href="/catalogo">Ver la colección <ArrowUpRight aria-hidden="true" size={18} /></Link>
+          <p className="section-label">A TU MANERA</p>
+          <h2 id="editorial-story-title" className="display">Tu rutina también vive en los detalles.</h2>
+          <p>Lo que eliges para moverte puede sentirse cercano, útil y muy tuyo.</p>
         </div>
       </div>
     </section>

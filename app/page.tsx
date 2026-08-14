@@ -1,14 +1,13 @@
 import { commerce, commerceMode } from '@/lib/commerce'
 import HeroMedia from '@/components/site/HeroMedia'
 import MotionTrack from '@/components/site/MotionTrack'
-import CategoryRail from '@/components/site/CategoryRail'
-import ProductGrid from '@/components/commerce/ProductGrid'
+import CollectionWorlds from '@/components/site/CollectionWorlds'
+import CollectionSection from '@/components/site/CollectionSection'
 import CommerceState from '@/components/commerce/CommerceState'
 import EditorialStory from '@/components/site/EditorialStory'
 import TrustFaq from '@/components/site/TrustFaq'
-import FinalGlow from '@/components/site/FinalGlow'
 import type { CommerceProduct } from '@/lib/commerce/types'
-import { selectHomeProducts } from '@/lib/home-selection'
+import { selectAccessoryTags, splitProductsByWorld } from '@/lib/home-selection'
 
 export const revalidate = 60
 
@@ -20,28 +19,49 @@ export default async function HomePage() {
   } catch {
     failed = true
   }
-  const categories = [...new Set(products.map((product) => product.category).filter((value): value is string => Boolean(value)))]
-  const homeProducts = selectHomeProducts(products)
+  const { ropa, accesorios } = splitProductsByWorld(products)
+  const accessoryTags = selectAccessoryTags(accesorios)
+  const commerceUnavailable = commerceMode === 'unconfigured' || failed
 
   return (
     <>
       <HeroMedia />
       <MotionTrack />
-      {commerceMode === 'live' && !failed && products.length > 0 && categories.length > 0 && (
-        <CategoryRail categories={categories} />
-      )}
-      {commerceMode === 'unconfigured' ? (
-        <CommerceState state="unconfigured" />
-      ) : failed ? (
-        <CommerceState state="error" />
-      ) : products.length === 0 ? (
-        <CommerceState state="empty" />
+      <CollectionWorlds
+        ropaAvailable={commerceUnavailable ? null : ropa.length > 0}
+        accesoriosAvailable={commerceUnavailable ? null : accesorios.length > 0}
+        accessoryTags={commerceUnavailable ? [] : accessoryTags}
+      />
+      {commerceUnavailable ? (
+        <div id="ropa">
+          <div id="accesorios">
+            <CommerceState state={commerceMode === 'unconfigured' ? 'unconfigured' : 'error'} />
+          </div>
+        </div>
       ) : (
-        <ProductGrid products={homeProducts} />
+        <CollectionSection
+          id="ropa"
+          eyebrow="ROPA"
+          title="Ropa para sentirte tú."
+          description="Prendas elegidas para entrenar, caminar y compartir tu ritmo."
+          products={ropa}
+          emptyTitle="Estamos preparando esta selección."
+          emptyCopy="Muy pronto encontrarás prendas elegidas para moverte a tu manera."
+        />
       )}
       <EditorialStory />
+      {!commerceUnavailable && (
+        <CollectionSection
+          id="accesorios"
+          eyebrow="SELECCIÓN ACTUAL"
+          title="Lo que se está llevando."
+          description="Accesorios originales y útiles para organizar, celebrar y acompañar cada meta."
+          products={accesorios}
+          emptyTitle="Estamos preparando los detalles."
+          emptyCopy="La selección de accesorios estará disponible pronto."
+        />
+      )}
       <TrustFaq />
-      <FinalGlow />
     </>
   )
 }

@@ -4,6 +4,7 @@ import { act, render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import Header from '@/components/Header'
+import Footer from '@/components/Footer'
 
 vi.mock('@/context/CartContext', () => ({
   useCart: () => ({ count: 2 }),
@@ -84,9 +85,11 @@ describe('Header', () => {
 
     expect(homeLink.querySelector('img')).toHaveAttribute('alt', '')
     expect(screen.getByRole('navigation', { name: /principal/i })).toBeInTheDocument()
-    expect(screen.getByRole('link', { name: 'Descubrir' })).toHaveAttribute('href', '/#descubrir')
-    expect(screen.getByRole('link', { name: 'Colección' })).toHaveAttribute('href', '/catalogo')
-    expect(screen.getByRole('link', { name: 'Nosotras' })).toHaveAttribute('href', '/#fyther')
+    expect(screen.getByRole('link', { name: 'Ropa' })).toHaveAttribute('href', '/catalogo?categoria=Ropa')
+    expect(screen.getByRole('link', { name: 'Accesorios' })).toHaveAttribute('href', '/catalogo?categoria=Accesorios')
+    expect(screen.queryByRole('link', { name: 'Descubrir' })).not.toBeInTheDocument()
+    expect(screen.queryByRole('link', { name: 'Colección' })).not.toBeInTheDocument()
+    expect(screen.queryByRole('link', { name: 'Nosotras' })).not.toBeInTheDocument()
     expect(screen.getByRole('link', { name: /carrito, 2 productos/i })).toBeInTheDocument()
     expect(screen.queryByText(/modo demo/i)).not.toBeInTheDocument()
   })
@@ -121,7 +124,7 @@ describe('Header', () => {
     await user.click(screen.getByRole('button', { name: 'Abrir menú' }))
     await user.tab()
 
-    expect(screen.getByRole('link', { name: 'Descubrir' })).toHaveFocus()
+    expect(screen.getByRole('link', { name: 'Ropa' })).toHaveFocus()
   })
 
   it('cleans the body lock when closed and unmounted', async () => {
@@ -152,5 +155,16 @@ describe('Header', () => {
       'false',
     )
     expect(document.body).not.toHaveAttribute('data-menu-open')
+  })
+
+  it('exposes the two collection destinations before Carrito in the footer store links', () => {
+    render(<Footer />)
+
+    const storeLinks = screen.getByText('Tienda').parentElement?.querySelectorAll('a') ?? []
+    expect(Array.from(storeLinks).map((link) => [link.textContent, link.getAttribute('href')])).toEqual([
+      ['Ropa', '/catalogo?categoria=Ropa'],
+      ['Accesorios', '/catalogo?categoria=Accesorios'],
+      ['Carrito', '/carrito'],
+    ])
   })
 })
