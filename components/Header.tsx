@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import Link from 'next/link'
 import { Menu, ShoppingBag, X } from 'lucide-react'
 import { useCart } from '@/context/CartContext'
@@ -9,7 +9,31 @@ import BrandMark from '@/components/BrandMark'
 export default function Header() {
   const { count } = useCart()
   const [open, setOpen] = useState(false)
+  const [scrolled, setScrolled] = useState(false)
+  const menuButtonRef = useRef<HTMLButtonElement>(null)
   const countLabel = `${count} ${count === 1 ? 'producto' : 'productos'}`
+
+  useEffect(() => {
+    let frameId: number | null = null
+
+    const updateScrolledState = () => {
+      frameId = null
+      setScrolled(window.scrollY > 40)
+    }
+    const queueScrolledState = () => {
+      if (frameId === null) {
+        frameId = window.requestAnimationFrame(updateScrolledState)
+      }
+    }
+
+    setScrolled(window.scrollY > 40)
+    window.addEventListener('scroll', queueScrolledState, { passive: true })
+
+    return () => {
+      window.removeEventListener('scroll', queueScrolledState)
+      if (frameId !== null) window.cancelAnimationFrame(frameId)
+    }
+  }, [])
 
   useEffect(() => {
     if (!open) {
@@ -18,7 +42,10 @@ export default function Header() {
     }
 
     const closeOnEscape = (event: KeyboardEvent) => {
-      if (event.key === 'Escape') setOpen(false)
+      if (event.key === 'Escape') {
+        setOpen(false)
+        menuButtonRef.current?.focus()
+      }
     }
     const desktopMedia = window.matchMedia('(min-width: 769px)')
     const closeOnDesktop = (event: MediaQueryListEvent) => {
@@ -37,13 +64,14 @@ export default function Header() {
   }, [open])
 
   return (
-    <header className="site-header">
+    <header className={`site-header${scrolled ? ' is-scrolled' : ''}`}>
       <div className="header-inner">
         <Link href="/" className="wordmark" aria-label="Fyther Store, inicio">
           <BrandMark decorative priority />
         </Link>
 
         <button
+          ref={menuButtonRef}
           type="button"
           className="icon-button menu-button"
           aria-label={open ? 'Cerrar menú' : 'Abrir menú'}
@@ -61,6 +89,7 @@ export default function Header() {
         >
           <Link href="/catalogo?categoria=Ropa" onClick={() => setOpen(false)}>Ropa</Link>
           <Link href="/catalogo?categoria=Accesorios" onClick={() => setOpen(false)}>Accesorios</Link>
+          <Link href="/envios-apartados" onClick={() => setOpen(false)}>Seguir pedido</Link>
         </nav>
 
         <Link
