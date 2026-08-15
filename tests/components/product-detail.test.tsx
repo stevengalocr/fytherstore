@@ -17,6 +17,7 @@ const product: CommerceProduct = {
   id: 'product-1',
   slug: 'legging-flujo',
   name: 'Legging Flujo',
+  brand: null,
   shortDescription: 'Suave, versátil y lista para acompañarte.',
   description: 'Una prenda cómoda para moverte a tu manera.',
   price: { amount: 28900, currency: 'CRC' },

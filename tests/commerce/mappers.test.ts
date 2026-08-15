@@ -28,6 +28,31 @@ describe('BilBildin product mapping', () => {
     expect(mapBilBildinProduct(row)).not.toHaveProperty('cost_price')
   })
 
+  it('trims a string brand from product attributes', () => {
+    expect(mapBilBildinProduct({
+      ...row,
+      attributes: { brand: '  Nike  ' },
+    }).brand).toBe('Nike')
+  })
+
+  it('maps an absent brand to null without inferring it from the product name', () => {
+    expect(mapBilBildinProduct({
+      ...row,
+      name: 'Nike Motion Tee',
+      attributes: {},
+    }).brand).toBeNull()
+  })
+
+  it.each([
+    ['numeric', { brand: 23 }],
+    ['whitespace-only', { brand: '   ' }],
+  ])('maps an %s brand to null', (_label, attributes) => {
+    expect(mapBilBildinProduct({
+      ...row,
+      attributes,
+    }).brand).toBeNull()
+  })
+
   it('adds the price modifier to a variant price', () => {
     const product = mapBilBildinProduct({
       ...row,

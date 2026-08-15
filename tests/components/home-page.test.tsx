@@ -23,6 +23,7 @@ function product(id: string, name: string, category: string, tags: string[] = []
     id,
     slug: id,
     name,
+    brand: null,
     shortDescription: null,
     description: null,
     price: { amount: 15000, currency: 'CRC' },

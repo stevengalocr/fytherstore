@@ -4,7 +4,7 @@ import ProductCard from '@/components/ProductCard'
 import type { CommerceProduct } from '@/lib/commerce/types'
 
 const product: CommerceProduct = {
-  id: 'product-1', slug: 'motion-tee', name: 'Motion Tee', shortDescription: 'Technical tee',
+  id: 'product-1', slug: 'motion-tee', name: 'Motion Tee', brand: null, shortDescription: 'Technical tee',
   description: null, price: { amount: 18900, currency: 'CRC' }, compareAtPrice: null,
   images: [], availability: 'out_of_stock', stockQuantity: 0, variants: [], category: 'Ropa',
   tags: [], featured: false,

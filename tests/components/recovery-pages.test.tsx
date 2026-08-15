@@ -10,6 +10,7 @@ const catalogProduct: CommerceProduct = {
   id: 'band-1',
   slug: 'banda-fuerza',
   name: 'Banda Fuerza',
+  brand: null,
   shortDescription: 'Resistencia para entrenar',
   description: null,
   price: { amount: 9900, currency: 'CRC' },

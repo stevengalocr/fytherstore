@@ -12,6 +12,7 @@ function product(id: string, featured = false, category: string | null = null): 
     id,
     slug: id,
     name: id,
+    brand: null,
     shortDescription: null,
     description: null,
     price: { amount: 10000, currency: 'CRC' },
