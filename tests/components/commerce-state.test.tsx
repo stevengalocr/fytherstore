@@ -25,7 +25,11 @@ describe('CommerceState', () => {
     const { container } = render(<CommerceState state="unconfigured" />)
 
     expect(screen.getByRole('heading', { name: 'Estamos preparando la colección.' })).toBeInTheDocument()
-    expect(container.querySelector('[data-variant="alternate"] img')).toHaveAttribute('src', expect.stringContaining('logo2'))
+    expect(
+      decodeURIComponent(
+        container.querySelector('[data-variant="alternate"] img')?.getAttribute('src') ?? '',
+      ),
+    ).toContain('/brand/fyther-mark-footer.webp')
     expect(container.querySelector('[data-variant="alternate"] img')).toHaveAttribute('sizes', '260px')
     expect(screen.queryByRole('article')).not.toBeInTheDocument()
     expect(container).not.toHaveTextContent(/key|endpoint|supabase|bilbildin|demo|simulaci/i)
