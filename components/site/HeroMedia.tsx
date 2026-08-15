@@ -1,8 +1,9 @@
 'use client'
 
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useRef, useState, type CSSProperties } from 'react'
 import Image from 'next/image'
 import Link from 'next/link'
+import { ArrowDown } from 'lucide-react'
 import { getHeroFrame } from '@/lib/hero-scroll'
 
 type NavigatorConnection = {
@@ -12,11 +13,15 @@ type NavigatorConnection = {
 }
 
 export default function HeroMedia() {
-  const sectionRef = useRef<HTMLElement>(null)
+  const journeyRef = useRef<HTMLElement>(null)
   const videoRef = useRef<HTMLVideoElement>(null)
+  const categoryCueRef = useRef<HTMLAnchorElement>(null)
   const frameRef = useRef<number | null>(null)
   const previousProgressRef = useRef(0)
   const [canScrubVideo, setCanScrubVideo] = useState<boolean | null>(null)
+  const [videoFailed, setVideoFailed] = useState(false)
+  const shouldScrubVideo = canScrubVideo === true && !videoFailed
+  const isStaticHero = canScrubVideo === false || videoFailed
 
   useEffect(() => {
     const motionPreference = window.matchMedia?.('(prefers-reduced-motion: reduce)')
@@ -44,32 +49,33 @@ export default function HeroMedia() {
   }, [])
 
   useEffect(() => {
-    const section = sectionRef.current
+    const journey = journeyRef.current
     const video = videoRef.current
-    if (!section || !video || !canScrubVideo) return
+    if (!journey || !video || !shouldScrubVideo) return
 
     video.pause()
 
     const updateFrame = () => {
       frameRef.current = null
-      const start = section.getBoundingClientRect().top + window.scrollY
+      const start = journey.getBoundingClientRect().top + window.scrollY
       const frame = getHeroFrame({
         scrollY: window.scrollY,
         start,
-        travel: section.offsetHeight - window.innerHeight,
+        travel: journey.offsetHeight - window.innerHeight,
         duration: video.duration,
         previousProgress: previousProgressRef.current,
       })
 
       previousProgressRef.current = frame.progress
       video.currentTime = frame.currentTime
-      section.style.setProperty('--hero-progress', String(frame.progress))
-      section.style.setProperty('--hero-media-scale', String(1.025 - frame.progress * 0.025))
-      section.style.setProperty('--hero-media-shift', `${frame.progress * -12}px`)
-      section.style.setProperty('--hero-copy-shift', `${frame.progress * -10}px`)
-      section.style.setProperty('--hero-copy-opacity', String(1 - frame.progress * 0.18))
-      section.style.setProperty('--hero-scrim-opacity', String(0.72 + frame.progress * 0.28))
-      section.dataset.heroComplete = String(frame.complete)
+      journey.style.setProperty('--hero-progress', String(frame.progress))
+      journey.style.setProperty('--hero-media-scale', String(1.025 - frame.progress * 0.025))
+      journey.style.setProperty('--hero-media-shift', `${frame.progress * -12}px`)
+      journey.style.setProperty('--hero-copy-shift', `${frame.progress * -24}px`)
+      journey.style.setProperty('--hero-copy-opacity', String(1 - frame.progress * 0.72))
+      journey.style.setProperty('--hero-scrim-opacity', String(0.72 + frame.progress * 0.28))
+      journey.dataset.heroComplete = String(frame.complete)
+      if (categoryCueRef.current) categoryCueRef.current.tabIndex = frame.complete ? 0 : -1
     }
 
     const scheduleFrame = () => {
@@ -92,18 +98,35 @@ export default function HeroMedia() {
       }
       video.pause()
     }
-  }, [canScrubVideo])
+  }, [shouldScrubVideo])
+
+  useEffect(() => {
+    const journey = journeyRef.current
+    if (!journey || !isStaticHero) return
+
+    previousProgressRef.current = 0
+    journey.style.setProperty('--hero-progress', '0')
+    journey.style.setProperty('--hero-media-scale', '1')
+    journey.style.setProperty('--hero-media-shift', '0px')
+    journey.style.setProperty('--hero-copy-shift', '0px')
+    journey.style.setProperty('--hero-copy-opacity', '1')
+    journey.style.setProperty('--hero-scrim-opacity', '0.72')
+    journey.dataset.heroComplete = 'false'
+    if (categoryCueRef.current) categoryCueRef.current.tabIndex = -1
+  }, [isStaticHero])
 
   return (
     <section
-      ref={sectionRef}
+      ref={journeyRef}
       id="descubrir"
-      className="hero-section"
+      className={`hero-journey${isStaticHero ? ' hero-journey-static' : ''}`}
       aria-labelledby="hero-title"
       data-scene="hero"
       data-hero-complete="false"
+      data-hero-static={String(isStaticHero)}
+      style={{ '--hero-progress': '0' } as CSSProperties}
     >
-      <div className="hero-scene">
+      <div className="hero-section hero-scene">
         <div className="hero-media">
           <picture className="hero-poster-frame">
             <source className="hero-poster-mobile" media="(max-width: 767px)" srcSet="/editorial/hero-poster-mobile.webp" />
@@ -116,7 +139,7 @@ export default function HeroMedia() {
               className="hero-poster hero-poster-desktop"
             />
           </picture>
-          {canScrubVideo && (
+          {shouldScrubVideo && (
             <video
               ref={videoRef}
               muted
@@ -124,13 +147,14 @@ export default function HeroMedia() {
               preload="metadata"
               poster="/editorial/hero-poster-desktop.webp"
               aria-hidden="true"
+              onError={() => setVideoFailed(true)}
             >
               <source src="/video-presentacion.mp4" type="video/mp4" />
             </video>
           )}
         </div>
         <div className="hero-scrim" aria-hidden="true" />
-        <div className="hero-content container" data-reveal>
+        <div className="hero-content container">
           <p>PARA MOVERTE, COMPARTIR Y SENTIRTE BIEN</p>
           <h1 id="hero-title" className="display">Muévete a tu manera.</h1>
           <p className="hero-description">Ropa y accesorios elegidos para moverte, compartir y sentirte bien.</p>
@@ -139,6 +163,10 @@ export default function HeroMedia() {
             <Link className="button button-secondary" href="#accesorios">Ver accesorios</Link>
           </div>
         </div>
+        <Link ref={categoryCueRef} className="hero-category-cue" href="#ropa" tabIndex={-1}>
+          Continuar a las categorías
+          <ArrowDown aria-hidden="true" size={16} strokeWidth={1.8} />
+        </Link>
       </div>
     </section>
   )

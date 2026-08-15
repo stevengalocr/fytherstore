@@ -102,9 +102,14 @@ describe('HeroMedia', () => {
     installAnimationFrame()
     const { container } = render(<HeroMedia />)
 
-    const hero = container.querySelector('.hero-section')
-    expect(hero).toHaveAttribute('id', 'descubrir')
-    expect(hero).toHaveAttribute('data-scene', 'hero')
+    const journey = container.querySelector<HTMLElement>('.hero-journey')
+    const scene = container.querySelector('.hero-section')
+    expect(journey).toHaveAttribute('id', 'descubrir')
+    expect(journey).toHaveAttribute('data-scene', 'hero')
+    expect(journey).toHaveAttribute('data-hero-complete', 'false')
+    expect(journey?.style.getPropertyValue('--hero-progress')).toBe('0')
+    expect(scene).toHaveClass('hero-section')
+    expect(container.querySelector('.hero-content')).not.toHaveAttribute('data-reveal')
     expect(screen.getByRole('heading', { name: 'Muévete a tu manera.' })).toBeInTheDocument()
     expect(screen.getByText('Ropa y accesorios elegidos para moverte, compartir y sentirte bien.')).toBeInTheDocument()
     expect(screen.getByRole('link', { name: 'Descubrir ropa' })).toHaveAttribute('href', '#ropa')
@@ -112,6 +117,7 @@ describe('HeroMedia', () => {
     expect(screen.getByRole('img', { name: 'Fyther Store, entrada a la colección' })).toBeInTheDocument()
     expect(container.querySelector('.hero-poster-desktop')).toHaveAttribute('src', expect.stringContaining('hero-poster-desktop.webp'))
     expect(container.querySelector('.hero-poster-mobile')).toHaveAttribute('srcset', expect.stringContaining('hero-poster-mobile.webp'))
+    expect(screen.getByRole('link', { name: 'Continuar a las categorías' })).toHaveAttribute('href', '#ropa')
     expect(screen.queryByText(/move different/i)).not.toBeInTheDocument()
   })
 
@@ -132,16 +138,16 @@ describe('HeroMedia', () => {
   })
 
   it('uses a short sticky journey on desktop and mobile', () => {
+    const heroJourneyCss = globalsCss.match(/\.hero-journey\s*\{([^}]*)\}/)?.[1] ?? ''
     const heroSectionCss = globalsCss.match(/\.hero-section\s*\{([^}]*)\}/)?.[1] ?? ''
-    const heroSceneCss = globalsCss.match(/\.hero-scene\s*\{([^}]*)\}/)?.[1] ?? ''
     const currentRailCss = globalsCss.match(/\.current-rail\s*\{([^}]*)\}/)?.[1] ?? ''
     const mobileCss = globalsCss.match(/@media \(max-width: 767px\)\s*\{([\s\S]*?)\n\}/)?.[1] ?? ''
 
-    expect(heroSectionCss).toContain('min-height: 150svh')
-    expect(heroSceneCss).toContain('position: sticky')
-    expect(heroSceneCss).toContain('height: 100svh')
-    expect(mobileCss).toMatch(/\.hero-section\s*\{[^}]*min-height:\s*120svh/)
-    expect(mobileCss).toMatch(/\.hero-scene\s*\{[^}]*height:\s*84svh/)
+    expect(heroJourneyCss).toContain('min-height: 150svh')
+    expect(heroSectionCss).toContain('position: sticky')
+    expect(heroSectionCss).toContain('height: 100svh')
+    expect(mobileCss).toMatch(/\.hero-journey\s*\{[^}]*min-height:\s*120svh/)
+    expect(mobileCss).toMatch(/\.hero-section\s*\{[^}]*height:\s*84svh/)
     expect(currentRailCss).toContain('min-height: 112px')
     expect(currentRailCss).toContain('justify-content: space-between')
     expect(currentRailCss).toMatch(/padding:\s*1\.15rem/)
@@ -177,6 +183,34 @@ describe('HeroMedia', () => {
     const { container } = render(<HeroMedia />)
 
     expect(container.querySelector('video')).not.toBeInTheDocument()
+    expect(container.querySelector('.hero-journey')).toHaveClass('hero-journey-static')
+    expect(container.querySelector('.hero-journey')).toHaveAttribute('data-hero-static', 'true')
+    expect(screen.getByRole('img', { name: 'Fyther Store, entrada a la colección' })).toBeInTheDocument()
+  })
+
+  it('collapses the journey when data saver is enabled during the session', () => {
+    const preferences = installPreferenceEnvironment()
+    installAnimationFrame()
+    const { container } = render(<HeroMedia />)
+
+    expect(container.querySelector('.hero-journey')).not.toHaveClass('hero-journey-static')
+    act(() => preferences.setSaveData(true))
+
+    expect(container.querySelector('video')).not.toBeInTheDocument()
+    expect(container.querySelector('.hero-journey')).toHaveClass('hero-journey-static')
+    expect(container.querySelector('.hero-journey')).toHaveAttribute('data-hero-static', 'true')
+  })
+
+  it('falls back to the poster and collapses the journey after a video error', () => {
+    installPreferenceEnvironment()
+    installAnimationFrame()
+    const { container } = render(<HeroMedia />)
+    const video = container.querySelector('video')!
+
+    act(() => video.dispatchEvent(new Event('error')))
+
+    expect(container.querySelector('video')).not.toBeInTheDocument()
+    expect(container.querySelector('.hero-journey')).toHaveClass('hero-journey-static')
     expect(screen.getByRole('img', { name: 'Fyther Store, entrada a la colección' })).toBeInTheDocument()
   })
 
@@ -184,7 +218,8 @@ describe('HeroMedia', () => {
     installPreferenceEnvironment()
     const animation = installAnimationFrame()
     const { container } = render(<HeroMedia />)
-    const hero = container.querySelector<HTMLElement>('.hero-section')!
+    const hero = container.querySelector<HTMLElement>('.hero-journey')!
+    const categoryCue = screen.getByRole('link', { name: 'Continuar a las categorías' })
     const video = container.querySelector('video')!
     Object.defineProperty(hero, 'offsetHeight', { configurable: true, value: 1500 })
     Object.defineProperty(window, 'innerHeight', { configurable: true, value: 500 })
@@ -219,7 +254,10 @@ describe('HeroMedia', () => {
     })
     expect(video.currentTime).toBeCloseTo(3.233, 3)
     expect(hero.style.getPropertyValue('--hero-progress')).toBe('1')
+    expect(hero.style.getPropertyValue('--hero-copy-opacity')).toBe('0.28')
+    expect(hero.style.getPropertyValue('--hero-copy-shift')).toBe('-24px')
     expect(hero).toHaveAttribute('data-hero-complete', 'true')
+    expect(categoryCue).toHaveAttribute('tabindex', '0')
 
     act(() => {
       Object.defineProperty(window, 'scrollY', { configurable: true, writable: true, value: 400 })
@@ -252,6 +290,21 @@ describe('HeroMedia', () => {
     expect(removeWindowListener).toHaveBeenCalledWith('resize', expect.any(Function))
     expect(preferences.mediaQuery.removeEventListener).toHaveBeenCalledWith('change', expect.any(Function))
     expect(preferences.connection.removeEventListener).toHaveBeenCalledWith('change', expect.any(Function))
+  })
+
+  it('removes sticky travel for reduced motion and static runtime fallbacks', () => {
+    const reducedMotionCss = globalsCss.match(/@media \(prefers-reduced-motion: reduce\)\s*\{([\s\S]*)\}\s*$/)?.[1] ?? ''
+
+    expect(reducedMotionCss).toMatch(/\.hero-journey\s*\{[^}]*min-height:\s*auto/)
+    expect(reducedMotionCss).toMatch(/\.hero-section\s*\{[^}]*position:\s*relative[^}]*height:\s*84svh/)
+    expect(globalsCss).toMatch(/\.hero-journey-static\s*\{[^}]*min-height:\s*auto/)
+    expect(globalsCss).toMatch(/\.hero-journey-static\s+\.hero-section\s*\{[^}]*position:\s*relative[^}]*height:\s*84svh/)
+  })
+
+  it('lets hero copy withdraw and reveals the category cue only at completion', () => {
+    expect(globalsCss).not.toMatch(/\.hero-content[^\n{]*\{[^}]*\}[\s\S]*?\.hero-content[^\n{]*data-reveal/)
+    expect(globalsCss).toMatch(/\.hero-category-cue\s*\{[^}]*opacity:\s*0[^}]*translateY\(12px\)/)
+    expect(globalsCss).toMatch(/\.hero-journey\[data-hero-complete='true'\]\s+\.hero-category-cue\s*\{[^}]*opacity:\s*1[^}]*translateY\(0\)/)
   })
 
   it('provides the Fyther brand-section anchor', () => {
