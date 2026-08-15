@@ -35,6 +35,13 @@ describe('V0.2 foundation', () => {
     expect(rootCss).toContain('--color-mist: #a8b4b8')
   })
 
+  it('defines the soft performance shape and motion tokens in :root', () => {
+    expect(rootCss).toContain('--radius-editorial: 24px')
+    expect(rootCss).toContain('--radius-product: 14px')
+    expect(rootCss).toContain('--radius-control: 999px')
+    expect(rootCss).toContain('--motion-enter: 360ms')
+  })
+
   it('removes the retired V0.1 palette', () => {
     expect(globalsCss).not.toMatch(/#b8ff3d/i)
     expect(globalsCss).not.toMatch(/--(?:volt|bone|obsidian)\s*:/i)
@@ -123,7 +130,7 @@ describe('Task 5 flagship home styling', () => {
     expect(globalsCss).toMatch(/\.trust-faq-layout\s*\{[^}]*display:\s*block/)
     expect(globalsCss).toMatch(/\.trust-faq-heading\s*\{[^}]*text-align:\s*center/)
     expect(globalsCss).toMatch(/\.trust-faq-list\s*\{[^}]*width:\s*min\(100%,\s*900px\);[^}]*margin-inline:\s*auto;[^}]*display:\s*grid/)
-    expect(globalsCss).toMatch(/\.trust-faq-list details\s*\{[^}]*background:\s*var\(--color-night-raised\);[^}]*border-radius:\s*8px/)
+    expect(globalsCss).toMatch(/\.trust-faq-list details\s*\{[^}]*background:\s*var\(--color-night-raised\);[^}]*border-radius:\s*var\(--radius-panel\)/)
     expect(globalsCss).toMatch(/\.trust-faq-list summary\s*\{[^}]*min-height:\s*(?:6[4-9]|7[0-2])px/)
     expect(globalsCss).toMatch(/\.trust-faq-list details\[open\] summary svg\s*\{[^}]*transform:\s*rotate\(180deg\)/)
     expect(globalsCss).toMatch(/\.trust-faq-list details\[open\] \.trust-faq-answer\s*\{[^}]*animation:\s*faq-answer-in\s+(?:1[89]\d|2\d\d|300)ms/)

@@ -21,7 +21,7 @@ export const metadata: Metadata = {
     description: 'Accesorios originales y nuevas selecciones en camino para acompañar tu movimiento.',
     locale: 'es_CR',
     type: 'website',
-    images: [{ url: '/home.jpeg', width: 1024, height: 572, alt: 'Boutique nocturna de Fyther Store' }],
+    images: [{ url: '/editorial/hero-poster-desktop.webp', width: 2400, height: 1350, alt: 'Fyther Store, movimiento y ropa deportiva femenina' }],
   },
 }
 

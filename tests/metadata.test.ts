@@ -10,4 +10,11 @@ describe('storefront metadata source', () => {
     expect(layoutSource.match(new RegExp(truthfulDescription, 'g'))).toHaveLength(2)
     expect(layoutSource).not.toContain('Ropa activa seleccionada')
   })
+
+  it('uses the desktop editorial poster for OpenGraph metadata', () => {
+    expect(layoutSource).toContain("url: '/editorial/hero-poster-desktop.webp'")
+    expect(layoutSource).toContain('width: 2400')
+    expect(layoutSource).toContain('height: 1350')
+    expect(layoutSource).toContain("alt: 'Fyther Store, movimiento y ropa deportiva femenina'")
+  })
 })
