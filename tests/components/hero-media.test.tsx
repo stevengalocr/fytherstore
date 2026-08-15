@@ -8,27 +8,28 @@ import EditorialStory from '@/components/site/EditorialStory'
 
 const globalsCss = readFileSync(resolve(process.cwd(), 'app/globals.css'), 'utf8')
 
-type VideoObserverHarness = {
-  callback: IntersectionObserverCallback
-  disconnect: ReturnType<typeof vi.fn>
-  observe: ReturnType<typeof vi.fn>
-}
-
-function installVideoObserver() {
-  let harness: VideoObserverHarness | undefined
-  const constructor = vi.fn(function (
-    this: IntersectionObserver,
-    callback: IntersectionObserverCallback,
-  ) {
-    harness = {
-      callback,
-      disconnect: vi.fn(),
-      observe: vi.fn(),
-    }
-    return harness
+function installAnimationFrame() {
+  let nextId = 0
+  const callbacks = new Map<number, FrameRequestCallback>()
+  const request = vi.fn((callback: FrameRequestCallback) => {
+    const id = ++nextId
+    callbacks.set(id, callback)
+    return id
   })
-  vi.stubGlobal('IntersectionObserver', constructor)
-  return { constructor, get harness() { return harness } }
+  const cancel = vi.fn((id: number) => callbacks.delete(id))
+
+  vi.stubGlobal('requestAnimationFrame', request)
+  vi.stubGlobal('cancelAnimationFrame', cancel)
+
+  return {
+    cancel,
+    request,
+    flush() {
+      const queued = [...callbacks.entries()]
+      callbacks.clear()
+      queued.forEach(([, callback]) => callback(0))
+    },
+  }
 }
 
 function installPreferenceEnvironment(initialReduced = false, initialSaveData = false) {
@@ -97,6 +98,8 @@ describe('HeroMedia', () => {
   })
 
   it('presents the approved warm Spanish hero contract', () => {
+    installPreferenceEnvironment()
+    installAnimationFrame()
     const { container } = render(<HeroMedia />)
 
     const hero = container.querySelector('.hero-section')
@@ -106,7 +109,9 @@ describe('HeroMedia', () => {
     expect(screen.getByText('Ropa y accesorios elegidos para moverte, compartir y sentirte bien.')).toBeInTheDocument()
     expect(screen.getByRole('link', { name: 'Descubrir ropa' })).toHaveAttribute('href', '#ropa')
     expect(screen.getByRole('link', { name: 'Ver accesorios' })).toHaveAttribute('href', '#accesorios')
-    expect(screen.getByRole('img', { name: 'Boutique nocturna de Fyther Store' })).toBeInTheDocument()
+    expect(screen.getByRole('img', { name: 'Fyther Store, entrada a la colección' })).toBeInTheDocument()
+    expect(container.querySelector('.hero-poster-desktop')).toHaveAttribute('src', expect.stringContaining('hero-poster-desktop.webp'))
+    expect(container.querySelector('.hero-poster-mobile')).toHaveAttribute('srcset', expect.stringContaining('hero-poster-mobile.webp'))
     expect(screen.queryByText(/move different/i)).not.toBeInTheDocument()
   })
 
@@ -126,74 +131,127 @@ describe('HeroMedia', () => {
     expect(container.querySelectorAll('.current-line > span')).toHaveLength(1)
   })
 
-  it('keeps a meaningful current phrase visible below the 96svh hero', () => {
+  it('uses a short sticky journey on desktop and mobile', () => {
     const heroSectionCss = globalsCss.match(/\.hero-section\s*\{([^}]*)\}/)?.[1] ?? ''
-    const heroContentCss = globalsCss.match(/\.hero-content\s*\{([^}]*)\}/)?.[1] ?? ''
+    const heroSceneCss = globalsCss.match(/\.hero-scene\s*\{([^}]*)\}/)?.[1] ?? ''
     const currentRailCss = globalsCss.match(/\.current-rail\s*\{([^}]*)\}/)?.[1] ?? ''
+    const mobileCss = globalsCss.match(/@media \(max-width: 767px\)\s*\{([\s\S]*?)\n\}/)?.[1] ?? ''
 
-    expect(heroSectionCss).toContain('min-height: 96svh')
-    expect(heroContentCss).toContain('min-height: 96svh')
+    expect(heroSectionCss).toContain('min-height: 150svh')
+    expect(heroSceneCss).toContain('position: sticky')
+    expect(heroSceneCss).toContain('height: 100svh')
+    expect(mobileCss).toMatch(/\.hero-section\s*\{[^}]*min-height:\s*120svh/)
+    expect(mobileCss).toMatch(/\.hero-scene\s*\{[^}]*height:\s*84svh/)
     expect(currentRailCss).toContain('min-height: 112px')
     expect(currentRailCss).toContain('justify-content: space-between')
     expect(currentRailCss).toMatch(/padding:\s*1\.15rem/)
   })
 
-  it('reacts to reduced-motion changes and removes its listeners on cleanup', () => {
+  it('renders a paused scroll-controlled video without autoplay or looping', () => {
     const preferences = installPreferenceEnvironment()
-    const observer = installVideoObserver()
+    const animation = installAnimationFrame()
     const { container, unmount } = render(<HeroMedia />)
+    const video = container.querySelector('video')!
 
-    expect(container.querySelector('video')).toBeInTheDocument()
-
-    act(() => preferences.setReduced(true))
-
-    expect(container.querySelector('video')).not.toBeInTheDocument()
+    expect(video).toBeInTheDocument()
+    expect(video.muted).toBe(true)
+    expect(video).toHaveAttribute('playsinline')
+    expect(video).not.toHaveAttribute('autoplay')
+    expect(video).not.toHaveAttribute('loop')
+    expect(video).toHaveAttribute('poster', '/editorial/hero-poster-desktop.webp')
+    expect(HTMLMediaElement.prototype.play).not.toHaveBeenCalled()
     expect(HTMLMediaElement.prototype.pause).toHaveBeenCalled()
-    expect(observer.harness?.disconnect).toHaveBeenCalledOnce()
 
     unmount()
+    expect(animation.cancel).toHaveBeenCalled()
     expect(preferences.mediaQuery.removeEventListener).toHaveBeenCalledWith('change', expect.any(Function))
     expect(preferences.connection.removeEventListener).toHaveBeenCalledWith('change', expect.any(Function))
   })
 
-  it('reacts when data saver is enabled during the session', () => {
-    const preferences = installPreferenceEnvironment()
-    installVideoObserver()
+  it.each([
+    ['reduced motion', true, false],
+    ['data saver', false, true],
+  ])('uses only the static poster for %s', (_label, reduced, saveData) => {
+    installPreferenceEnvironment(reduced, saveData)
+    installAnimationFrame()
     const { container } = render(<HeroMedia />)
 
-    expect(container.querySelector('video')).toBeInTheDocument()
-
-    act(() => preferences.setSaveData(true))
-
     expect(container.querySelector('video')).not.toBeInTheDocument()
-    expect(HTMLMediaElement.prototype.pause).toHaveBeenCalled()
+    expect(screen.getByRole('img', { name: 'Fyther Store, entrada a la colección' })).toBeInTheDocument()
   })
 
-  it('plays video only while intersecting and disconnects the observer on cleanup', async () => {
+  it('coalesces scroll updates and advances to duration minus one without rewinding', () => {
     installPreferenceEnvironment()
-    const observer = installVideoObserver()
-    const { container, unmount } = render(<HeroMedia />)
+    const animation = installAnimationFrame()
+    const { container } = render(<HeroMedia />)
+    const hero = container.querySelector<HTMLElement>('.hero-section')!
     const video = container.querySelector('video')!
-
-    expect(observer.constructor).toHaveBeenCalledWith(expect.any(Function), { threshold: 0.2 })
-    expect(observer.harness?.observe).toHaveBeenCalledWith(video)
-
-    await act(async () => {
-      observer.harness?.callback([
-        { isIntersecting: true, target: video } as unknown as IntersectionObserverEntry,
-      ], observer.harness as unknown as IntersectionObserver)
-    })
-    expect(HTMLMediaElement.prototype.play).toHaveBeenCalledOnce()
+    Object.defineProperty(hero, 'offsetHeight', { configurable: true, value: 1500 })
+    Object.defineProperty(window, 'innerHeight', { configurable: true, value: 500 })
+    Object.defineProperty(window, 'scrollY', { configurable: true, writable: true, value: 0 })
+    vi.spyOn(hero, 'getBoundingClientRect').mockImplementation(() => ({
+      top: 100 - window.scrollY,
+      bottom: 1600 - window.scrollY,
+      left: 0,
+      right: 1000,
+      width: 1000,
+      height: 1500,
+      x: 0,
+      y: 100,
+      toJSON: () => ({}),
+    }))
+    Object.defineProperty(video, 'duration', { configurable: true, value: 4.233 })
 
     act(() => {
-      observer.harness?.callback([
-        { isIntersecting: false, target: video } as unknown as IntersectionObserverEntry,
-      ], observer.harness as unknown as IntersectionObserver)
+      video.dispatchEvent(new Event('loadedmetadata'))
+      window.dispatchEvent(new Event('scroll'))
+      window.dispatchEvent(new Event('scroll'))
     })
-    expect(HTMLMediaElement.prototype.pause).toHaveBeenCalledOnce()
+    expect(animation.request).toHaveBeenCalledTimes(1)
+
+    act(() => animation.flush())
+    expect(hero.style.getPropertyValue('--hero-progress')).toBe('0')
+
+    act(() => {
+      Object.defineProperty(window, 'scrollY', { configurable: true, writable: true, value: 1100 })
+      window.dispatchEvent(new Event('scroll'))
+      animation.flush()
+    })
+    expect(video.currentTime).toBeCloseTo(3.233, 3)
+    expect(hero.style.getPropertyValue('--hero-progress')).toBe('1')
+    expect(hero).toHaveAttribute('data-hero-complete', 'true')
+
+    act(() => {
+      Object.defineProperty(window, 'scrollY', { configurable: true, writable: true, value: 400 })
+      window.dispatchEvent(new Event('scroll'))
+      animation.flush()
+    })
+    expect(video.currentTime).toBeCloseTo(3.233, 3)
+    expect(hero.style.getPropertyValue('--hero-progress')).toBe('1')
+  })
+
+  it('responds to resize and preference changes, then cleans up all listeners', () => {
+    const preferences = installPreferenceEnvironment()
+    const animation = installAnimationFrame()
+    const removeWindowListener = vi.spyOn(window, 'removeEventListener')
+    const { container, unmount } = render(<HeroMedia />)
+
+    act(() => {
+      animation.flush()
+      window.dispatchEvent(new Event('resize'))
+    })
+    expect(animation.request).toHaveBeenCalledTimes(2)
+
+    act(() => {
+      preferences.setReduced(true)
+    })
+    expect(container.querySelector('video')).not.toBeInTheDocument()
 
     unmount()
-    expect(observer.harness?.disconnect).toHaveBeenCalledOnce()
+    expect(removeWindowListener).toHaveBeenCalledWith('scroll', expect.any(Function))
+    expect(removeWindowListener).toHaveBeenCalledWith('resize', expect.any(Function))
+    expect(preferences.mediaQuery.removeEventListener).toHaveBeenCalledWith('change', expect.any(Function))
+    expect(preferences.connection.removeEventListener).toHaveBeenCalledWith('change', expect.any(Function))
   })
 
   it('provides the Fyther brand-section anchor', () => {
