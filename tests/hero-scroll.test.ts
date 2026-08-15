@@ -84,20 +84,19 @@ describe('getHeroFrame', () => {
     expect(frame.currentTime).toBeGreaterThanOrEqual(0)
   })
 
-  it('stays finite and bounded when travel is nonpositive', () => {
+  it('clamps nonpositive travel to one', () => {
     for (const travel of [0, -1500]) {
-      const frame = getHeroFrame({
+      expect(getHeroFrame({
         scrollY: 10,
         start: 0,
         travel,
         duration: 8,
         previousProgress: 0,
+      })).toEqual({
+        progress: 1,
+        currentTime: 7,
+        complete: true,
       })
-
-      expect(Number.isFinite(frame.progress)).toBe(true)
-      expect(Number.isFinite(frame.currentTime)).toBe(true)
-      expect(frame.progress).toBeGreaterThanOrEqual(0)
-      expect(frame.progress).toBeLessThanOrEqual(1)
     }
   })
 })
