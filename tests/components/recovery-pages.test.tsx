@@ -5,7 +5,11 @@ import ErrorPage from '@/app/error'
 import NotFound from '@/app/not-found'
 import type { CommerceProduct } from '@/lib/commerce/types'
 
-const getProducts = vi.hoisted(() => vi.fn())
+const commerceMock = vi.hoisted(() => ({
+  getProducts: vi.fn(),
+  mode: 'live' as 'live' | 'unconfigured',
+}))
+const refresh = vi.hoisted(() => vi.fn())
 const catalogProduct: CommerceProduct = {
   id: 'band-1',
   slug: 'banda-fuerza',
@@ -25,8 +29,12 @@ const catalogProduct: CommerceProduct = {
 }
 
 vi.mock('@/lib/commerce', () => ({
-  commerce: { getProducts },
-  commerceMode: 'live',
+  commerce: { getProducts: commerceMock.getProducts },
+  get commerceMode() { return commerceMock.mode },
+}))
+
+vi.mock('next/navigation', () => ({
+  useRouter: () => ({ refresh }),
 }))
 
 vi.mock('@/app/catalogo/CatalogClient', () => ({
@@ -35,7 +43,11 @@ vi.mock('@/app/catalogo/CatalogClient', () => ({
       data-testid="catalog-client"
       data-initial-category={initialCategory}
       data-initial-query={initialQuery}
-    />
+    >
+      <header className="catalog-hero container">
+        <h1>Encuentra algo para ti.</h1>
+      </header>
+    </div>
   ),
 }))
 
@@ -43,7 +55,9 @@ import CatalogPage from '@/app/catalogo/page'
 
 describe('recovery pages', () => {
   beforeEach(() => {
-    getProducts.mockReset()
+    commerceMock.getProducts.mockReset()
+    commerceMock.mode = 'live'
+    refresh.mockClear()
   })
 
   afterEach(() => {
@@ -81,7 +95,7 @@ describe('recovery pages', () => {
   })
 
   it('uses the inclusive catalog lead when the live catalog is empty', async () => {
-    getProducts.mockResolvedValue([])
+    commerceMock.getProducts.mockResolvedValue([])
 
     render(await CatalogPage({ searchParams: Promise.resolve({}) }))
 
@@ -89,8 +103,44 @@ describe('recovery pages', () => {
     expect(screen.queryByText('Ropa activa para entrenar, caminar y compartir tu ritmo.')).not.toBeInTheDocument()
   })
 
+  it('renders the unconfigured catalog as one full status surface', async () => {
+    commerceMock.mode = 'unconfigured'
+    commerceMock.getProducts.mockResolvedValue([catalogProduct])
+
+    const { container } = render(await CatalogPage({ searchParams: Promise.resolve({}) }))
+
+    expect(screen.getAllByRole('heading', { level: 1 })).toHaveLength(1)
+    expect(screen.getByRole('heading', { level: 1, name: 'Estamos preparando la colección.' })).toBeInTheDocument()
+    expect(screen.queryByRole('heading', { level: 1, name: 'Encuentra algo para ti.' })).not.toBeInTheDocument()
+    expect(container.querySelector('.status-surface')).toBeInTheDocument()
+    expect(container.querySelectorAll('.status-primary-action')).toHaveLength(1)
+  })
+
+  it('renders an unavailable catalog as one full status surface', async () => {
+    commerceMock.getProducts.mockRejectedValue(new Error('private catalog failure'))
+
+    const { container } = render(await CatalogPage({ searchParams: Promise.resolve({}) }))
+
+    expect(screen.getAllByRole('heading', { level: 1 })).toHaveLength(1)
+    expect(screen.getByRole('heading', { level: 1, name: 'No pudimos cargar la colección.' })).toBeInTheDocument()
+    expect(screen.queryByRole('heading', { level: 1, name: 'Encuentra algo para ti.' })).not.toBeInTheDocument()
+    expect(container.querySelector('.status-surface')).toBeInTheDocument()
+    expect(container.querySelectorAll('.status-primary-action')).toHaveLength(1)
+  })
+
+  it('keeps the normal catalog header when commerce is configured', async () => {
+    commerceMock.getProducts.mockResolvedValue([catalogProduct])
+
+    const { container } = render(await CatalogPage({ searchParams: Promise.resolve({}) }))
+
+    expect(screen.getAllByRole('heading', { level: 1 })).toHaveLength(1)
+    expect(screen.getByRole('heading', { level: 1, name: 'Encuentra algo para ti.' })).toBeInTheDocument()
+    expect(container.querySelector('.catalog-hero')).toBeInTheDocument()
+    expect(container.querySelector('.status-surface')).not.toBeInTheDocument()
+  })
+
   it('passes the first sanitized catalog filters to CatalogClient', async () => {
-    getProducts.mockResolvedValue([catalogProduct])
+    commerceMock.getProducts.mockResolvedValue([catalogProduct])
 
     render(await CatalogPage({
       searchParams: Promise.resolve({ categoria: 'Accesorios', buscar: ['Gym', 'ignored'] }),
@@ -101,7 +151,7 @@ describe('recovery pages', () => {
   })
 
   it('uses default catalog filters when URL parameters are omitted', async () => {
-    getProducts.mockResolvedValue([catalogProduct])
+    commerceMock.getProducts.mockResolvedValue([catalogProduct])
 
     render(await CatalogPage({ searchParams: Promise.resolve({}) }))
 
@@ -110,7 +160,7 @@ describe('recovery pages', () => {
   })
 
   it('trims and caps the first value of each catalog filter', async () => {
-    getProducts.mockResolvedValue([catalogProduct])
+    commerceMock.getProducts.mockResolvedValue([catalogProduct])
     const longQuery = 'g'.repeat(90)
 
     render(await CatalogPage({

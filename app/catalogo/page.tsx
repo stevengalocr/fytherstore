@@ -25,7 +25,7 @@ export default async function CatalogPage({ searchParams }: { searchParams: Prom
   const initialQuery = firstParam(params.buscar)
   try {
     const products = await commerce.getProducts()
-    if (commerceMode === 'unconfigured') return <><CatalogHeader /><CommerceState state="unconfigured" /></>
+    if (commerceMode === 'unconfigured') return <CommerceState state="unconfigured" />
     if (products.length === 0) return <><CatalogHeader /><CommerceState state="empty" /></>
     return <CatalogClient products={products} initialCategory={initialCategory} initialQuery={initialQuery} />
   } catch {
