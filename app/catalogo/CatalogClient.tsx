@@ -42,7 +42,12 @@ export default function CatalogClient({ products, initialCategory, initialQuery 
     const normalized = query.trim().toLocaleLowerCase('es')
     const normalizedCategory = category === 'Todos' ? '' : normalizeCollectionCategory(category)
     const filtered = products.filter((product) => {
-      const searchable = [product.name, product.shortDescription ?? '', ...product.tags]
+      const searchable = [
+        product.name,
+        product.brand ?? '',
+        product.shortDescription ?? '',
+        ...product.tags,
+      ]
         .join(' ')
         .toLocaleLowerCase('es')
       return (category === 'Todos' || normalizeCollectionCategory(product.category) === normalizedCategory)
