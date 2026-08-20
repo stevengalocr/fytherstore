@@ -18,7 +18,7 @@ export function splitProductsByWorld(products: CommerceProduct[]): Record<Collec
 }
 
 export function selectHomeProducts(products: CommerceProduct[], limit = 3): CommerceProduct[] {
-  const selectionLimit = Math.min(Math.max(0, limit), 3)
+  const selectionLimit = Math.min(Math.max(0, limit), 4)
   const selected: CommerceProduct[] = []
   const selectedIds = new Set<string>()
 

@@ -46,6 +46,38 @@ describe('selectHomeProducts', () => {
     expect(selectHomeProducts(products).map(({ id }) => id)).toEqual(['one', 'two', 'three'])
   })
 
+  it('allows four products and bounds larger limits at four', () => {
+    const products = [
+      product('one'),
+      product('two'),
+      product('three'),
+      product('four'),
+      product('five'),
+    ]
+
+    expect(selectHomeProducts(products, 4).map(({ id }) => id)).toEqual(['one', 'two', 'three', 'four'])
+    expect(selectHomeProducts(products, 12).map(({ id }) => id)).toEqual(['one', 'two', 'three', 'four'])
+  })
+
+  it('keeps featured-first stable unique order across a four-product selection', () => {
+    const featured = product('featured', true)
+    const products = [
+      product('one'),
+      featured,
+      product('two'),
+      featured,
+      product('second-featured', true),
+      product('three'),
+    ]
+
+    expect(selectHomeProducts(products, 4).map(({ id }) => id)).toEqual([
+      'featured',
+      'second-featured',
+      'one',
+      'two',
+    ])
+  })
+
   it('preserves group order across mixed products and never duplicates an id', () => {
     const featured = product('featured', true)
     const products = [product('one'), featured, product('two'), featured, product('second-featured', true)]
