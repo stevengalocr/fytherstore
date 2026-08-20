@@ -147,8 +147,14 @@ describe('Task 5 deterministic browser matrix', () => {
   const playwrightConfig = readFileSync(resolve(process.cwd(), 'playwright.config.ts'), 'utf8')
   const storeE2e = readFileSync(resolve(process.cwd(), 'e2e/store.spec.ts'), 'utf8')
 
-  it('defines configured responsive projects and a separate unconfigured desktop project', () => {
-    for (const projectName of ['desktop-configured', 'tablet-configured', 'mobile-configured', 'desktop-unconfigured']) {
+  it('defines configured, unconfigured production, and no-JavaScript browser projects', () => {
+    for (const projectName of [
+      'desktop-configured',
+      'tablet-configured',
+      'mobile-configured',
+      'desktop-unconfigured',
+      'desktop-no-js-configured',
+    ]) {
       expect(playwrightConfig).toContain(`name: '${projectName}'`)
     }
     expect(playwrightConfig.match(/webServer:\s*\[/)).not.toBeNull()
@@ -158,8 +164,10 @@ describe('Task 5 deterministic browser matrix', () => {
     expect(playwrightConfig).toMatch(/NEXT_PUBLIC_SUPABASE_ANON_KEY:\s*''/)
     expect(playwrightConfig).toMatch(/NEXT_PUBLIC_BUSINESS_ID:\s*''/)
     expect(playwrightConfig).toMatch(/SUPABASE_SERVICE_ROLE_KEY:\s*''/)
-    expect(playwrightConfig).toMatch(/FYTHER_E2E_COMMERCE_FIXTURE:\s*'live'/)
-    expect(playwrightConfig).toMatch(/FYTHER_E2E_COMMERCE_FIXTURE:\s*''/)
+    expect(playwrightConfig.match(/FYTHER_E2E_COMMERCE_FIXTURE:\s*'live'/g)).toHaveLength(2)
+    expect(playwrightConfig).toMatch(/command:\s*`npm run dev[^`]+configuredPort/)
+    expect(playwrightConfig).toMatch(/\[nextCli, 'build'\]/)
+    expect(playwrightConfig).toMatch(/javaScriptEnabled:\s*false/)
     expect(playwrightConfig).not.toContain('-live')
     expect(playwrightConfig).toMatch(/workers:\s*1/)
     expect(playwrightConfig).toMatch(/retries:\s*0/)
