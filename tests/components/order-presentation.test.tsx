@@ -79,16 +79,43 @@ describe('OrderPresentation', () => {
     expect(screen.getByText(label)).toBeInTheDocument()
   })
 
-  it('falls back to factual raw values for unknown live status and payment data', () => {
+  it.each([
+    ['pending', 'Pedido recibido'],
+    ['preparing', 'En preparación'],
+    ['shipped', 'En camino'],
+    ['delivered', 'Entregado'],
+    ['cancelled', 'Cancelado'],
+  ] as const)('maps known order status %s to %s', (status, label) => {
+    render(<OrderPresentation order={{ ...order, status }} view="tracking" />)
+
+    expect(screen.getByText(label)).toBeInTheDocument()
+  })
+
+  it.each([
+    ['unknown', 'awaiting_pickup'],
+    ['empty', ''],
+    ['unusual', 'STATUS::<script>'],
+  ] as const)('uses a neutral customer label for %s backend status values', (_case, status) => {
     const unexpectedOrder = {
       ...order,
-      status: 'awaiting_pickup',
+      status,
+    } as unknown as CommerceOrder
+
+    render(<OrderPresentation order={unexpectedOrder} view="tracking" />)
+
+    expect(screen.getByText('En proceso')).toBeInTheDocument()
+    if (status) expect(screen.queryByText(status, { exact: true })).not.toBeInTheDocument()
+  })
+
+  it('preserves the factual fallback for an unknown payment method', () => {
+    const unexpectedOrder = {
+      ...order,
       paymentMethod: 'bank_transfer',
     } as unknown as CommerceOrder
 
     render(<OrderPresentation order={unexpectedOrder} view="tracking" />)
 
-    expect(screen.getByText('awaiting_pickup')).toBeInTheDocument()
+    expect(screen.getByText('En camino')).toBeInTheDocument()
     expect(screen.getByText('bank_transfer')).toBeInTheDocument()
   })
 

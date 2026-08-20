@@ -26,19 +26,9 @@ export default async function CatalogPage({ searchParams }: { searchParams: Prom
   try {
     const products = await commerce.getProducts()
     if (commerceMode === 'unconfigured') return <CommerceState state="unconfigured" />
-    if (products.length === 0) return <><CatalogHeader /><CommerceState state="empty" /></>
+    if (products.length === 0) return <CommerceState state="empty" />
     return <CatalogClient products={products} initialCategory={initialCategory} initialQuery={initialQuery} />
   } catch {
     return <CommerceState state="error" />
   }
-}
-
-function CatalogHeader() {
-  return (
-    <header className="catalog-hero container">
-      <p className="section-label">FYTHER / COLECCIÓN</p>
-      <h1 className="display">Encuentra algo para ti.</h1>
-      <p>Ropa y accesorios elegidos para moverte y disfrutar cada día.</p>
-    </header>
-  )
 }

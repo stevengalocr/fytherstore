@@ -94,13 +94,16 @@ describe('recovery pages', () => {
     expect(container).not.toHaveTextContent(/bilbildin|supabase|endpoint|environment|entorno|configuraci[oó]n|service.role|stack|digest|cambios|devoluciones/i)
   })
 
-  it('uses the inclusive catalog lead when the live catalog is empty', async () => {
+  it('renders the live empty catalog as one full status surface', async () => {
     commerceMock.getProducts.mockResolvedValue([])
 
-    render(await CatalogPage({ searchParams: Promise.resolve({}) }))
+    const { container } = render(await CatalogPage({ searchParams: Promise.resolve({}) }))
 
-    expect(screen.getByText('Ropa y accesorios elegidos para moverte y disfrutar cada día.')).toBeInTheDocument()
-    expect(screen.queryByText('Ropa activa para entrenar, caminar y compartir tu ritmo.')).not.toBeInTheDocument()
+    expect(screen.getAllByRole('heading', { level: 1 })).toHaveLength(1)
+    expect(screen.getByRole('heading', { level: 1, name: 'La colección vuelve pronto.' })).toBeInTheDocument()
+    expect(screen.queryByRole('heading', { level: 1, name: 'Encuentra algo para ti.' })).not.toBeInTheDocument()
+    expect(container.querySelector('.status-surface')).toBeInTheDocument()
+    expect(container.querySelectorAll('.status-primary-action')).toHaveLength(1)
   })
 
   it('renders the unconfigured catalog as one full status surface', async () => {
