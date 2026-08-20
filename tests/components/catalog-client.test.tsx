@@ -76,6 +76,23 @@ describe('CatalogClient', () => {
     expect(screen.getByText('1 resultado')).toHaveAttribute('aria-live', 'polite')
   })
 
+  it('matches product names without requiring Spanish diacritics', async () => {
+    const user = userEvent.setup()
+    const accentedProduct = {
+      ...products[0],
+      id: 'pantalon-1',
+      slug: 'pantalon-flujo',
+      name: 'Pantalón Flujo',
+      brand: null,
+    }
+    render(<CatalogClient products={[accentedProduct]} initialCategory="Todos" initialQuery="" />)
+
+    await user.type(screen.getByRole('textbox', { name: 'Buscar productos' }), 'pantalon')
+
+    expect(within(productList()).getByText('Pantalón Flujo')).toBeInTheDocument()
+    expect(screen.getByText('1 resultado')).toHaveAttribute('aria-live', 'polite')
+  })
+
   it('searches actual brand metadata without changing product order', async () => {
     const user = userEvent.setup()
     render(<CatalogClient products={products} initialCategory="Todos" initialQuery="" />)

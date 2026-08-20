@@ -59,7 +59,7 @@ describe('ProductCard', () => {
   it('keeps sold-out products navigable with a noninteractive status', () => {
     const { container } = render(<ProductCard product={product} />)
 
-    expect(screen.getByRole('link', { name: 'Ver producto Motion Tee' })).toHaveAttribute(
+    expect(screen.getByRole('link', { name: 'Motion Tee, Agotado' })).toHaveAttribute(
       'href',
       '/catalogo/motion-tee',
     )

@@ -12,12 +12,13 @@ export default function ProductCard({ product, imageSizes = '100vw' }: ProductCa
   const image = product.images[0]
   const soldOut = product.availability !== 'in_stock'
   const metadata = product.brand ?? product.category
+  const accessibleName = soldOut ? `${product.name}, Agotado` : `Ver producto ${product.name}`
 
   return (
     <Link
       href={`/catalogo/${product.slug}`}
       className="product-card"
-      aria-label={`Ver producto ${product.name}`}
+      aria-label={accessibleName}
     >
       <div className="product-media">
         {image ? (

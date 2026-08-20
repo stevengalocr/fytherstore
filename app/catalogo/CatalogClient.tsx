@@ -10,6 +10,14 @@ const CATALOG_PRODUCT_IMAGE_SIZES = '(max-width: 560px) calc(100vw - 32px), (max
 const CATEGORIES = ['Todos', 'Ropa', 'Accesorios'] as const
 type CatalogCategory = (typeof CATEGORIES)[number]
 
+function normalizeSearch(value: string) {
+  return value
+    .trim()
+    .toLocaleLowerCase('es')
+    .normalize('NFD')
+    .replace(/\p{Diacritic}/gu, '')
+}
+
 function canonicalCategory(category: string): CatalogCategory {
   return CATEGORIES.find((candidate) => candidate === category) ?? 'Todos'
 }
@@ -39,7 +47,7 @@ export default function CatalogClient({ products, initialCategory, initialQuery 
   }
 
   const visible = useMemo(() => {
-    const normalized = query.trim().toLocaleLowerCase('es')
+    const normalized = normalizeSearch(query)
     const normalizedCategory = category === 'Todos' ? '' : normalizeCollectionCategory(category)
     const filtered = products.filter((product) => {
       const searchable = [
@@ -48,10 +56,9 @@ export default function CatalogClient({ products, initialCategory, initialQuery 
         product.shortDescription ?? '',
         ...product.tags,
       ]
-        .join(' ')
-        .toLocaleLowerCase('es')
+      const normalizedSearchable = normalizeSearch(searchable.join(' '))
       return (category === 'Todos' || normalizeCollectionCategory(product.category) === normalizedCategory)
-        && (!normalized || searchable.includes(normalized))
+        && (!normalized || normalizedSearchable.includes(normalized))
     })
     return [...filtered].sort((a, b) => {
       if (sort === 'price-asc') return a.price.amount - b.price.amount

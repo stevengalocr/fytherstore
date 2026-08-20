@@ -560,9 +560,9 @@ test('renders the final home without simulated commerce', async ({ page }, testI
       }
     })
 
-    await focusByKeyboard(page, '#accesorios .product-action')
-    await expect(firstProductAction).toBeFocused()
-    expect(await firstProductAction.evaluate((element) => element.matches(':focus-visible'))).toBe(true)
+    await focusByKeyboard(page, '#accesorios .product-card')
+    await expect(firstProductCard).toBeFocused()
+    expect(await firstProductCard.evaluate((element) => element.matches(':focus-visible'))).toBe(true)
     await expect.poll(() => firstProductCard.evaluate((element) => getComputedStyle(element).borderTopColor)).toBe('rgb(240, 108, 203)')
     await expect.poll(() => firstProductAction.evaluate((element) => getComputedStyle(element).color)).toBe('rgb(110, 239, 242)')
     await expect.poll(async () => {
@@ -589,8 +589,8 @@ test('renders the final home without simulated commerce', async ({ page }, testI
       return {
         borderColor: cardStyle.borderTopColor,
         actionColor: actionStyle?.color ?? null,
-        outlineStyle: actionStyle?.outlineStyle ?? null,
-        outlineWidth: actionStyle?.outlineWidth ?? null,
+        outlineStyle: cardStyle.outlineStyle,
+        outlineWidth: cardStyle.outlineWidth,
         documentX: bounds.x + window.scrollX,
         documentY: bounds.y + window.scrollY,
         width: bounds.width,
@@ -980,9 +980,9 @@ test('disables ambient motion when reduced motion is requested', async ({ page }
       }
     })
 
-    await focusByKeyboard(page, '#accesorios .product-action')
-    await expect(firstProductAction).toBeFocused()
-    expect(await firstProductAction.evaluate((element) => element.matches(':focus-visible'))).toBe(true)
+    await focusByKeyboard(page, '#accesorios .product-card')
+    await expect(firstProductCard).toBeFocused()
+    expect(await firstProductCard.evaluate((element) => element.matches(':focus-visible'))).toBe(true)
     await expect.poll(() => firstProductCard.evaluate((element) => getComputedStyle(element).borderTopColor)).toBe('rgb(240, 108, 203)')
     await expect.poll(() => firstProductAction.evaluate((element) => getComputedStyle(element).color)).toBe('rgb(110, 239, 242)')
 
@@ -998,6 +998,8 @@ test('disables ambient motion when reduced motion is requested', async ({ page }
         borderColor: style.borderTopColor,
         cardTransform: style.transform,
         cardTransitionDuration: style.transitionDuration,
+        outlineStyle: style.outlineStyle,
+        outlineWidth: style.outlineWidth,
         imageTransform: imageStyle?.transform ?? null,
         imageTransitionDuration: imageStyle?.transitionDuration ?? null,
         actionTransitionDuration: actionStyle?.transitionDuration ?? null,
@@ -1006,6 +1008,8 @@ test('disables ambient motion when reduced motion is requested', async ({ page }
     expect(reducedFeedback.actionColor).not.toBe(baselineFeedback.actionColor)
     expect(reducedFeedback.actionColor).toBe('rgb(110, 239, 242)')
     expect(reducedFeedback.borderColor).toBe('rgb(240, 108, 203)')
+    expect(reducedFeedback.outlineStyle).not.toBe('none')
+    expect(Number.parseFloat(reducedFeedback.outlineWidth)).toBeGreaterThan(0)
     expect(reducedFeedback.cardTransform).toBe('none')
     expect(reducedFeedback.actionTransform).toBe('none')
     expect(reducedFeedback.imageTransform).toBe('none')
