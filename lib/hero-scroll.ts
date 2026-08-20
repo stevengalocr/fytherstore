@@ -17,6 +17,12 @@ function clampProgress(value: number): number {
   return Math.min(1, Math.max(0, value))
 }
 
+export function getHeroTravel(journeyHeight: number, sceneHeight: number): number {
+  const journey = Number.isFinite(journeyHeight) ? journeyHeight : 0
+  const scene = Number.isFinite(sceneHeight) ? sceneHeight : 0
+  return Math.max(1, journey - scene)
+}
+
 export function getHeroFrame(input: HeroFrameInput): HeroFrame {
   const travel = Math.max(1, Number.isFinite(input.travel) ? input.travel : 1)
   const raw = (input.scrollY - input.start) / travel

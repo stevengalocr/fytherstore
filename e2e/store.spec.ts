@@ -918,6 +918,18 @@ test('scrubs the hero once across its own journey travel without rewinding', asy
   })
   expect(journey.travel).toBeGreaterThan(0)
 
+  if (testInfo.project.name === 'mobile-configured') {
+    const viewportHeight = page.viewportSize()?.height ?? 0
+    expect(journey.travel / viewportHeight).toBeGreaterThan(0.32)
+    expect(journey.travel / viewportHeight).toBeLessThan(0.4)
+    await scrollInstantly(page, journey.start + journey.travel * 0.6)
+    await expect(hero).toHaveAttribute('data-hero-complete', 'false')
+    await expect.poll(() => hero.evaluate((element) => {
+      const progress = Number.parseFloat((element as HTMLElement).style.getPropertyValue('--hero-progress'))
+      return progress > 0.55 && progress < 0.65
+    })).toBe(true)
+  }
+
   await scrollInstantly(page, journey.start + journey.travel)
   await expect(hero).toHaveAttribute('data-hero-complete', 'true')
   const finalFrame = await settleAndSampleVideoFrame(video)

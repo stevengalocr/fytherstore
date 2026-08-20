@@ -4,7 +4,7 @@ import { useEffect, useRef, useState, type CSSProperties } from 'react'
 import Image from 'next/image'
 import Link from 'next/link'
 import { ArrowDown } from 'lucide-react'
-import { getHeroFrame } from '@/lib/hero-scroll'
+import { getHeroFrame, getHeroTravel } from '@/lib/hero-scroll'
 
 type NavigatorConnection = {
   saveData?: boolean
@@ -21,6 +21,7 @@ function setCategoryCueAvailability(cue: HTMLAnchorElement | null, isAvailable: 
 
 export default function HeroMedia() {
   const journeyRef = useRef<HTMLElement>(null)
+  const sceneRef = useRef<HTMLDivElement>(null)
   const videoRef = useRef<HTMLVideoElement>(null)
   const categoryCueRef = useRef<HTMLAnchorElement>(null)
   const frameRef = useRef<number | null>(null)
@@ -57,10 +58,18 @@ export default function HeroMedia() {
 
   useEffect(() => {
     const journey = journeyRef.current
+    const scene = sceneRef.current
     const video = videoRef.current
-    if (!journey || !video || !shouldScrubVideo) return
+    if (!journey || !scene || !video || !shouldScrubVideo) return
 
     video.pause()
+    let scrollAttached = false
+
+    const detachScroll = () => {
+      if (!scrollAttached) return
+      window.removeEventListener('scroll', scheduleFrame)
+      scrollAttached = false
+    }
 
     const updateFrame = () => {
       frameRef.current = null
@@ -68,7 +77,7 @@ export default function HeroMedia() {
       const frame = getHeroFrame({
         scrollY: window.scrollY,
         start,
-        travel: journey.offsetHeight - window.innerHeight,
+        travel: getHeroTravel(journey.offsetHeight, scene.offsetHeight),
         duration: video.duration,
         previousProgress: previousProgressRef.current,
       })
@@ -83,6 +92,7 @@ export default function HeroMedia() {
       journey.style.setProperty('--hero-scrim-opacity', String(0.72 + frame.progress * 0.28))
       journey.dataset.heroComplete = String(frame.complete)
       setCategoryCueAvailability(categoryCueRef.current, frame.complete)
+      if (frame.complete) detachScroll()
     }
 
     const scheduleFrame = () => {
@@ -91,12 +101,13 @@ export default function HeroMedia() {
     }
 
     window.addEventListener('scroll', scheduleFrame, { passive: true })
+    scrollAttached = true
     window.addEventListener('resize', scheduleFrame)
     video.addEventListener('loadedmetadata', scheduleFrame)
     scheduleFrame()
 
     return () => {
-      window.removeEventListener('scroll', scheduleFrame)
+      detachScroll()
       window.removeEventListener('resize', scheduleFrame)
       video.removeEventListener('loadedmetadata', scheduleFrame)
       if (frameRef.current !== null) {
@@ -133,7 +144,7 @@ export default function HeroMedia() {
       data-hero-static={String(isStaticHero)}
       style={{ '--hero-progress': '0' } as CSSProperties}
     >
-      <div className="hero-section hero-scene">
+      <div ref={sceneRef} className="hero-section hero-scene">
         <div className="hero-media">
           <picture className="hero-poster-frame">
             <source className="hero-poster-mobile" media="(max-width: 767px)" srcSet="/editorial/hero-poster-mobile.webp" />

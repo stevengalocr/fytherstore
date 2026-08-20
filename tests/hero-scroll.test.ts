@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { getHeroFrame, type HeroFrame } from '@/lib/hero-scroll'
+import * as heroScroll from '@/lib/hero-scroll'
 
 function expectFiniteBoundedFrame(frame: HeroFrame) {
   expect(Number.isFinite(frame.progress)).toBe(true)
@@ -11,6 +12,18 @@ function expectFiniteBoundedFrame(frame: HeroFrame) {
 }
 
 describe('getHeroFrame', () => {
+  it('derives mobile travel from the journey and actual sticky scene heights', () => {
+    const getHeroTravel = (heroScroll as unknown as {
+      getHeroTravel?: (journeyHeight: number, sceneHeight: number) => number
+    }).getHeroTravel
+
+    expect(getHeroTravel).toEqual(expect.any(Function))
+    if (!getHeroTravel) return
+    expect(getHeroTravel(1200, 840)).toBe(360)
+    expect(getHeroTravel(1200, 1000)).toBe(200)
+    expect(getHeroTravel(840, 840)).toBe(1)
+  })
+
   it('maps halfway through the scroll travel to halfway through the cut time', () => {
     expect(getHeroFrame({
       scrollY: 750,

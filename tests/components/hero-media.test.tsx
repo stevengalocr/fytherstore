@@ -240,20 +240,24 @@ describe('HeroMedia', () => {
   it('coalesces scroll updates and advances to duration minus one without rewinding', async () => {
     installPreferenceEnvironment()
     const animation = installAnimationFrame()
+    const addWindowListener = vi.spyOn(window, 'addEventListener')
+    const removeWindowListener = vi.spyOn(window, 'removeEventListener')
     const { container } = render(<HeroMedia />)
     const hero = container.querySelector<HTMLElement>('.hero-journey')!
+    const scene = container.querySelector<HTMLElement>('.hero-section')!
     const categoryCue = container.querySelector<HTMLAnchorElement>('.hero-category-cue')!
     const video = container.querySelector('video')!
-    Object.defineProperty(hero, 'offsetHeight', { configurable: true, value: 1500 })
-    Object.defineProperty(window, 'innerHeight', { configurable: true, value: 500 })
+    Object.defineProperty(hero, 'offsetHeight', { configurable: true, value: 1200 })
+    Object.defineProperty(scene, 'offsetHeight', { configurable: true, value: 840 })
+    Object.defineProperty(window, 'innerHeight', { configurable: true, value: 1000 })
     Object.defineProperty(window, 'scrollY', { configurable: true, writable: true, value: 0 })
     vi.spyOn(hero, 'getBoundingClientRect').mockImplementation(() => ({
       top: 100 - window.scrollY,
-      bottom: 1600 - window.scrollY,
+      bottom: 1300 - window.scrollY,
       left: 0,
       right: 1000,
       width: 1000,
-      height: 1500,
+      height: 1200,
       x: 0,
       y: 100,
       toJSON: () => ({}),
@@ -271,7 +275,15 @@ describe('HeroMedia', () => {
     expect(hero.style.getPropertyValue('--hero-progress')).toBe('0')
 
     act(() => {
-      Object.defineProperty(window, 'scrollY', { configurable: true, writable: true, value: 1100 })
+      Object.defineProperty(window, 'scrollY', { configurable: true, writable: true, value: 316 })
+      window.dispatchEvent(new Event('scroll'))
+      animation.flush()
+    })
+    expect(hero.style.getPropertyValue('--hero-progress')).toBe('0.6')
+    expect(hero).toHaveAttribute('data-hero-complete', 'false')
+
+    act(() => {
+      Object.defineProperty(window, 'scrollY', { configurable: true, writable: true, value: 460 })
       window.dispatchEvent(new Event('scroll'))
       animation.flush()
     })
@@ -283,6 +295,9 @@ describe('HeroMedia', () => {
     expect(categoryCue).not.toHaveAttribute('aria-hidden')
     expect(categoryCue).toHaveAttribute('tabindex', '0')
     expect(screen.getByRole('link', { name: 'Continuar a las categorías' })).toBe(categoryCue)
+    const scrollListener = addWindowListener.mock.calls.find(([type]) => type === 'scroll')?.[1]
+    expect(removeWindowListener).toHaveBeenCalledWith('scroll', scrollListener)
+    const frameRequestsAtCompletion = animation.request.mock.calls.length
 
     const user = userEvent.setup()
     await user.tab()
@@ -297,6 +312,7 @@ describe('HeroMedia', () => {
       window.dispatchEvent(new Event('scroll'))
       animation.flush()
     })
+    expect(animation.request).toHaveBeenCalledTimes(frameRequestsAtCompletion)
     expect(video.currentTime).toBeCloseTo(3.233, 3)
     expect(hero.style.getPropertyValue('--hero-progress')).toBe('1')
   })
