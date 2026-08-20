@@ -2,6 +2,7 @@ import type { Metadata } from 'next'
 import { commerceMode } from '@/lib/commerce'
 import { createServiceClient, getServerBusinessId } from '@/lib/supabase-server'
 import { getEnabledPaymentMethods } from '@/lib/commerce/checkout'
+import { getE2ECommerceFixtureProvider } from '@/lib/commerce/e2e-fixture'
 import type { ThemeConfig } from '@/lib/commerce/types'
 import CheckoutClient, { type PaymentOption } from './CheckoutClient'
 import CommerceState from '@/components/commerce/CommerceState'
@@ -11,6 +12,9 @@ export const dynamic = 'force-dynamic'
 
 export default async function CheckoutPage() {
   if (commerceMode === 'unconfigured') return <CommerceState state="unconfigured" />
+
+  const fixtureProvider = getE2ECommerceFixtureProvider()
+  if (fixtureProvider) return <CheckoutClient methods={fixtureProvider.checkoutMethods} />
 
   let methods: PaymentOption[] = []
   try {

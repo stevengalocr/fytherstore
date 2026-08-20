@@ -3,6 +3,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 vi.mock('server-only', () => ({}))
 
 function stubCommerceEnv(fixture: string) {
+  vi.stubEnv('NODE_ENV', 'test')
   vi.stubEnv('FYTHER_E2E_COMMERCE_FIXTURE', fixture)
   vi.stubEnv('NEXT_PUBLIC_SUPABASE_URL', '')
   vi.stubEnv('NEXT_PUBLIC_SUPABASE_ANON_KEY', '')
@@ -11,6 +12,7 @@ function stubCommerceEnv(fixture: string) {
 }
 
 function stubConfiguredCommerceEnv() {
+  vi.stubEnv('NODE_ENV', 'test')
   vi.stubEnv('FYTHER_E2E_COMMERCE_FIXTURE', '')
   vi.stubEnv('NEXT_PUBLIC_SUPABASE_URL', 'https://example.supabase.co')
   vi.stubEnv('NEXT_PUBLIC_SUPABASE_ANON_KEY', 'public-anon-key')
@@ -34,9 +36,9 @@ describe('configured E2E commerce fixture', () => {
 
     expect(commerceMode).toBe('live')
     expect(products.map(({ id, slug }) => ({ id, slug }))).toEqual([
-      { id: 'fyther-e2e-accesorio-01', slug: 'accesorio-fyther-uno' },
-      { id: 'fyther-e2e-accesorio-02', slug: 'accesorio-fyther-dos' },
-      { id: 'fyther-e2e-accesorio-03', slug: 'accesorio-fyther-tres' },
+      { id: '10000000-0000-4000-8000-000000000001', slug: 'accesorio-fyther-uno' },
+      { id: '10000000-0000-4000-8000-000000000002', slug: 'accesorio-fyther-dos' },
+      { id: '10000000-0000-4000-8000-000000000003', slug: 'accesorio-fyther-tres' },
     ])
     expect(products.every(({ category }) => category === 'Accesorios')).toBe(true)
     expect(products.some(({ category }) => category === 'Ropa')).toBe(false)
@@ -60,9 +62,81 @@ describe('configured E2E commerce fixture', () => {
       stockQuantity: 2,
       featured: false,
     })
+    expect(products[0].variants).toEqual([
+      expect.objectContaining({
+        id: '20000000-0000-4000-8000-000000000001',
+        name: 'Rosa',
+        stockQuantity: 3,
+      }),
+      expect.objectContaining({
+        id: '20000000-0000-4000-8000-000000000002',
+        name: 'Cian',
+        stockQuantity: 2,
+      }),
+    ])
 
     await expect(commerce.getProductBySlug('accesorio-fyther-dos')).resolves.toEqual(products[1])
     await expect(commerce.getProductBySlug('no-existe')).resolves.toBeNull()
+  })
+
+  it('cannot activate fabricated commerce in a production build environment', async () => {
+    stubCommerceEnv('live')
+    vi.stubEnv('NODE_ENV', 'production')
+
+    const { commerce, commerceMode } = await import('@/lib/commerce')
+
+    expect(commerceMode).toBe('unconfigured')
+    await expect(commerce.getProducts()).resolves.toEqual([])
+    await expect(commerce.getProductBySlug('accesorio-fyther-uno')).resolves.toBeNull()
+  })
+
+  it('provides deterministic checkout, confirmation, and tracking only through the guarded provider', async () => {
+    stubCommerceEnv('live')
+    const fixtureModule = await import('@/lib/commerce/e2e-fixture')
+    const getProvider = (fixtureModule as unknown as {
+      getE2ECommerceFixtureProvider?: (env?: Record<string, string | undefined>) => unknown
+    }).getE2ECommerceFixtureProvider
+
+    expect(getProvider).toEqual(expect.any(Function))
+    if (!getProvider) return
+
+    expect(getProvider({ NODE_ENV: 'production', FYTHER_E2E_COMMERCE_FIXTURE: 'live' })).toBeNull()
+    const provider = getProvider({
+      NODE_ENV: 'test',
+      FYTHER_E2E_COMMERCE_FIXTURE: 'live',
+    }) as {
+      checkoutMethods: Array<{ id: string }>
+      createOrder(input: unknown): Promise<string>
+      readOrder(orderId: string): Promise<unknown>
+    }
+    expect(provider.checkoutMethods).toEqual([
+      expect.objectContaining({ id: 'cash' }),
+    ])
+
+    const orderId = await provider.createOrder({
+      idempotencyKey: '30000000-0000-4000-8000-000000000001',
+      items: [{
+        productId: '10000000-0000-4000-8000-000000000001',
+        variantId: '20000000-0000-4000-8000-000000000002',
+        name: 'ignored customer value',
+        variantName: 'ignored customer value',
+        image: null,
+        quantity: 1,
+      }],
+      customer: { name: 'Ana', email: 'ana@example.com', phone: '' },
+      address: { address: 'San Jose', city: 'San Jose', country: 'Costa Rica', notes: '' },
+      paymentMethod: 'cash',
+    })
+
+    expect(orderId).toBe('40000000-0000-4000-8000-000000000001')
+    await expect(provider.readOrder(orderId)).resolves.toMatchObject({
+      id: orderId,
+      orderNumber: 'FY-E2E-0001',
+      status: 'pending',
+      paymentMethod: 'cash',
+      lines: [expect.objectContaining({ name: 'Accesorio Fyther Uno - Cian', quantity: 1 })],
+      tracking: [expect.objectContaining({ status: 'pending', title: 'Pedido recibido' })],
+    })
   })
 
   it('preserves unconfigured production behavior for non-exact fixture values', async () => {

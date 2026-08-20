@@ -30,22 +30,43 @@ const order: CommerceOrder = {
 
 describe('OrderPresentation', () => {
   it('shows the confirmed order number and its real tracking link', () => {
-    render(<OrderPresentation order={order} view="confirmation" />)
+    const { container } = render(<OrderPresentation order={order} view="confirmation" />)
 
+    expect(container.querySelector('.status-surface')).toBe(container.firstElementChild)
+    expect(screen.getAllByRole('heading', { level: 1 })).toHaveLength(1)
     expect(screen.getByRole('heading', { level: 1, name: 'Pedido confirmado.' })).toBeInTheDocument()
     expect(screen.getByText('FY-12345')).toBeInTheDocument()
-    expect(screen.getByRole('link', { name: 'Seguir pedido' })).toHaveAttribute('href', '/tracking/order-123')
+    expect(screen.getByText(/Legging Flujo/)).toBeInTheDocument()
+    expect(screen.getByText('SINPE Móvil')).toBeInTheDocument()
+    const trackingLink = screen.getByRole('link', { name: 'Seguir pedido' })
+    expect(trackingLink).toHaveClass('status-primary-action')
+    expect(trackingLink).toHaveAttribute('href', '/tracking/order-123')
+    expect(container.querySelectorAll('.status-primary-action')).toHaveLength(1)
   })
 
   it('shows the warm tracking heading with mapped status and factual event details', () => {
-    render(<OrderPresentation order={order} view="tracking" />)
+    const { container } = render(<OrderPresentation order={order} view="tracking" />)
 
+    expect(container.querySelector('.status-surface')).toBe(container.firstElementChild)
+    expect(screen.getAllByRole('heading', { level: 1 })).toHaveLength(1)
     expect(screen.getByRole('heading', { level: 1, name: 'Tu pedido sigue su camino.' })).toBeInTheDocument()
+    expect(screen.getByText('Pedido FY-12345')).toBeInTheDocument()
     expect(screen.getByText('En camino')).toBeInTheDocument()
     expect(screen.getByText('Salió para entrega')).toBeInTheDocument()
+    expect(screen.getByText('Va camino a tu dirección.')).toBeInTheDocument()
     expect(screen.getByText((content) => content.includes('San José'))).toHaveTextContent(
       new Date(order.tracking[0].createdAt).toLocaleString('es-CR', { dateStyle: 'medium', timeStyle: 'short' }),
     )
+    const collectionLink = screen.getByRole('link', { name: 'Volver a la colección' })
+    expect(collectionLink).toHaveClass('status-primary-action')
+    expect(collectionLink).toHaveAttribute('href', '/catalogo')
+    expect(container.querySelectorAll('.status-primary-action')).toHaveLength(1)
+  })
+
+  it.each(['confirmation', 'tracking'] as const)('keeps the %s surface free of internal and prohibited copy', (view) => {
+    const { container } = render(<OrderPresentation order={order} view={view} />)
+
+    expect(container).not.toHaveTextContent(/bilbildin|supabase|endpoint|environment|entorno|configuraci[oó]n|service.role|stack|digest|demo|simulaci[oó]n|cambios|devoluciones/i)
   })
 
   it.each([
@@ -58,16 +79,43 @@ describe('OrderPresentation', () => {
     expect(screen.getByText(label)).toBeInTheDocument()
   })
 
-  it('falls back to factual raw values for unknown live status and payment data', () => {
+  it.each([
+    ['pending', 'Pedido recibido'],
+    ['preparing', 'En preparación'],
+    ['shipped', 'En camino'],
+    ['delivered', 'Entregado'],
+    ['cancelled', 'Cancelado'],
+  ] as const)('maps known order status %s to %s', (status, label) => {
+    render(<OrderPresentation order={{ ...order, status }} view="tracking" />)
+
+    expect(screen.getByText(label)).toBeInTheDocument()
+  })
+
+  it.each([
+    ['unknown', 'awaiting_pickup'],
+    ['empty', ''],
+    ['unusual', 'STATUS::<script>'],
+  ] as const)('uses a neutral customer label for %s backend status values', (_case, status) => {
     const unexpectedOrder = {
       ...order,
-      status: 'awaiting_pickup',
+      status,
+    } as unknown as CommerceOrder
+
+    render(<OrderPresentation order={unexpectedOrder} view="tracking" />)
+
+    expect(screen.getByText('En proceso')).toBeInTheDocument()
+    if (status) expect(screen.queryByText(status, { exact: true })).not.toBeInTheDocument()
+  })
+
+  it('preserves the factual fallback for an unknown payment method', () => {
+    const unexpectedOrder = {
+      ...order,
       paymentMethod: 'bank_transfer',
     } as unknown as CommerceOrder
 
     render(<OrderPresentation order={unexpectedOrder} view="tracking" />)
 
-    expect(screen.getByText('awaiting_pickup')).toBeInTheDocument()
+    expect(screen.getByText('En camino')).toBeInTheDocument()
     expect(screen.getByText('bank_transfer')).toBeInTheDocument()
   })
 

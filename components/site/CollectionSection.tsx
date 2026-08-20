@@ -13,8 +13,7 @@ export interface CollectionSectionProps {
   emptyCopy: string
 }
 
-const COLLECTION_PRODUCT_IMAGE_SIZES = '(max-width: 560px) calc(100vw - 32px), (max-width: 1240px) 42vw, 500px'
-const FEATURED_COLLECTION_PRODUCT_IMAGE_SIZES = '(max-width: 560px) calc(100vw - 32px), (max-width: 1024px) 42vw, 820px'
+const COLLECTION_PRODUCT_IMAGE_SIZES = '(max-width: 560px) 72vw, (max-width: 900px) 48vw, (max-width: 1240px) 31vw, 25vw'
 
 const categoryActions = {
   ropa: {
@@ -38,7 +37,6 @@ export default function CollectionSection({
 }: CollectionSectionProps) {
   const titleId = `${id}-collection-title`
   const categoryAction = categoryActions[id]
-  const usesFeaturedLayout = id === 'accesorios' && products.length >= 3
 
   return (
     <section id={id} className={`collection-section collection-section-${id} container`} data-reveal aria-labelledby={titleId}>
@@ -55,23 +53,12 @@ export default function CollectionSection({
         </div>
       ) : (
         <>
-          <div className="collection-product-grid">
-            {products.map((product, index) => {
-              const isFeatured = usesFeaturedLayout && index === 0
-
-              return (
-                <div
-                  key={product.id}
-                  className={`collection-product-card${isFeatured ? ' collection-product-card-featured' : ''}`}
-                  data-reveal
-                >
-                  <ProductCard
-                    product={product}
-                    imageSizes={isFeatured ? FEATURED_COLLECTION_PRODUCT_IMAGE_SIZES : COLLECTION_PRODUCT_IMAGE_SIZES}
-                  />
-                </div>
-              )
-            })}
+          <div className="collection-product-rail">
+            {products.map((product) => (
+              <div key={product.id} className="collection-product-card" data-reveal>
+                <ProductCard product={product} imageSizes={COLLECTION_PRODUCT_IMAGE_SIZES} />
+              </div>
+            ))}
           </div>
           <Link className="collection-section-link text-link" href={categoryAction.href}>
             {categoryAction.label}

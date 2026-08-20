@@ -1,18 +1,23 @@
+import { readFileSync } from 'node:fs'
+import { resolve } from 'node:path'
 import { render, screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { describe, expect, it } from 'vitest'
 import CatalogClient from '@/app/catalogo/CatalogClient'
 import type { CommerceProduct } from '@/lib/commerce/types'
 
+const globalsCss = readFileSync(resolve(process.cwd(), 'app/globals.css'), 'utf8')
+
 const products: CommerceProduct[] = [
   {
     id: 'legging-1',
     slug: 'legging-flujo',
     name: 'Legging Flujo',
+    brand: 'Nike',
     shortDescription: 'Suave para moverte todo el día',
     description: null,
     price: { amount: 28900, currency: 'CRC' },
-    compareAtPrice: null,
+    compareAtPrice: { amount: 32900, currency: 'CRC' },
     images: [{ src: '/legging-flujo.jpg', alt: 'Legging Flujo' }],
     availability: 'in_stock',
     stockQuantity: 8,
@@ -25,6 +30,7 @@ const products: CommerceProduct[] = [
     id: 'top-1',
     slug: 'top-brisa',
     name: 'Top Brisa',
+    brand: 'Alo',
     shortDescription: 'Soporte ligero para compartir tu ritmo',
     description: null,
     price: { amount: 19900, currency: 'CRC' },
@@ -67,6 +73,36 @@ describe('CatalogClient', () => {
 
     expect(within(productList()).getByText('Legging Flujo')).toBeInTheDocument()
     expect(within(productList()).queryByText('Top Brisa')).not.toBeInTheDocument()
+    expect(screen.getByText('1 resultado')).toHaveAttribute('aria-live', 'polite')
+  })
+
+  it('matches product names without requiring Spanish diacritics', async () => {
+    const user = userEvent.setup()
+    const accentedProduct = {
+      ...products[0],
+      id: 'pantalon-1',
+      slug: 'pantalon-flujo',
+      name: 'Pantalón Flujo',
+      brand: null,
+    }
+    render(<CatalogClient products={[accentedProduct]} initialCategory="Todos" initialQuery="" />)
+
+    await user.type(screen.getByRole('textbox', { name: 'Buscar productos' }), 'pantalon')
+
+    expect(within(productList()).getByText('Pantalón Flujo')).toBeInTheDocument()
+    expect(screen.getByText('1 resultado')).toHaveAttribute('aria-live', 'polite')
+  })
+
+  it('searches actual brand metadata without changing product order', async () => {
+    const user = userEvent.setup()
+    render(<CatalogClient products={products} initialCategory="Todos" initialQuery="" />)
+
+    await user.type(screen.getByRole('textbox', { name: 'Buscar productos' }), 'alo')
+
+    expect(within(productList()).getByText('Alo')).toBeInTheDocument()
+    expect(within(productList()).getByText('Top Brisa')).toBeInTheDocument()
+    expect(within(productList()).queryByText('Nike')).not.toBeInTheDocument()
+    expect(within(productList()).queryByText('Legging Flujo')).not.toBeInTheDocument()
     expect(screen.getByText('1 resultado')).toHaveAttribute('aria-live', 'polite')
   })
 
@@ -164,5 +200,10 @@ describe('CatalogClient', () => {
     expect(screen.getByRole('textbox', { name: 'Buscar productos' })).toHaveValue('')
     expect(within(productList()).getByText('Legging Flujo')).toBeInTheDocument()
     expect(within(productList()).getByText('Top Brisa')).toBeInTheDocument()
+  })
+
+  it('keeps filter touch targets and shape semantics stable', () => {
+    expect(globalsCss).toMatch(/\.category-filters button\s*\{[^}]*min-height:\s*44px;[^}]*border-radius:\s*var\(--radius-control\)/)
+    expect(globalsCss).toMatch(/\.search-control, \.sort-control\s*\{[^}]*min-height:\s*44px;[^}]*border-radius:\s*var\(--radius-panel\)/)
   })
 })

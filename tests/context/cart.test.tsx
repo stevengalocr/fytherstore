@@ -4,7 +4,7 @@ import { CartProvider, useCart } from '@/context/CartContext'
 import type { CommerceProduct } from '@/lib/commerce/types'
 
 const product: CommerceProduct = {
-  id: 'product-1', slug: 'motion-tee', name: 'Motion Tee', shortDescription: null,
+  id: 'product-1', slug: 'motion-tee', name: 'Motion Tee', brand: null, shortDescription: null,
   description: null, price: { amount: 18900, currency: 'CRC' }, compareAtPrice: null,
   images: [], availability: 'in_stock', stockQuantity: 5, category: 'Ropa', tags: [], featured: true,
   variants: [{ id: 'variant-1', name: 'Talla M', sku: null, price: { amount: 18900, currency: 'CRC' }, stockQuantity: 2, attributes: {}, images: [] }],

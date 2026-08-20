@@ -38,7 +38,7 @@ export default function CollectionWorlds({
         >
           <span className="collection-world-media">
             <Image
-              src="/collection-ropa.webp"
+              src="/editorial/collection-ropa.webp"
               alt="Selección editorial de ropa Fyther"
               fill
               sizes={COLLECTION_IMAGE_SIZES}
@@ -66,7 +66,7 @@ export default function CollectionWorlds({
         >
           <span className="collection-world-media">
             <Image
-              src="/collection-accesorios.webp"
+              src="/editorial/collection-accesorios.webp"
               alt="Selección editorial de accesorios Fyther"
               fill
               sizes={COLLECTION_IMAGE_SIZES}

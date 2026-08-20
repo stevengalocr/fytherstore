@@ -23,6 +23,7 @@ function product(id: string, name: string, category: string, tags: string[] = []
     id,
     slug: id,
     name,
+    brand: null,
     shortDescription: null,
     description: null,
     price: { amount: 15000, currency: 'CRC' },
@@ -122,6 +123,80 @@ describe('HomePage', () => {
     expect(screen.getAllByText('Próximamente')).toHaveLength(2)
   })
 
+  it('renders zero Ropa and exactly three real accessories without fabricating products', async () => {
+    commerceMock.getProducts.mockResolvedValue([
+      product('botella-real', 'Botella Real', 'Accesorios', ['Botellas', 'Gym']),
+      product('bolso-real', 'Bolso Real', 'Accesorios', ['Bolsos']),
+      product('gorra-real', 'Gorra Real', 'Accesorios', ['Gorras']),
+    ])
+
+    const { container } = render(await HomePage())
+    const ropa = container.querySelector('section#ropa') as HTMLElement
+    const accesorios = container.querySelector('section#accesorios') as HTMLElement
+
+    expect(within(ropa).queryByRole('link', { name: /^Ver producto / })).not.toBeInTheDocument()
+    expect(within(ropa).getByRole('heading', { name: 'Estamos preparando esta selección.' })).toBeInTheDocument()
+    const productCards = within(accesorios).getAllByRole('link', { name: /^Ver producto / })
+    expect(productCards).toHaveLength(3)
+    expect(productCards.map((card) => card.getAttribute('href'))).toEqual([
+      '/catalogo/botella-real',
+      '/catalogo/bolso-real',
+      '/catalogo/gorra-real',
+    ])
+    expect(productCards.every((card) => card.classList.contains('product-card'))).toBe(true)
+    expect(productCards.every((card) => card.querySelector('a, button, input, select, textarea') === null)).toBe(true)
+    expect(within(accesorios).getAllByRole('heading', { level: 3 }).map((heading) => heading.textContent)).toEqual([
+      'Botella Real',
+      'Bolso Real',
+      'Gorra Real',
+    ])
+    expect(container.querySelectorAll('.product-card')).toHaveLength(3)
+  })
+
+  it('selects at most four real products independently for each home collection', async () => {
+    const ropaProducts = Array.from({ length: 5 }, (_, index) => product(`ropa-${index}`, `Ropa ${index}`, 'Ropa'))
+    const accesoriosProducts = Array.from({ length: 5 }, (_, index) => product(`accesorio-${index}`, `Accesorio ${index}`, 'Accesorios'))
+    ropaProducts[4].featured = true
+    accesoriosProducts[3].featured = true
+    commerceMock.getProducts.mockResolvedValue([...ropaProducts, ...accesoriosProducts])
+
+    const { container } = render(await HomePage())
+    const ropa = container.querySelector('section#ropa') as HTMLElement
+    const accesorios = container.querySelector('section#accesorios') as HTMLElement
+
+    const ropaCards = within(ropa).getAllByRole('link', { name: /^Ver producto / })
+    const accesoriosCards = within(accesorios).getAllByRole('link', { name: /^Ver producto / })
+    expect(ropaCards).toHaveLength(4)
+    expect(accesoriosCards).toHaveLength(4)
+    expect(ropaCards.map((card) => card.getAttribute('href'))).toEqual([
+      '/catalogo/ropa-4',
+      '/catalogo/ropa-0',
+      '/catalogo/ropa-1',
+      '/catalogo/ropa-2',
+    ])
+    expect(accesoriosCards.map((card) => card.getAttribute('href'))).toEqual([
+      '/catalogo/accesorio-3',
+      '/catalogo/accesorio-0',
+      '/catalogo/accesorio-1',
+      '/catalogo/accesorio-2',
+    ])
+    expect([...ropaCards, ...accesoriosCards].every((card) => card.classList.contains('product-card'))).toBe(true)
+    expect(within(ropa).getAllByRole('heading', { level: 3 }).map((heading) => heading.textContent)).toEqual([
+      'Ropa 4',
+      'Ropa 0',
+      'Ropa 1',
+      'Ropa 2',
+    ])
+    expect(within(accesorios).getAllByRole('heading', { level: 3 }).map((heading) => heading.textContent)).toEqual([
+      'Accesorio 3',
+      'Accesorio 0',
+      'Accesorio 1',
+      'Accesorio 2',
+    ])
+    expect(screen.queryByText('Ropa 3')).not.toBeInTheDocument()
+    expect(screen.queryByText('Accesorio 4')).not.toBeInTheDocument()
+  })
+
   it('keeps truthful anchors and unknown world statuses when commerce fails', async () => {
     commerceMock.getProducts.mockRejectedValue(new Error('offline'))
 
@@ -132,6 +207,9 @@ describe('HomePage', () => {
     expect(container.querySelectorAll('section.collection-section')).toHaveLength(0)
     expect(container.querySelectorAll('section.commerce-state')).toHaveLength(1)
     expect(screen.getByRole('alert')).toHaveTextContent('No pudimos cargar la colección.')
+    expect(screen.getAllByRole('heading', { level: 1 })).toHaveLength(1)
+    expect(screen.getByRole('heading', { level: 1, name: 'Muévete a tu manera.' })).toBeInTheDocument()
+    expect(screen.getByRole('heading', { level: 2, name: 'No pudimos cargar la colección.' })).toBeInTheDocument()
     expect(screen.queryByText('Próximamente')).not.toBeInTheDocument()
     expect(screen.getAllByText('Explorar')).toHaveLength(2)
   })
@@ -149,6 +227,9 @@ describe('HomePage', () => {
     expect(container.querySelectorAll('section.collection-section')).toHaveLength(0)
     expect(container.querySelectorAll('section.commerce-state')).toHaveLength(1)
     expect(screen.getByRole('heading', { name: 'Estamos preparando la colección.' })).toBeInTheDocument()
+    expect(screen.getAllByRole('heading', { level: 1 })).toHaveLength(1)
+    expect(screen.getByRole('heading', { level: 1, name: 'Muévete a tu manera.' })).toBeInTheDocument()
+    expect(screen.getByRole('heading', { level: 2, name: 'Estamos preparando la colección.' })).toBeInTheDocument()
     expect(screen.queryByText('Próximamente')).not.toBeInTheDocument()
     expect(screen.getAllByText('Explorar')).toHaveLength(2)
     expect(container.querySelector('.collection-world-filters')).not.toBeInTheDocument()

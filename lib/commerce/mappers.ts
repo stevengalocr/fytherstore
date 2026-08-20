@@ -39,6 +39,8 @@ function availability(stock: number): Availability {
 
 export function mapBilBildinProduct(row: BilBildinProductRow): CommerceProduct {
   const basePrice = Number(row.price) || 0
+  const brandValue = row.attributes?.brand
+  const brand = typeof brandValue === 'string' ? brandValue.trim() || null : null
   const variants: CommerceVariant[] = (row.variants ?? []).map((variant) => ({
     id: variant.id,
     name: variant.name,
@@ -56,6 +58,7 @@ export function mapBilBildinProduct(row: BilBildinProductRow): CommerceProduct {
     id: row.id,
     slug: row.slug,
     name: row.name,
+    brand,
     shortDescription: row.short_description,
     description: row.description,
     price: { amount: basePrice, currency: 'CRC' },

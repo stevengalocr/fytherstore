@@ -1,6 +1,5 @@
 import Image from 'next/image'
 import Link from 'next/link'
-import { ArrowUpRight } from 'lucide-react'
 import { formatMoney } from '@/lib/format'
 import type { CommerceProduct } from '@/lib/commerce/types'
 
@@ -12,9 +11,15 @@ interface ProductCardProps {
 export default function ProductCard({ product, imageSizes = '100vw' }: ProductCardProps) {
   const image = product.images[0]
   const soldOut = product.availability !== 'in_stock'
+  const metadata = product.brand ?? product.category
+  const accessibleName = soldOut ? `${product.name}, Agotado` : `Ver producto ${product.name}`
 
   return (
-    <article className="product-card">
+    <Link
+      href={`/catalogo/${product.slug}`}
+      className="product-card"
+      aria-label={accessibleName}
+    >
       <div className="product-media">
         {image ? (
           <Image
@@ -33,18 +38,21 @@ export default function ProductCard({ product, imageSizes = '100vw' }: ProductCa
       </div>
       <div className="product-copy">
         <div>
-          {product.category && <span className="product-category">{product.category}</span>}
+          {metadata && <span className="product-category">{metadata}</span>}
           <h3>{product.name}</h3>
         </div>
-        <p>{formatMoney(product.price)}</p>
+        <div className="product-prices">
+          <span className="product-price">{formatMoney(product.price)}</span>
+          {product.compareAtPrice ? (
+            <del className="product-compare-price">{formatMoney(product.compareAtPrice)}</del>
+          ) : null}
+        </div>
       </div>
       {soldOut ? (
-        <button type="button" className="product-action product-action-disabled" disabled>Agotado</button>
+        <span className="product-action product-action-disabled">Agotado</span>
       ) : (
-        <Link href={`/catalogo/${product.slug}`} className="product-action" aria-label={`Ver producto ${product.name}`}>
-          <span>Ver producto</span><ArrowUpRight aria-hidden="true" size={17} strokeWidth={1.7} />
-        </Link>
+        <span className="product-action">Ver producto</span>
       )}
-    </article>
+    </Link>
   )
 }

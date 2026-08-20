@@ -36,7 +36,7 @@ export default function CartPage() {
               </article>
             ))}
           </div>
-          <aside className="cart-summary">
+          <aside className="cart-summary commerce-summary-panel">
             <h2>Resumen</h2>
             <div><span>Subtotal</span><strong>{formatMoney(subtotal)}</strong></div>
             <p>El envío y las instrucciones de pago se confirman durante el checkout.</p>

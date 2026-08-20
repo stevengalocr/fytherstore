@@ -26,6 +26,7 @@ export interface CommerceProduct {
   id: string
   slug: string
   name: string
+  brand: string | null
   shortDescription: string | null
   description: string | null
   price: Money

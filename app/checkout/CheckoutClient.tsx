@@ -83,7 +83,7 @@ export default function CheckoutClient({ methods }: { methods: PaymentOption[] }
     if (!normalizedEmail) return
     if (!items.length) { setServerError('Tu carrito está vacío.'); return }
     if (!paymentMethod || !methods.some((method) => method.id === paymentMethod)) {
-      setServerError('No hay métodos de pago configurados. Contacta a Fyther.')
+      setServerError('No hay métodos de pago disponibles. Contacta a Fyther.')
       return
     }
     inFlightRef.current = true
@@ -137,7 +137,7 @@ export default function CheckoutClient({ methods }: { methods: PaymentOption[] }
             <fieldset className="payment-fieldset"><legend>Método de pago</legend>
               {methods.length > 0 ? <div className="payment-options">{methods.map((method) => (
                 <label key={method.id} className="payment-option"><input type="radio" name="payment" value={method.id} checked={paymentMethod === method.id} onChange={() => { idempotencyKeyRef.current = null; setPaymentMethod(method.id) }} /><span><strong>{method.label}</strong><small>{method.description}</small></span></label>
-              ))}</div> : <p className="payment-missing">No hay métodos de pago configurados. Contacta a Fyther antes de continuar.</p>}
+              ))}</div> : <p className="payment-missing">No hay métodos de pago disponibles. Contacta a Fyther antes de continuar.</p>}
             </fieldset>
 
             {Object.keys(fieldErrors).length > 0 && <p className="form-error" role="alert">Revisa los campos marcados para continuar.</p>}
@@ -147,7 +147,7 @@ export default function CheckoutClient({ methods }: { methods: PaymentOption[] }
             </button>
           </form>
 
-          <aside className="checkout-summary"><h2>Tu pedido</h2>{items.map((line) => <div key={line.key}><span>{line.quantity} × {line.name}{line.variantName ? `, ${line.variantName}` : ''}</span><strong>{formatMoney({ amount: line.unitPrice.amount * line.quantity, currency: 'CRC' })}</strong></div>)}<p><span>Total</span><strong>{formatMoney(subtotal)}</strong></p></aside>
+          <aside className="checkout-summary commerce-summary-panel"><h2>Tu pedido</h2>{items.map((line) => <div key={line.key}><span>{line.quantity} × {line.name}{line.variantName ? `, ${line.variantName}` : ''}</span><strong>{formatMoney({ amount: line.unitPrice.amount * line.quantity, currency: 'CRC' })}</strong></div>)}<p><span>Total</span><strong>{formatMoney(subtotal)}</strong></p></aside>
         </div>
       )}
     </div>

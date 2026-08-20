@@ -2,6 +2,7 @@
 
 import { createServiceClient, getServerBusinessId } from '@/lib/supabase-server'
 import { normalizeCheckoutEmail } from '@/lib/commerce/checkout'
+import { getE2ECommerceFixtureProvider } from '@/lib/commerce/e2e-fixture'
 import type { CheckoutInput, CheckoutResult, PaymentMethod } from '@/lib/commerce/types'
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i
@@ -21,7 +22,6 @@ function customerMessage(error: unknown): string {
   if (message.includes('invalid_customer_details') || message.includes('invalid_checkout_payload')) {
     return 'Revisa tus datos y vuelve a intentar.'
   }
-  if (message.includes('configuración de compra en vivo')) return message
   return 'No pudimos confirmar el pedido. Intenta de nuevo.'
 }
 
@@ -57,6 +57,19 @@ function validateInput(input: CheckoutInput): { email: string } {
 export async function createOrder(input: CheckoutInput): Promise<CheckoutResult> {
   try {
     const { email } = validateInput(input)
+    const fixtureProvider = getE2ECommerceFixtureProvider()
+    if (fixtureProvider) {
+      const orderId = await fixtureProvider.createOrder({
+        ...input,
+        customer: {
+          ...input.customer,
+          name: input.customer.name.trim(),
+          email,
+          phone: input.customer.phone.trim(),
+        },
+      })
+      return { ok: true, mode: 'live', orderId }
+    }
     const businessId = getServerBusinessId()
     const { data, error } = await createServiceClient().rpc('create_fyther_storefront_order', {
       p_business_id: businessId,

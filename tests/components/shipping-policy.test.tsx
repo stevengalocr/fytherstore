@@ -29,10 +29,10 @@ describe('shipping and layaway policy', () => {
     expect(article).toHaveTextContent(/cobertura.*costo.*coordina.*cada pedido/i)
     expect(article).toHaveTextContent(/apartados.*disponibles/i)
     expect(article).toHaveTextContent(/condiciones.*acuerdan.*antes.*reserva/i)
-    expect(article).toHaveTextContent(/pedido confirmado.*vista única.*seguimiento.*BilBildin/i)
+    expect(article).toHaveTextContent(/pedido confirmado.*vista única.*seguimiento.*actualizaciones más recientes/i)
     expect(within(article).getByRole('link', { name: 'fytherstore@gmail.com' })).toHaveAttribute('href', 'mailto:fytherstore@gmail.com')
     expect(article).toHaveTextContent(/menos de 24 horas/i)
-    expect(article).not.toHaveTextContent(/cambios|devoluciones/i)
+    expect(article).not.toHaveTextContent(/BilBildin|modo live|configuraci[oó]n|configurado|cambios|devoluciones/i)
     expect(article).not.toHaveTextContent(/\b\d+\s*(días?|semanas?|%)\b/i)
   })
 

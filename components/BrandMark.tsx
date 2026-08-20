@@ -11,13 +11,17 @@ export default function BrandMark({
   variant?: 'primary' | 'alternate'
   sizes?: string
 }) {
+  const image = variant === 'primary'
+    ? { src: '/brand/fyther-mark-header.webp', width: 640, height: 640 }
+    : { src: '/brand/fyther-mark-footer.webp', width: 960, height: 960 }
+
   return (
     <span className="brand-mark" data-variant={variant}>
       <Image
-        src={variant === 'primary' ? '/logo1.png' : '/logo2.png'}
+        src={image.src}
         alt={decorative ? '' : 'Fyther Store'}
-        width={220}
-        height={220}
+        width={image.width}
+        height={image.height}
         priority={priority}
         sizes={sizes}
       />

@@ -1,7 +1,7 @@
 import 'server-only'
 import { bilBildinCommerce } from '@/lib/commerce/bilbildin'
 import { commerceMode as configuredCommerceMode } from '@/lib/commerce/config'
-import { e2eFixtureCommerce } from '@/lib/commerce/e2e-fixture'
+import { getE2ECommerceFixtureProvider } from '@/lib/commerce/e2e-fixture'
 import type { CommerceMode, CommerceProduct } from '@/lib/commerce/types'
 
 interface CommerceAdapter {
@@ -14,11 +14,11 @@ const unconfiguredCommerce: CommerceAdapter = {
   async getProductBySlug() { return null },
 }
 
-const fixtureEnabled = process.env.FYTHER_E2E_COMMERCE_FIXTURE === 'live'
+const fixtureProvider = getE2ECommerceFixtureProvider()
 
-export const commerceMode: CommerceMode = fixtureEnabled ? 'live' : configuredCommerceMode
-export const commerce: CommerceAdapter = fixtureEnabled
-  ? e2eFixtureCommerce
+export const commerceMode: CommerceMode = fixtureProvider ? 'live' : configuredCommerceMode
+export const commerce: CommerceAdapter = fixtureProvider
+  ? fixtureProvider.commerce
   : configuredCommerceMode === 'live'
     ? bilBildinCommerce
     : unconfiguredCommerce

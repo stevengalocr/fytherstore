@@ -7,7 +7,7 @@ import CommerceState from '@/components/commerce/CommerceState'
 import EditorialStory from '@/components/site/EditorialStory'
 import TrustFaq from '@/components/site/TrustFaq'
 import type { CommerceProduct } from '@/lib/commerce/types'
-import { selectAccessoryTags, splitProductsByWorld } from '@/lib/home-selection'
+import { selectAccessoryTags, selectHomeProducts, splitProductsByWorld } from '@/lib/home-selection'
 
 export const revalidate = 60
 
@@ -20,6 +20,8 @@ export default async function HomePage() {
     failed = true
   }
   const { ropa, accesorios } = splitProductsByWorld(products)
+  const homeRopa = selectHomeProducts(ropa, 4)
+  const homeAccesorios = selectHomeProducts(accesorios, 4)
   const accessoryTags = selectAccessoryTags(accesorios)
   const commerceUnavailable = commerceMode === 'unconfigured' || failed
 
@@ -35,7 +37,7 @@ export default async function HomePage() {
       {commerceUnavailable ? (
         <div id="ropa">
           <div id="accesorios">
-            <CommerceState state={commerceMode === 'unconfigured' ? 'unconfigured' : 'error'} />
+            <CommerceState state={commerceMode === 'unconfigured' ? 'unconfigured' : 'error'} headingLevel={2} />
           </div>
         </div>
       ) : (
@@ -44,7 +46,7 @@ export default async function HomePage() {
           eyebrow="ROPA"
           title="Ropa para sentirte tú."
           description="Prendas elegidas para entrenar, caminar y compartir tu ritmo."
-          products={ropa}
+          products={homeRopa}
           emptyTitle="Estamos preparando esta selección."
           emptyCopy="Muy pronto encontrarás prendas elegidas para moverte a tu manera."
         />
@@ -56,7 +58,7 @@ export default async function HomePage() {
           eyebrow="SELECCIÓN ACTUAL"
           title="Lo que se está llevando."
           description="Accesorios originales y útiles para organizar, celebrar y acompañar cada meta."
-          products={accesorios}
+          products={homeAccesorios}
           emptyTitle="Estamos preparando los detalles."
           emptyCopy="La selección de accesorios estará disponible pronto."
         />
