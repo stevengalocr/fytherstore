@@ -25,6 +25,15 @@ export default function RevealInit() {
       }
     }), { threshold: 0.12 })
     reveals.forEach((element) => observer.observe(element))
+    const revealForKeyboard = (event: KeyboardEvent) => {
+      if (event.key !== 'Tab') return
+      reveals.forEach((element) => {
+        element.setAttribute('data-reveal', 'on')
+        observer.unobserve(element)
+      })
+      window.removeEventListener('keydown', revealForKeyboard)
+    }
+    window.addEventListener('keydown', revealForKeyboard)
     root.setAttribute('data-reveal-enhanced', 'true')
 
     let frame = 0
@@ -50,6 +59,7 @@ export default function RevealInit() {
       if (frame) window.cancelAnimationFrame(frame)
       window.removeEventListener('scroll', requestUpdate)
       window.removeEventListener('resize', requestUpdate)
+      window.removeEventListener('keydown', revealForKeyboard)
     }
   }, [pathname])
 

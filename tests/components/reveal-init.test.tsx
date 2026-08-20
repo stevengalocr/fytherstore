@@ -176,6 +176,31 @@ describe('RevealInit', () => {
     expect(removeEventListener).toHaveBeenCalledWith('resize', resizeCall?.[1])
   })
 
+  it('reveals every pending region before keyboard traversal can reach its controls', () => {
+    installMatchMedia(false)
+    const observer = installIntersectionObserver()
+    const removeEventListener = vi.spyOn(window, 'removeEventListener')
+
+    const { container, unmount } = render(
+      <>
+        <RevealInit />
+        <section data-reveal><a href="/catalogo">Catalogo</a></section>
+        <section data-reveal><button type="button">Pregunta</button></section>
+      </>,
+    )
+    const reveals = [...container.querySelectorAll<HTMLElement>('[data-reveal]')]
+
+    expect(reveals).toHaveLength(2)
+    expect(reveals.every((element) => element.getAttribute('data-reveal') !== 'on')).toBe(true)
+    act(() => window.dispatchEvent(new KeyboardEvent('keydown', { key: 'Tab' })))
+
+    expect(reveals.every((element) => element.getAttribute('data-reveal') === 'on')).toBe(true)
+    for (const reveal of reveals) expect(observer.harness?.unobserve).toHaveBeenCalledWith(reveal)
+
+    unmount()
+    expect(removeEventListener).toHaveBeenCalledWith('keydown', expect.any(Function))
+  })
+
   it('cleans the previous route lifecycle before observing the next pathname', () => {
     installMatchMedia(false)
     const observer = installIntersectionObserver()
