@@ -87,6 +87,7 @@ export default function ProductDetail({ product }: { product: CommerceProduct })
         </div>
         <div className="detail-copy">
           {product.category && <p className="product-category">{product.category}</p>}
+          {product.brand ? <p className="detail-brand">{product.brand}</p> : null}
           <h1 className="display">{product.name}</h1>
           <p className="detail-price">{formatMoney(price)}</p>
           <p className="detail-description">{description}</p>

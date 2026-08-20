@@ -147,7 +147,7 @@ export default function CheckoutClient({ methods }: { methods: PaymentOption[] }
             </button>
           </form>
 
-          <aside className="checkout-summary"><h2>Tu pedido</h2>{items.map((line) => <div key={line.key}><span>{line.quantity} × {line.name}{line.variantName ? `, ${line.variantName}` : ''}</span><strong>{formatMoney({ amount: line.unitPrice.amount * line.quantity, currency: 'CRC' })}</strong></div>)}<p><span>Total</span><strong>{formatMoney(subtotal)}</strong></p></aside>
+          <aside className="checkout-summary commerce-summary-panel"><h2>Tu pedido</h2>{items.map((line) => <div key={line.key}><span>{line.quantity} × {line.name}{line.variantName ? `, ${line.variantName}` : ''}</span><strong>{formatMoney({ amount: line.unitPrice.amount * line.quantity, currency: 'CRC' })}</strong></div>)}<p><span>Total</span><strong>{formatMoney(subtotal)}</strong></p></aside>
         </div>
       )}
     </div>

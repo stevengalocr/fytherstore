@@ -1,9 +1,13 @@
+import { readFileSync } from 'node:fs'
+import { resolve } from 'node:path'
 import { fireEvent, render, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { createOrder } from '@/app/actions/checkout'
 import CheckoutClient from '@/app/checkout/CheckoutClient'
 import type { CartLine } from '@/lib/commerce/types'
+
+const globalsCss = readFileSync(resolve(process.cwd(), 'app/globals.css'), 'utf8')
 
 const { cart, clear, push } = vi.hoisted(() => ({
   cart: {
@@ -52,6 +56,7 @@ describe('CheckoutClient', () => {
     render(<CheckoutClient methods={methods} />)
 
     expect(screen.getByRole('heading', { level: 1, name: 'Terminemos juntas.' })).toBeInTheDocument()
+    expect(document.querySelector('aside.checkout-summary.commerce-summary-panel')).toBeInTheDocument()
   })
 
   it('marks missing fields, focuses the first one, and preserves entered data', async () => {
@@ -71,6 +76,10 @@ describe('CheckoutClient', () => {
     expect(address).toHaveAttribute('aria-invalid', 'true')
     expect(email).toHaveAccessibleDescription('Ingresa tu correo electrónico.')
     expect(address).toHaveAccessibleDescription('Ingresa tu dirección exacta.')
+    expect(email.getAttribute('aria-describedby')).toBe(email.nextElementSibling?.id)
+    expect(address.getAttribute('aria-describedby')).toBe(address.nextElementSibling?.id)
+    expect(email.nextElementSibling).toHaveClass('field-error')
+    expect(address.nextElementSibling).toHaveClass('field-error')
     expect(email).toHaveFocus()
     expect(createOrder).not.toHaveBeenCalled()
   })
@@ -254,5 +263,17 @@ describe('CheckoutClient', () => {
     rerender(<CheckoutClient methods={[]} />)
     expect(screen.getByText('No hay métodos de pago configurados. Contacta a Fyther antes de continuar.')).toBeInTheDocument()
     expect(screen.getByRole('button', { name: /confirmar pedido/i })).toBeDisabled()
+  })
+
+  it('uses resilient field focus and a non-overlay mobile checkout action', () => {
+    const mobileStart = globalsCss.indexOf('@media (max-width: 560px)')
+    const mobileEnd = globalsCss.indexOf('@media (prefers-reduced-motion: reduce)')
+    const mobileCss = globalsCss.slice(mobileStart, mobileEnd)
+
+    expect(globalsCss).toMatch(/\.field-block input,\s*\.field-block textarea\s*\{[^}]*border-radius:\s*var\(--radius-panel\)/)
+    expect(globalsCss).toMatch(/\.field-block input:focus-visible,\s*\.field-block textarea:focus-visible\s*\{[^}]*border-color:\s*var\(--color-cyan\)[^}]*box-shadow:/)
+    expect(globalsCss).toMatch(/\.field-block input\[aria-invalid="true"\]:focus-visible\s*\{[^}]*box-shadow:/)
+    expect(globalsCss).toMatch(/\.field-error\s*\{[^}]*display:\s*block/)
+    expect(mobileCss).toMatch(/\.checkout-submit\s*\{[^}]*width:\s*100%[^}]*position:\s*static/)
   })
 })

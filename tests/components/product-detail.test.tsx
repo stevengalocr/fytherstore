@@ -69,6 +69,40 @@ describe('ProductDetail', () => {
     expect(screen.getByText('2 disponibles')).toBeInTheDocument()
   })
 
+  it('renders only an explicit brand above the product name', () => {
+    const { rerender } = render(<ProductDetail product={{ ...product, brand: 'Fyther Studio' }} />)
+
+    const brand = screen.getByText('Fyther Studio')
+    const name = screen.getByRole('heading', { level: 1, name: product.name })
+    expect(brand).toHaveClass('detail-brand')
+    expect(brand.compareDocumentPosition(name) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
+
+    rerender(<ProductDetail product={{ ...product, brand: null }} />)
+    expect(screen.queryByText('Fyther Studio')).not.toBeInTheDocument()
+    expect(document.querySelector('.detail-brand')).not.toBeInTheDocument()
+  })
+
+  it('keeps variant names accessible and exposes the selected Talla M state', async () => {
+    const user = userEvent.setup()
+    const sizedProduct = {
+      ...product,
+      variants: [
+        { ...product.variants[0], name: 'Talla S' },
+        { ...product.variants[1], name: 'Talla M', stockQuantity: 4 },
+      ],
+    }
+    render(<ProductDetail product={sizedProduct} />)
+
+    const small = screen.getByRole('button', { name: 'Talla S' })
+    const medium = screen.getByRole('button', { name: 'Talla M' })
+    expect(small).toHaveAttribute('aria-pressed', 'true')
+    expect(medium).toHaveAttribute('aria-pressed', 'false')
+
+    await user.click(medium)
+    expect(small).toHaveAttribute('aria-pressed', 'false')
+    expect(medium).toHaveAttribute('aria-pressed', 'true')
+  })
+
   it('resets quantity when selecting an available variant', async () => {
     const user = userEvent.setup()
     const productWithSecondAvailableVariant = {
@@ -278,5 +312,18 @@ describe('ProductDetail', () => {
     expect(mobileStart).toBeGreaterThan(tabletStart)
     expect(tabletCss).toMatch(/\.purchase-row\s*\{[^}]*flex-direction:\s*column/)
     expect(tabletCss).toMatch(/\.quantity-control\s*\{[^}]*width:\s*100%/)
+  })
+
+  it('uses the responsive detail geometry and touch control tokens', () => {
+    const tabletStart = globalsCss.indexOf('@media (max-width: 900px)')
+    const mobileStart = globalsCss.indexOf('@media (max-width: 767px)')
+    const tabletCss = globalsCss.slice(tabletStart, mobileStart)
+
+    expect(globalsCss).toMatch(/\.detail-layout\s*\{[^}]*grid-template-columns:\s*minmax\(0,\s*1\.25fr\)\s+minmax\(290px,\s*0\.75fr\)/)
+    expect(tabletCss).toMatch(/\.detail-layout\s*\{[^}]*grid-template-columns:\s*1fr/)
+    expect(globalsCss).toMatch(/\.detail-media\s*\{[^}]*aspect-ratio:\s*4\s*\/\s*5[^}]*border-radius:\s*var\(--radius-editorial\)/)
+    expect(globalsCss).toMatch(/\.variant-fieldset button\s*\{[^}]*min-width:\s*44px[^}]*min-height:\s*44px[^}]*border-radius:\s*var\(--radius-panel\)/)
+    expect(globalsCss).toMatch(/\.quantity-control\s*\{[^}]*border-radius:\s*var\(--radius-panel\)/)
+    expect(globalsCss).toMatch(/\.quantity-control button\s*\{[^}]*min-width:\s*44px[^}]*min-height:\s*44px/)
   })
 })
