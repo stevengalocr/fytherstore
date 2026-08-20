@@ -70,15 +70,15 @@ describe('ProductDetail', () => {
   })
 
   it('renders only an explicit brand above the product name', () => {
-    const { rerender } = render(<ProductDetail product={{ ...product, brand: 'Fyther Studio' }} />)
+    const { rerender } = render(<ProductDetail product={{ ...product, brand: 'Nike' }} />)
 
-    const brand = screen.getByText('Fyther Studio')
+    const brand = screen.getByText('Nike')
     const name = screen.getByRole('heading', { level: 1, name: product.name })
-    expect(brand).toHaveClass('detail-brand')
+    expect(screen.getByText('Nike')).toHaveClass('detail-brand')
     expect(brand.compareDocumentPosition(name) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
 
     rerender(<ProductDetail product={{ ...product, brand: null }} />)
-    expect(screen.queryByText('Fyther Studio')).not.toBeInTheDocument()
+    expect(screen.queryByText('Nike')).not.toBeInTheDocument()
     expect(document.querySelector('.detail-brand')).not.toBeInTheDocument()
   })
 
