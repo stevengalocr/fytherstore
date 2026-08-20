@@ -261,7 +261,7 @@ describe('CheckoutClient', () => {
     expect(screen.getByText('Método configurado')).toBeInTheDocument()
 
     rerender(<CheckoutClient methods={[]} />)
-    expect(screen.getByText('No hay métodos de pago configurados. Contacta a Fyther antes de continuar.')).toBeInTheDocument()
+    expect(screen.getByText('No hay métodos de pago disponibles. Contacta a Fyther antes de continuar.')).toBeInTheDocument()
     expect(screen.getByRole('button', { name: /confirmar pedido/i })).toBeDisabled()
   })
 

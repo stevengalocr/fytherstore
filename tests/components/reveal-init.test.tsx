@@ -1,8 +1,11 @@
+import { readFileSync } from 'node:fs'
+import { resolve } from 'node:path'
 import { act, render } from '@testing-library/react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import RevealInit from '@/components/RevealInit'
 
 const navigation = vi.hoisted(() => ({ pathname: '/' }))
+const globalsCss = readFileSync(resolve(process.cwd(), 'app/globals.css'), 'utf8')
 
 vi.mock('next/navigation', () => ({
   usePathname: () => navigation.pathname,
@@ -60,8 +63,15 @@ describe('RevealInit', () => {
   })
 
   afterEach(() => {
+    document.documentElement.removeAttribute('data-reveal-enhanced')
     vi.restoreAllMocks()
     vi.unstubAllGlobals()
+  })
+
+  it('hides pending reveals only under an explicit enhanced root contract', () => {
+    expect(globalsCss).not.toMatch(/^\[data-reveal\]:not\(\[data-reveal='on'\]\)/m)
+    expect(globalsCss).toMatch(/html\[data-reveal-enhanced='true'\]\s+\[data-reveal\]:not\(\[data-reveal='on'\]\)\s*\{[^}]*opacity:\s*0[^}]*visibility:\s*hidden[^}]*pointer-events:\s*none/)
+    expect(globalsCss).toMatch(/\[data-reveal\]\s*\{[^}]*opacity:\s*1[^}]*visibility:\s*visible/)
   })
 
   it('finishes reveals and currents immediately in reduced motion without observers or listeners', () => {
@@ -125,6 +135,7 @@ describe('RevealInit', () => {
     )
     const reveal = container.querySelector<HTMLElement>('[data-reveal]')!
     const current = container.querySelector<HTMLElement>('[data-current]')!
+    expect(document.documentElement).toHaveAttribute('data-reveal-enhanced', 'true')
     vi.spyOn(current, 'getBoundingClientRect').mockReturnValue({
       top: 500,
       height: 100,
@@ -158,6 +169,7 @@ describe('RevealInit', () => {
     act(() => requestUpdate(new Event('scroll')))
     unmount()
 
+    expect(document.documentElement).not.toHaveAttribute('data-reveal-enhanced')
     expect(observer.harness?.disconnect).toHaveBeenCalledOnce()
     expect(window.cancelAnimationFrame).toHaveBeenCalledWith(17)
     expect(removeEventListener).toHaveBeenCalledWith('scroll', requestUpdate)

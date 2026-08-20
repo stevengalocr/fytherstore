@@ -176,6 +176,16 @@ export default defineConfig({
       name: 'desktop-unconfigured',
       use: { ...devices['Desktop Chrome'], viewport: { width: 1440, height: 900 }, baseURL: unconfiguredBaseURL },
     },
+    {
+      name: 'desktop-no-js-configured',
+      grep: /without JavaScript/,
+      use: {
+        ...devices['Desktop Chrome'],
+        viewport: { width: 1440, height: 900 },
+        baseURL: configuredBaseURL,
+        javaScriptEnabled: false,
+      },
+    },
   ],
   webServer: [
     {

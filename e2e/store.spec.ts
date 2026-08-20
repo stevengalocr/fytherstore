@@ -1,7 +1,7 @@
 import { expect, test, type Locator, type Page, type Request } from '@playwright/test'
 
-const forbiddenCommerceCopy = /modo demo|productos de demostraci[oó]n|simulaci[oó]n|Motion Tee|Training Layer|Daily Bag|Recovery Cap/i
-const exposedConfiguration = /Supabase|service_role|\bkey\b|endpoint|\bdemo\b|simulaci/i
+const forbiddenCommerceCopy = /BilBildin|modo live|configuraci[oó]n|configurad[oa]s?|modo demo|productos de demostraci[oó]n|simulaci[oó]n|Motion Tee|Training Layer|Daily Bag|Recovery Cap/i
+const exposedConfiguration = /BilBildin|modo live|configuraci[oó]n|configurad[oa]s?|Supabase|service_role|\bkey\b|endpoint|\bdemo\b|simulaci/i
 const frameworkDialog = '[data-nextjs-dialog]'
 const backendTimeout = 15_000
 
@@ -839,6 +839,35 @@ test('renders the final home without simulated commerce', async ({ page }, testI
   browser.expectClean()
 })
 
+test('categories, products, FAQ, and footer work without JavaScript', async ({ page }, testInfo) => {
+  test.skip(testInfo.project.name !== 'desktop-no-js-configured', 'No-JavaScript contract has a dedicated project')
+
+  await page.goto('/')
+  await expect(page.locator('html')).not.toHaveAttribute('data-reveal-enhanced', 'true')
+  await expect(page.locator('.collection-world-panel')).toHaveCount(2)
+  await expect(page.locator('.collection-world-panel').first()).toBeVisible()
+  await expect(page.locator('#accesorios .product-card')).toHaveCount(3)
+  await expect(page.locator('#accesorios .product-card').first()).toBeVisible()
+  await expect(page.locator('#preguntas')).toBeVisible()
+
+  const firstQuestion = page.locator('#preguntas summary').first()
+  await expect(firstQuestion).toBeVisible()
+  await firstQuestion.click()
+  await expect(page.locator('#preguntas details').first()).toHaveAttribute('open', '')
+  await expect(page.getByText('Sí. Todos nuestros productos son originales y de marcas reconocidas.')).toBeVisible()
+  await expect(page.locator('.site-footer')).toBeVisible()
+  await expect(page.locator('.site-footer').getByRole('link', { name: 'Términos' })).toHaveAttribute('href', '/terminos')
+  const revealStyles = await page.locator('[data-reveal]').evaluateAll((elements) => elements.map((element) => {
+    const style = getComputedStyle(element)
+    return { opacity: style.opacity, pointerEvents: style.pointerEvents, visibility: style.visibility }
+  }))
+  expect(revealStyles.length).toBeGreaterThan(0)
+  expect(revealStyles.every((style) => style.opacity === '1'
+    && style.visibility === 'visible'
+    && style.pointerEvents !== 'none')).toBe(true)
+  await page.screenshot({ path: testInfo.outputPath('home-no-javascript.png'), fullPage: true })
+})
+
 test('scrubs the hero once across its own journey travel without rewinding', async ({ page }, testInfo) => {
   test.skip(projectMode(testInfo.project.name) !== 'configured', 'Hero scrub runs once per configured viewport')
   const browser = watchBrowserErrors(page)
@@ -1141,7 +1170,7 @@ test('supports a continuous keyboard path through the mobile storefront', async 
     { label: 'category', target: page.locator('.collection-world-panel').nth(1) },
     { label: 'product', target: page.locator('#accesorios .product-card').nth(0) },
     { label: 'product', target: page.locator('#accesorios .product-card').nth(2) },
-    { label: 'FAQ', target: page.locator('#preguntas .trust-faq-question').first() },
+    { label: 'FAQ', target: page.locator('#preguntas summary').first() },
     { label: 'footer', target: page.locator('.site-footer .footer-links a').first() },
   ]) {
     await tabTo(page, target, storefrontTraversal)
@@ -1208,8 +1237,8 @@ test('keeps catalog, cart, and checkout truthful across harness states', async (
     await page.goto('/checkout')
     await expect(page.getByRole('heading', { level: 1, name: 'Terminemos juntas.' })).toBeVisible({ timeout: backendTimeout })
     await expect(page.locator('.checkout-summary')).toContainText('1 × Accesorio Fyther Uno')
-    await expect(page.getByText('No hay métodos de pago configurados. Contacta a Fyther antes de continuar.')).toBeVisible()
-    await expect(page.getByRole('button', { name: /Confirmar pedido/ })).toBeDisabled()
+    await expect(page.getByRole('radio', { name: /Efectivo/ })).toBeChecked()
+    await expect(page.getByRole('button', { name: /Confirmar pedido/ })).toBeEnabled()
   } else {
     expect(mode).toBe('unconfigured')
     await expect(page.getByRole('heading', { name: 'Estamos preparando la colección.' })).toBeVisible({ timeout: backendTimeout })
@@ -1231,7 +1260,7 @@ test('keeps catalog, cart, and checkout truthful across harness states', async (
   if (isConfigured) {
     await expect(page.getByRole('heading', { level: 1, name: 'Terminemos juntas.' })).toBeVisible({ timeout: backendTimeout })
     await expect(page.locator('.checkout-summary')).toContainText('1 × Accesorio Fyther Uno')
-    await expect(page.getByRole('button', { name: /Confirmar pedido/ })).toBeDisabled()
+    await expect(page.getByRole('button', { name: /Confirmar pedido/ })).toBeEnabled()
   } else {
     await expect(page.getByRole('heading', { name: 'Estamos preparando la colección.' })).toBeVisible({ timeout: backendTimeout })
     await expect(page.getByText(forbiddenCommerceCopy)).toHaveCount(0)

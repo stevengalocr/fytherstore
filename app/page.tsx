@@ -37,7 +37,7 @@ export default async function HomePage() {
       {commerceUnavailable ? (
         <div id="ropa">
           <div id="accesorios">
-            <CommerceState state={commerceMode === 'unconfigured' ? 'unconfigured' : 'error'} />
+            <CommerceState state={commerceMode === 'unconfigured' ? 'unconfigured' : 'error'} headingLevel={2} />
           </div>
         </div>
       ) : (

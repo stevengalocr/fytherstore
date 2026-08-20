@@ -49,7 +49,7 @@ describe('home scene contracts', () => {
     expect(screen.queryByRole('link', { name: 'Ver la colección' })).not.toBeInTheDocument()
   })
 
-  it('uses five exclusive disclosures for the factual service FAQ', async () => {
+  it('uses five native disclosures for the factual service FAQ', async () => {
     const user = userEvent.setup()
     const { container } = render(<TrustFaq />)
     const scene = container.querySelector('#preguntas') as HTMLElement
@@ -59,9 +59,12 @@ describe('home scene contracts', () => {
     expect(within(scene).queryByRole('list')).not.toBeInTheDocument()
     expect(scene.querySelector('.trust-chips')).not.toBeInTheDocument()
 
-    const questions = within(scene).getAllByRole('button')
-    const chevrons = scene.querySelectorAll('button svg.lucide-chevron-down')
+    const questions = Array.from(scene.querySelectorAll('summary'))
+    const disclosures = Array.from(scene.querySelectorAll('details'))
+    const chevrons = scene.querySelectorAll('summary svg.lucide-chevron-down')
     expect(questions).toHaveLength(5)
+    expect(disclosures).toHaveLength(5)
+    expect(disclosures.every((details) => details.getAttribute('name') === 'fyther-faq')).toBe(true)
     expect(chevrons).toHaveLength(5)
     expect(Array.from(chevrons).every((icon) => icon.getAttribute('aria-hidden') === 'true')).toBe(true)
     expect(questions.map((question) => question.textContent)).toEqual([
@@ -71,8 +74,7 @@ describe('home scene contracts', () => {
       '¿Puedo apartar un producto?',
       '¿Cómo consulto mi pedido?',
     ])
-    expect(questions.every((question) => question.getAttribute('aria-expanded') === 'false')).toBe(true)
-    expect(within(scene).queryByRole('region')).not.toBeInTheDocument()
+    expect(disclosures.every((details) => !details.open)).toBe(true)
 
     const answerPatterns = [
       /productos.*originales.*marcas reconocidas/i,
@@ -83,9 +85,9 @@ describe('home scene contracts', () => {
     ]
     for (const [index, question] of questions.entries()) {
       await user.click(question)
-      const region = within(scene).getByRole('region', { name: question.textContent ?? '' })
-      expect(region).toHaveTextContent(answerPatterns[index])
-      expect(within(scene).getAllByRole('region')).toHaveLength(1)
+      expect(disclosures[index]).toHaveAttribute('open')
+      expect(disclosures[index]).toHaveTextContent(answerPatterns[index])
+      await user.click(question)
     }
     await user.click(questions[1])
     expect(within(scene).getByRole('link', { name: /envíos y apartados/i })).toHaveAttribute('href', '/envios-apartados')

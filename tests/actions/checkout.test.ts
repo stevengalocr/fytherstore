@@ -96,6 +96,22 @@ describe('createOrder', () => {
     })
   })
 
+  it('does not expose active commerce configuration language to customers', async () => {
+    rpc.mockResolvedValue({
+      data: null,
+      error: { message: 'La configuración de compra en vivo está incompleta.' },
+    })
+
+    const result = await createOrder(input)
+
+    expect(result).toEqual({
+      ok: false,
+      mode: 'live',
+      error: 'No pudimos confirmar el pedido. Intenta de nuevo.',
+    })
+    expect(result.error).not.toMatch(/bilbildin|modo live|configuraci[oó]n|configurad[oa]s?/i)
+  })
+
   it('rejects an invalid RPC response without exposing integration details', async () => {
     rpc.mockResolvedValue({ data: { orderId: 'not-an-order-id' }, error: null })
 

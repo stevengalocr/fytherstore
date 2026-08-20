@@ -1,12 +1,13 @@
 'use client'
 
-import { useEffect } from 'react'
+import { useLayoutEffect } from 'react'
 import { usePathname } from 'next/navigation'
 
 export default function RevealInit() {
   const pathname = usePathname()
 
-  useEffect(() => {
+  useLayoutEffect(() => {
+    const root = document.documentElement
     const reveals = [...document.querySelectorAll<HTMLElement>('[data-reveal]:not([data-reveal="on"])')]
     const currents = [...document.querySelectorAll<HTMLElement>('[data-current]')]
     const reduced = window.matchMedia?.('(prefers-reduced-motion: reduce)').matches ?? false
@@ -24,6 +25,7 @@ export default function RevealInit() {
       }
     }), { threshold: 0.12 })
     reveals.forEach((element) => observer.observe(element))
+    root.setAttribute('data-reveal-enhanced', 'true')
 
     let frame = 0
     const updateCurrent = () => {
@@ -43,6 +45,7 @@ export default function RevealInit() {
     window.addEventListener('resize', requestUpdate)
 
     return () => {
+      root.removeAttribute('data-reveal-enhanced')
       observer.disconnect()
       if (frame) window.cancelAnimationFrame(frame)
       window.removeEventListener('scroll', requestUpdate)

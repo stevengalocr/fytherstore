@@ -22,7 +22,6 @@ function customerMessage(error: unknown): string {
   if (message.includes('invalid_customer_details') || message.includes('invalid_checkout_payload')) {
     return 'Revisa tus datos y vuelve a intentar.'
   }
-  if (message.includes('configuración de compra en vivo')) return message
   return 'No pudimos confirmar el pedido. Intenta de nuevo.'
 }
 
