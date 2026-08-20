@@ -184,7 +184,7 @@ describe('RevealInit', () => {
     const { container, unmount } = render(
       <>
         <RevealInit />
-        <section data-reveal><a href="/catalogo">Catalogo</a></section>
+        <section data-reveal><a href="#catalogo">Catalogo</a></section>
         <section data-reveal><button type="button">Pregunta</button></section>
       </>,
     )
