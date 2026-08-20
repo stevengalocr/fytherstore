@@ -39,9 +39,9 @@ describe('ProductCard', () => {
     expect(card.querySelector('.product-action')?.tagName).toBe('SPAN')
     expect(screen.getByText('Nike')).toBeInTheDocument()
     expect(screen.getByRole('heading', { name: 'Legging Flujo' })).toBeInTheDocument()
-    expect(screen.getByText(/25[.,\s]000/)).toHaveClass('product-price')
-    expect(screen.getByText(/30[.,\s]000/)).toHaveClass('product-compare-price')
-    expect(screen.getByText(/30[.,\s]000/).tagName).toBe('DEL')
+    expect(screen.getByText('₡25 000')).toHaveClass('product-price')
+    expect(screen.getByText('₡30 000')).toHaveClass('product-compare-price')
+    expect(screen.getByText('₡30 000').tagName).toBe('DEL')
   })
 
   it('applies image sizing supplied by its layout context', () => {
