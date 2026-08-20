@@ -36,16 +36,15 @@ export default function FaqAccordion({ items }: FaqAccordionProps) {
               <span>{item.question}</span>
               <ChevronDown aria-hidden="true" size={20} strokeWidth={1.7} />
             </button>
-            {isOpen && (
-              <div
-                id={answerId}
-                className="trust-faq-answer"
-                role="region"
-                aria-labelledby={questionId}
-              >
-                <p>{item.answer}</p>
-              </div>
-            )}
+            <div
+              id={answerId}
+              className="trust-faq-answer"
+              role="region"
+              aria-labelledby={questionId}
+              hidden={!isOpen}
+            >
+              {isOpen && <p>{item.answer}</p>}
+            </div>
           </div>
         )
       })}
