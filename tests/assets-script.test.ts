@@ -17,9 +17,9 @@ type PrepareOptionalAsset = (options: {
 const roots: string[] = []
 
 async function loadOptionalAssetPreparer(): Promise<PrepareOptionalAsset | undefined> {
-  // @ts-ignore The executable asset script intentionally remains an ESM JavaScript module.
-  const module = await import('../scripts/prepare-fyther-assets.mjs')
-  return module.prepareOptionalEditorialAsset as PrepareOptionalAsset | undefined
+  // @ts-expect-error The executable asset script intentionally remains an ESM JavaScript module.
+  const assetScript = await import('../scripts/prepare-fyther-assets.mjs')
+  return assetScript.prepareOptionalEditorialAsset as PrepareOptionalAsset | undefined
 }
 
 async function temporaryRoot() {
