@@ -5,6 +5,19 @@ const exposedConfiguration = /Supabase|service_role|\bkey\b|endpoint|\bdemo\b|si
 const frameworkDialog = '[data-nextjs-dialog]'
 const backendTimeout = 15_000
 
+type VideoFrameSample = {
+  luminances: number[]
+  meanLuminance: number
+  luminanceVariance: number
+  opaqueSamples: number
+}
+
+type FocusTraversal = {
+  encountered: Set<string>
+  initialIdentity: string | null
+  lastOrder: number
+}
+
 function projectMode(projectName: string) {
   if (projectName.endsWith('-configured')) return 'configured' as const
   if (projectName.endsWith('-unconfigured')) return 'unconfigured' as const
@@ -54,13 +67,167 @@ async function expectHealthyPage(page: Page) {
   })).toBe(true)
 }
 
-async function tabTo(page: Page, target: Locator, maxPresses = 48) {
+function createFocusTraversal(): FocusTraversal {
+  return {
+    encountered: new Set<string>(),
+    initialIdentity: null,
+    lastOrder: -1,
+  }
+}
+
+async function readActiveFocus(page: Page) {
+  return page.evaluate(() => {
+    const active = document.activeElement as HTMLElement | null
+    if (!active || active === document.body || active === document.documentElement) {
+      return { isDocument: true, identity: 'document', label: 'document', order: -1 }
+    }
+
+    const segments: string[] = []
+    let current: HTMLElement | null = active
+    while (current && current !== document.body) {
+      if (current.id) {
+        segments.unshift(`#${current.id}`)
+        break
+      }
+      const parent: HTMLElement | null = current.parentElement
+      if (!parent) break
+      const sameTagSiblings = [...parent.children].filter((sibling) => sibling.tagName === current?.tagName)
+      const siblingIndex = sameTagSiblings.indexOf(current) + 1
+      segments.unshift(`${current.tagName.toLowerCase()}:nth-of-type(${siblingIndex})`)
+      current = parent
+    }
+
+    return {
+      isDocument: false,
+      identity: segments.join(' > '),
+      label: active.getAttribute('aria-label') || active.textContent?.trim().replace(/\s+/g, ' ') || active.tagName.toLowerCase(),
+      order: [...document.querySelectorAll('*')].indexOf(active),
+    }
+  })
+}
+
+async function tabTo(page: Page, target: Locator, traversal = createFocusTraversal(), maxPresses = 48) {
   await expect(target).toBeVisible()
+  const startingFocus = await readActiveFocus(page)
+  if (!startingFocus.isDocument && !traversal.encountered.has(startingFocus.identity)) {
+    traversal.initialIdentity ??= startingFocus.identity
+    traversal.encountered.add(startingFocus.identity)
+    traversal.lastOrder = startingFocus.order
+  }
+
   for (let press = 0; press < maxPresses; press += 1) {
     await page.keyboard.press('Tab')
-    if (await target.evaluate((element) => element === document.activeElement)) return
+    const focus = await readActiveFocus(page)
+    if (focus.isDocument) {
+      throw new Error('Focus traversal wrapped to body/document')
+    }
+    if (focus.identity === traversal.initialIdentity) {
+      throw new Error(`Focus traversal wrapped to initial element: ${focus.label}`)
+    }
+    if (traversal.encountered.has(focus.identity)) {
+      throw new Error(`Focus traversal wrapped to repeated element: ${focus.label}`)
+    }
+    if (focus.order <= traversal.lastOrder) {
+      throw new Error(`Focus traversal wrapped backward from DOM order ${traversal.lastOrder} to ${focus.order}: ${focus.label}`)
+    }
+
+    traversal.encountered.add(focus.identity)
+    traversal.initialIdentity ??= focus.identity
+    traversal.lastOrder = focus.order
+    if (await target.evaluate((element) => element === document.activeElement)) return focus
   }
   throw new Error(`Could not reach ${await target.evaluate((element) => element.outerHTML)} after ${maxPresses} Tab presses`)
+}
+
+async function settleAndSampleVideoFrame(video: Locator): Promise<VideoFrameSample> {
+  return video.evaluate(async (media) => {
+    const element = media as HTMLVideoElement
+    const frameVideo = element as HTMLVideoElement & {
+      cancelVideoFrameCallback?: (handle: number) => void
+      requestVideoFrameCallback?: (callback: () => void) => number
+    }
+
+    const waitForSeek = async () => {
+      if (!element.seeking) return
+      await new Promise<void>((resolve, reject) => {
+        const timeout = window.setTimeout(() => {
+          element.removeEventListener('seeked', onSeeked)
+          reject(new Error(`Video seek did not settle at ${element.currentTime.toFixed(3)}s`))
+        }, 5_000)
+        const onSeeked = () => {
+          window.clearTimeout(timeout)
+          resolve()
+        }
+        element.addEventListener('seeked', onSeeked, { once: true })
+        if (!element.seeking) {
+          element.removeEventListener('seeked', onSeeked)
+          window.clearTimeout(timeout)
+          resolve()
+        }
+      })
+    }
+
+    const waitForPaint = async () => {
+      await new Promise<void>((resolve) => {
+        let complete = false
+        let frameHandle: number | undefined
+        let timeout: number | undefined
+        const finish = () => {
+          if (complete) return
+          complete = true
+          if (timeout !== undefined) window.clearTimeout(timeout)
+          resolve()
+        }
+        const animationFrameFallback = () => {
+          window.requestAnimationFrame(() => window.requestAnimationFrame(finish))
+        }
+
+        if (typeof frameVideo.requestVideoFrameCallback === 'function') {
+          frameHandle = frameVideo.requestVideoFrameCallback(finish)
+          timeout = window.setTimeout(() => {
+            if (frameHandle !== undefined) frameVideo.cancelVideoFrameCallback?.(frameHandle)
+            animationFrameFallback()
+          }, 1_000)
+        } else {
+          animationFrameFallback()
+        }
+      })
+    }
+
+    await waitForSeek()
+    await waitForPaint()
+    if (element.seeking) {
+      await waitForSeek()
+      await waitForPaint()
+    }
+
+    const canvas = document.createElement('canvas')
+    canvas.width = 32
+    canvas.height = 18
+    const context = canvas.getContext('2d', { alpha: true, willReadFrequently: true })
+    if (!context) throw new Error('Could not create video frame sampling canvas')
+    context.drawImage(element, 0, 0, canvas.width, canvas.height)
+    const pixels = context.getImageData(0, 0, canvas.width, canvas.height).data
+    const luminances: number[] = []
+    let opaqueSamples = 0
+    for (let y = 1; y < canvas.height; y += 3) {
+      for (let x = 1; x < canvas.width; x += 4) {
+        const offset = (y * canvas.width + x) * 4
+        const red = pixels[offset]
+        const green = pixels[offset + 1]
+        const blue = pixels[offset + 2]
+        const alpha = pixels[offset + 3]
+        if (alpha > 0) opaqueSamples += 1
+        luminances.push((0.2126 * red) + (0.7152 * green) + (0.0722 * blue))
+      }
+    }
+    const meanLuminance = luminances.reduce((total, value) => total + value, 0) / luminances.length
+    const luminanceVariance = luminances.reduce((total, value) => (
+      total + ((value - meanLuminance) ** 2)
+    ), 0) / luminances.length
+
+    return { luminances, meanLuminance, luminanceVariance, opaqueSamples }
+  })
 }
 
 async function scrollInstantly(page: Page, top: number) {
@@ -77,14 +244,11 @@ async function scrollInstantly(page: Page, top: number) {
 async function focusByKeyboard(page: Page, selector: string, maxPresses = 48) {
   const target = page.locator(selector).first()
   await expect(target).toBeVisible()
-  await page.evaluate(() => (document.activeElement as HTMLElement | null)?.blur())
-
-  for (let press = 0; press < maxPresses; press += 1) {
-    await page.keyboard.press('Tab')
-    if (await target.evaluate((element) => element === document.activeElement)) return target
-  }
-
-  throw new Error(`Could not reach ${selector} after ${maxPresses} Tab presses`)
+  const firstFocusable = page.locator('a[href], button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])').filter({ visible: true }).first()
+  await expect(firstFocusable).toBeVisible()
+  await firstFocusable.focus()
+  await tabTo(page, target, createFocusTraversal(), maxPresses)
+  return target
 }
 
 async function expectNoOverlap(page: Page, selectors: string[]) {
@@ -704,12 +868,13 @@ test('scrubs the hero once across its own journey travel without rewinding', asy
       width: element.videoWidth,
     }
   })
-  const poster = (await inspectImages(page, '.hero-poster-desktop'))[0]
   expect(metadata.width).toBeGreaterThan(0)
   expect(metadata.height).toBeGreaterThan(0)
-  expect(poster).toEqual(expect.objectContaining({ complete: true, error: '' }))
-  expect(poster.naturalWidth).toBeGreaterThan(0)
-  expect(poster.naturalHeight).toBeGreaterThan(0)
+
+  const startFrame = await settleAndSampleVideoFrame(video)
+  expect(startFrame.opaqueSamples).toBe(startFrame.luminances.length)
+  expect(startFrame.meanLuminance).toBeGreaterThan(8)
+  expect(startFrame.luminanceVariance).toBeGreaterThan(40)
 
   await page.screenshot({ path: testInfo.outputPath(`hero-start-${testInfo.project.name}.png`) })
   const journey = await hero.evaluate((element) => {
@@ -726,6 +891,16 @@ test('scrubs the hero once across its own journey travel without rewinding', asy
 
   await scrollInstantly(page, journey.start + journey.travel)
   await expect(hero).toHaveAttribute('data-hero-complete', 'true')
+  const finalFrame = await settleAndSampleVideoFrame(video)
+  expect(finalFrame.opaqueSamples).toBe(finalFrame.luminances.length)
+  expect(finalFrame.meanLuminance).toBeGreaterThan(8)
+  expect(finalFrame.luminanceVariance).toBeGreaterThan(40)
+  expect(finalFrame.luminances).toHaveLength(startFrame.luminances.length)
+  const frameDifference = finalFrame.luminances.reduce((total, luminance, index) => (
+    total + Math.abs(luminance - startFrame.luminances[index])
+  ), 0) / finalFrame.luminances.length
+  expect(frameDifference).toBeGreaterThan(12)
+
   const finalTime = await video.evaluate((media) => (media as HTMLVideoElement).currentTime)
   expect(Math.abs(finalTime - (metadata.duration - 1))).toBeLessThanOrEqual(0.15)
   expect(await video.evaluate((media) => (media as HTMLVideoElement).ended)).toBe(false)
@@ -941,34 +1116,49 @@ test('supports a continuous keyboard path through the mobile storefront', async 
 
   await page.goto('/')
   const menuButton = page.locator('.menu-button')
-  await tabTo(page, menuButton)
+  const headerTraversal = createFocusTraversal()
+  await tabTo(page, menuButton, headerTraversal)
   await page.keyboard.press('Enter')
   await expect(menuButton).toHaveAttribute('aria-expanded', 'true')
 
   const mobileNav = page.locator('#primary-navigation')
   for (const name of ['Ropa', 'Accesorios', 'Seguir pedido']) {
     const link = mobileNav.getByRole('link', { name, exact: true })
-    await tabTo(page, link)
+    await tabTo(page, link, headerTraversal)
     await expect(link).toBeFocused()
   }
   await page.keyboard.press('Escape')
   await expect(menuButton).toBeFocused()
   await expect(menuButton).toHaveAttribute('aria-expanded', 'false')
 
-  for (const target of [
-    page.locator('.cart-link'),
-    page.getByRole('link', { name: 'Descubrir ropa' }).first(),
-    page.getByRole('link', { name: 'Ver accesorios' }).first(),
-    page.locator('.collection-world-panel').nth(0),
-    page.locator('.collection-world-panel').nth(1),
-    page.locator('#accesorios .product-card').nth(0),
-    page.locator('#accesorios .product-card').nth(2),
-    page.locator('#preguntas .trust-faq-question').first(),
-    page.locator('.site-footer .footer-links a').first(),
+  const storefrontTraversal = createFocusTraversal()
+  const progression: Array<{ label: string, order: number }> = []
+  for (const { label, target } of [
+    { label: '', target: page.locator('.cart-link') },
+    { label: '', target: page.getByRole('link', { name: 'Descubrir ropa' }).first() },
+    { label: '', target: page.getByRole('link', { name: 'Ver accesorios' }).first() },
+    { label: 'category', target: page.locator('.collection-world-panel').nth(0) },
+    { label: 'category', target: page.locator('.collection-world-panel').nth(1) },
+    { label: 'product', target: page.locator('#accesorios .product-card').nth(0) },
+    { label: 'product', target: page.locator('#accesorios .product-card').nth(2) },
+    { label: 'FAQ', target: page.locator('#preguntas .trust-faq-question').first() },
+    { label: 'footer', target: page.locator('.site-footer .footer-links a').first() },
   ]) {
-    await tabTo(page, target)
+    await tabTo(page, target, storefrontTraversal)
     await expect(target).toBeFocused()
+    if (label) {
+      progression.push({
+        label,
+        order: await target.evaluate((element) => [...document.querySelectorAll('*')].indexOf(element)),
+      })
+    }
   }
+
+  expect(progression.map(({ label }) => label)).toEqual(['category', 'category', 'product', 'product', 'FAQ', 'footer'])
+  for (let index = 1; index < progression.length; index += 1) {
+    expect(progression[index].order).toBeGreaterThan(progression[index - 1].order)
+  }
+  await expect(tabTo(page, menuButton, storefrontTraversal)).rejects.toThrow(/focus traversal wrapped/i)
 
   await expectHealthyPage(page)
   browser.expectClean()
