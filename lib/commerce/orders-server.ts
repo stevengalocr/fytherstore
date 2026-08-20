@@ -1,6 +1,7 @@
 import 'server-only'
 import { createServiceClient, getServerBusinessId } from '@/lib/supabase-server'
 import { buildOrderFilters } from '@/lib/commerce/orders'
+import { getE2ECommerceFixtureProvider } from '@/lib/commerce/e2e-fixture'
 import type { CommerceOrder, OrderStatus, PaymentMethod } from '@/lib/commerce/types'
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
@@ -59,4 +60,11 @@ export async function readLiveOrder(orderId: string): Promise<CommerceOrder | nu
       createdAt: event.created_at,
     })),
   }
+}
+
+export async function readCommerceOrder(orderId: string): Promise<CommerceOrder | null> {
+  const fixtureProvider = getE2ECommerceFixtureProvider()
+  return fixtureProvider
+    ? fixtureProvider.readOrder(orderId)
+    : readLiveOrder(orderId)
 }

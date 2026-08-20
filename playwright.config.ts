@@ -141,7 +141,8 @@ const unconfiguredEnv = {
   NEXT_PUBLIC_SUPABASE_ANON_KEY: '',
   NEXT_PUBLIC_BUSINESS_ID: '',
   SUPABASE_SERVICE_ROLE_KEY: '',
-  FYTHER_E2E_COMMERCE_FIXTURE: '',
+  // Production builds must ignore this flag; the unconfigured project is the build contract.
+  FYTHER_E2E_COMMERCE_FIXTURE: 'live',
   FYTHER_UNCONFIGURED_SERVER_SCRIPT: unconfiguredServerScriptBase64,
 }
 const unconfiguredServerCommand = `${JSON.stringify(process.execPath)} -e "eval(Buffer.from(process.env.FYTHER_UNCONFIGURED_SERVER_SCRIPT,'base64').toString('utf8'))"`
@@ -178,7 +179,7 @@ export default defineConfig({
   ],
   webServer: [
     {
-      command: `npm run build && npm run start -- --hostname 127.0.0.1 --port ${configuredPort}`,
+      command: `npm run dev -- --hostname 127.0.0.1 --port ${configuredPort}`,
       url: configuredBaseURL,
       env: configuredEnv,
       reuseExistingServer: false,

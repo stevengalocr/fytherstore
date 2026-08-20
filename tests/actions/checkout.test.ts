@@ -1,9 +1,10 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { createOrder } from '@/app/actions/checkout'
 import type { CheckoutInput } from '@/lib/commerce/types'
 
 const { rpc } = vi.hoisted(() => ({ rpc: vi.fn() }))
 
+vi.mock('server-only', () => ({}))
 vi.mock('@/lib/supabase-server', () => ({
   createServiceClient: () => ({ rpc }),
   getServerBusinessId: () => '11111111-1111-4111-8111-111111111111',
@@ -25,7 +26,13 @@ const input: CheckoutInput = {
 }
 
 describe('createOrder', () => {
-  beforeEach(() => rpc.mockReset())
+  beforeEach(() => {
+    rpc.mockReset()
+    vi.stubEnv('NODE_ENV', 'test')
+    vi.stubEnv('FYTHER_E2E_COMMERCE_FIXTURE', '')
+  })
+
+  afterEach(() => vi.unstubAllEnvs())
 
   it('delegates the complete order to the atomic idempotent RPC', async () => {
     rpc.mockResolvedValue({
@@ -97,5 +104,28 @@ describe('createOrder', () => {
       mode: 'live',
       error: 'No pudimos confirmar el pedido. Intenta de nuevo.',
     })
+  })
+
+  it('submits fixture inventory through the guarded provider without a broad RPC bypass', async () => {
+    vi.stubEnv('FYTHER_E2E_COMMERCE_FIXTURE', 'live')
+    rpc.mockRejectedValue(new Error('Supabase must not be called for the fixture'))
+
+    await expect(createOrder({
+      ...input,
+      items: [{
+        ...input.items[0],
+        productId: '10000000-0000-4000-8000-000000000001',
+        variantId: '20000000-0000-4000-8000-000000000002',
+        name: 'Accesorio Fyther Uno',
+        variantName: 'Cian',
+        quantity: 1,
+      }],
+      paymentMethod: 'cash',
+    })).resolves.toEqual({
+      ok: true,
+      mode: 'live',
+      orderId: '40000000-0000-4000-8000-000000000001',
+    })
+    expect(rpc).not.toHaveBeenCalled()
   })
 })

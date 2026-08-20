@@ -1247,6 +1247,46 @@ test('keeps catalog, cart, and checkout truthful across harness states', async (
   expect(trackingHtml).not.toMatch(exposedConfiguration)
 })
 
+test('completes configured variant checkout through confirmation and tracking', async ({ page }, testInfo) => {
+  test.skip(testInfo.project.name !== 'desktop-configured', 'Successful checkout runs once in the guarded development fixture')
+  const browser = watchBrowserErrors(page)
+
+  await page.goto('/catalogo/accesorio-fyther-uno')
+  await expect(page.getByRole('heading', { level: 1, name: 'Accesorio Fyther Uno' })).toBeVisible()
+  await page.getByRole('button', { name: 'Cian' }).click()
+  await expect(page.getByRole('button', { name: 'Cian' })).toHaveAttribute('aria-pressed', 'true')
+  await expect(page.getByText('2 disponibles')).toBeVisible()
+  await page.getByRole('button', { name: 'Agregar al carrito' }).click()
+  await expect(page.getByRole('status')).toHaveText('Agregado al carrito')
+
+  await page.goto('/checkout')
+  await expect(page.locator('.checkout-summary')).toContainText('1 × Accesorio Fyther Uno, Cian')
+  await page.getByRole('textbox', { name: 'Nombre completo' }).fill('Ana Prueba')
+  await page.getByRole('textbox', { name: 'Correo electrónico' }).fill('ana@example.com')
+  await page.getByRole('textbox', { name: 'Dirección exacta' }).fill('Barrio Escalante')
+  await expect(page.getByRole('radio', { name: /Efectivo/ })).toBeChecked()
+  await page.getByRole('button', { name: /Confirmar pedido/ }).click()
+
+  await expect(page).toHaveURL(/\/confirmacion\/40000000-0000-4000-8000-000000000001$/)
+  await expect(page.getByRole('heading', { level: 1, name: 'Pedido confirmado.' })).toBeVisible()
+  await expect(page.getByText('FY-E2E-0001')).toBeVisible()
+  await expect(page.locator('.order-summary')).toContainText('1 x Accesorio Fyther Uno - Cian')
+  const trackingLink = page.locator('.confirmation-lead').getByRole('link', { name: 'Seguir pedido' })
+  await expect(trackingLink).toHaveAttribute('href', '/tracking/40000000-0000-4000-8000-000000000001')
+  await page.screenshot({ path: testInfo.outputPath('checkout-confirmation.png'), fullPage: true })
+
+  await trackingLink.click()
+  await expect(page).toHaveURL(/\/tracking\/40000000-0000-4000-8000-000000000001$/)
+  await expect(page.getByRole('heading', { level: 1, name: 'Tu pedido sigue su camino.' })).toBeVisible()
+  await expect(page.locator('.tracking-head')).toContainText('Pedido recibido')
+  await expect(page.getByRole('heading', { level: 2, name: 'Historial' })).toBeVisible()
+  await expect(page.locator('.tracking-events')).toContainText('Recibimos tu pedido y ya estamos preparándolo.')
+  await expect(page.getByRole('link', { name: 'Volver a la colección' })).toHaveAttribute('href', '/catalogo')
+  await page.screenshot({ path: testInfo.outputPath('order-tracking.png'), fullPage: true })
+  await expectHealthyPage(page)
+  browser.expectClean()
+})
+
 test('keeps every service ribbon phrase visible at 200% mobile text size', async ({ page }, testInfo) => {
   test.skip(testInfo.project.name !== 'mobile-configured', 'Text resizing runs only in mobile-configured')
   const browser = watchBrowserErrors(page)
