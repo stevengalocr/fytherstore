@@ -54,19 +54,30 @@ describe('recovery pages', () => {
     const user = userEvent.setup()
     const reset = vi.fn()
     vi.spyOn(console, 'error').mockImplementation(() => undefined)
-    render(<ErrorPage error={new Error('private integration detail')} reset={reset} />)
+    const { container } = render(<ErrorPage error={new Error('private BilBildin endpoint and stack detail')} reset={reset} />)
 
+    expect(container.querySelector('.status-surface')).toBe(container.firstElementChild)
+    expect(screen.getAllByRole('heading', { level: 1 })).toHaveLength(1)
     expect(screen.getByRole('heading', { name: 'No pudimos abrir esta vista.', level: 1 })).toBeInTheDocument()
-    expect(screen.queryByText(/private integration detail/i)).not.toBeInTheDocument()
-    await user.click(screen.getByRole('button', { name: 'Intentar de nuevo' }))
+    expect(container).not.toHaveTextContent(/bilbildin|supabase|endpoint|environment|entorno|configuraci[oó]n|service.role|stack|digest|cambios|devoluciones/i)
+    const retryButton = screen.getByRole('button', { name: 'Intentar de nuevo' })
+    expect(retryButton).toHaveClass('status-primary-action')
+    expect(container.querySelectorAll('.status-primary-action')).toHaveLength(1)
+    await user.click(retryButton)
     expect(reset).toHaveBeenCalledOnce()
   })
 
   it('returns missing routes to the collection', () => {
-    render(<NotFound />)
+    const { container } = render(<NotFound />)
 
+    expect(container.querySelector('.status-surface')).toBe(container.firstElementChild)
+    expect(screen.getAllByRole('heading', { level: 1 })).toHaveLength(1)
     expect(screen.getByRole('heading', { name: 'No encontramos esta página.', level: 1 })).toBeInTheDocument()
-    expect(screen.getByRole('link', { name: 'Ver la colección' })).toHaveAttribute('href', '/catalogo')
+    const collectionLink = screen.getByRole('link', { name: 'Ver la colección' })
+    expect(collectionLink).toHaveClass('status-primary-action')
+    expect(collectionLink).toHaveAttribute('href', '/catalogo')
+    expect(container.querySelectorAll('.status-primary-action')).toHaveLength(1)
+    expect(container).not.toHaveTextContent(/bilbildin|supabase|endpoint|environment|entorno|configuraci[oó]n|service.role|stack|digest|cambios|devoluciones/i)
   })
 
   it('uses the inclusive catalog lead when the live catalog is empty', async () => {
