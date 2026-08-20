@@ -1,6 +1,7 @@
 import { readFileSync } from 'node:fs'
 import { resolve } from 'node:path'
 import { act, cleanup, render, screen } from '@testing-library/react'
+import userEvent from '@testing-library/user-event'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import HeroMedia from '@/components/site/HeroMedia'
 import MotionTrack from '@/components/site/MotionTrack'
@@ -97,10 +98,11 @@ describe('HeroMedia', () => {
     vi.unstubAllGlobals()
   })
 
-  it('presents the approved warm Spanish hero contract', () => {
+  it('keeps the primary actions usable and the category cue hidden during initial scrub', async () => {
     installPreferenceEnvironment()
     installAnimationFrame()
     const { container } = render(<HeroMedia />)
+    const user = userEvent.setup()
 
     const journey = container.querySelector<HTMLElement>('.hero-journey')
     const scene = container.querySelector('.hero-section')
@@ -117,8 +119,17 @@ describe('HeroMedia', () => {
     expect(screen.getByRole('img', { name: 'Fyther Store, entrada a la colección' })).toBeInTheDocument()
     expect(container.querySelector('.hero-poster-desktop')).toHaveAttribute('src', expect.stringContaining('hero-poster-desktop.webp'))
     expect(container.querySelector('.hero-poster-mobile')).toHaveAttribute('srcset', expect.stringContaining('hero-poster-mobile.webp'))
-    expect(screen.getByRole('link', { name: 'Continuar a las categorías' })).toHaveAttribute('href', '#ropa')
+    const categoryCue = container.querySelector('.hero-category-cue')
+    expect(screen.queryByRole('link', { name: 'Continuar a las categorías' })).not.toBeInTheDocument()
+    expect(categoryCue).toHaveAttribute('href', '#ropa')
+    expect(categoryCue).toHaveAttribute('aria-hidden', 'true')
+    expect(categoryCue).toHaveAttribute('tabindex', '-1')
     expect(screen.queryByText(/move different/i)).not.toBeInTheDocument()
+
+    await user.tab()
+    expect(screen.getByRole('link', { name: 'Descubrir ropa' })).toHaveFocus()
+    await user.tab()
+    expect(screen.getByRole('link', { name: 'Ver accesorios' })).toHaveFocus()
   })
 
   it('renders the calm Fyther Current without a repeated marquee', () => {
@@ -177,15 +188,27 @@ describe('HeroMedia', () => {
   it.each([
     ['reduced motion', true, false],
     ['data saver', false, true],
-  ])('uses only the static poster for %s', (_label, reduced, saveData) => {
+  ])('keeps the primary actions usable and the category cue hidden for %s', async (_label, reduced, saveData) => {
     installPreferenceEnvironment(reduced, saveData)
     installAnimationFrame()
     const { container } = render(<HeroMedia />)
+    const user = userEvent.setup()
+    const clothingCta = screen.getByRole('link', { name: 'Descubrir ropa' })
+    const accessoriesCta = screen.getByRole('link', { name: 'Ver accesorios' })
+    const categoryCue = container.querySelector('.hero-category-cue')
 
     expect(container.querySelector('video')).not.toBeInTheDocument()
     expect(container.querySelector('.hero-journey')).toHaveClass('hero-journey-static')
     expect(container.querySelector('.hero-journey')).toHaveAttribute('data-hero-static', 'true')
     expect(screen.getByRole('img', { name: 'Fyther Store, entrada a la colección' })).toBeInTheDocument()
+    expect(screen.queryByRole('link', { name: 'Continuar a las categorías' })).not.toBeInTheDocument()
+    expect(categoryCue).toHaveAttribute('aria-hidden', 'true')
+    expect(categoryCue).toHaveAttribute('tabindex', '-1')
+
+    await user.tab()
+    expect(clothingCta).toHaveFocus()
+    await user.tab()
+    expect(accessoriesCta).toHaveFocus()
   })
 
   it('collapses the journey when data saver is enabled during the session', () => {
@@ -214,12 +237,12 @@ describe('HeroMedia', () => {
     expect(screen.getByRole('img', { name: 'Fyther Store, entrada a la colección' })).toBeInTheDocument()
   })
 
-  it('coalesces scroll updates and advances to duration minus one without rewinding', () => {
+  it('coalesces scroll updates and advances to duration minus one without rewinding', async () => {
     installPreferenceEnvironment()
     const animation = installAnimationFrame()
     const { container } = render(<HeroMedia />)
     const hero = container.querySelector<HTMLElement>('.hero-journey')!
-    const categoryCue = screen.getByRole('link', { name: 'Continuar a las categorías' })
+    const categoryCue = container.querySelector<HTMLAnchorElement>('.hero-category-cue')!
     const video = container.querySelector('video')!
     Object.defineProperty(hero, 'offsetHeight', { configurable: true, value: 1500 })
     Object.defineProperty(window, 'innerHeight', { configurable: true, value: 500 })
@@ -257,7 +280,17 @@ describe('HeroMedia', () => {
     expect(hero.style.getPropertyValue('--hero-copy-opacity')).toBe('0.28')
     expect(hero.style.getPropertyValue('--hero-copy-shift')).toBe('-24px')
     expect(hero).toHaveAttribute('data-hero-complete', 'true')
+    expect(categoryCue).not.toHaveAttribute('aria-hidden')
     expect(categoryCue).toHaveAttribute('tabindex', '0')
+    expect(screen.getByRole('link', { name: 'Continuar a las categorías' })).toBe(categoryCue)
+
+    const user = userEvent.setup()
+    await user.tab()
+    expect(screen.getByRole('link', { name: 'Descubrir ropa' })).toHaveFocus()
+    await user.tab()
+    expect(screen.getByRole('link', { name: 'Ver accesorios' })).toHaveFocus()
+    await user.tab()
+    expect(categoryCue).toHaveFocus()
 
     act(() => {
       Object.defineProperty(window, 'scrollY', { configurable: true, writable: true, value: 400 })
@@ -303,8 +336,9 @@ describe('HeroMedia', () => {
 
   it('lets hero copy withdraw and reveals the category cue only at completion', () => {
     expect(globalsCss).not.toMatch(/\.hero-content[^\n{]*\{[^}]*\}[\s\S]*?\.hero-content[^\n{]*data-reveal/)
-    expect(globalsCss).toMatch(/\.hero-category-cue\s*\{[^}]*opacity:\s*0[^}]*translateY\(12px\)/)
-    expect(globalsCss).toMatch(/\.hero-journey\[data-hero-complete='true'\]\s+\.hero-category-cue\s*\{[^}]*opacity:\s*1[^}]*translateY\(0\)/)
+    expect(globalsCss).toMatch(/\.hero-category-cue\s*\{[^}]*visibility:\s*hidden[^}]*opacity:\s*0[^}]*translateY\(12px\)/)
+    expect(globalsCss).toMatch(/\.hero-journey\[data-hero-complete='true'\]\s+\.hero-category-cue\s*\{[^}]*visibility:\s*visible[^}]*opacity:\s*1[^}]*translateY\(0\)/)
+    expect(globalsCss).not.toMatch(/\.hero-journey\[data-hero-complete='true'\]\s+\.hero-content\s*\{[^}]*pointer-events:\s*none/)
   })
 
   it('provides the Fyther brand-section anchor', () => {

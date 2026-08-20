@@ -12,6 +12,13 @@ type NavigatorConnection = {
   removeEventListener?: (type: 'change', listener: EventListener) => void
 }
 
+function setCategoryCueAvailability(cue: HTMLAnchorElement | null, isAvailable: boolean) {
+  if (!cue) return
+
+  cue.tabIndex = isAvailable ? 0 : -1
+  cue.toggleAttribute('aria-hidden', !isAvailable)
+}
+
 export default function HeroMedia() {
   const journeyRef = useRef<HTMLElement>(null)
   const videoRef = useRef<HTMLVideoElement>(null)
@@ -75,7 +82,7 @@ export default function HeroMedia() {
       journey.style.setProperty('--hero-copy-opacity', String(1 - frame.progress * 0.72))
       journey.style.setProperty('--hero-scrim-opacity', String(0.72 + frame.progress * 0.28))
       journey.dataset.heroComplete = String(frame.complete)
-      if (categoryCueRef.current) categoryCueRef.current.tabIndex = frame.complete ? 0 : -1
+      setCategoryCueAvailability(categoryCueRef.current, frame.complete)
     }
 
     const scheduleFrame = () => {
@@ -112,7 +119,7 @@ export default function HeroMedia() {
     journey.style.setProperty('--hero-copy-opacity', '1')
     journey.style.setProperty('--hero-scrim-opacity', '0.72')
     journey.dataset.heroComplete = 'false'
-    if (categoryCueRef.current) categoryCueRef.current.tabIndex = -1
+    setCategoryCueAvailability(categoryCueRef.current, false)
   }, [isStaticHero])
 
   return (
@@ -163,7 +170,7 @@ export default function HeroMedia() {
             <Link className="button button-secondary" href="#accesorios">Ver accesorios</Link>
           </div>
         </div>
-        <Link ref={categoryCueRef} className="hero-category-cue" href="#ropa" tabIndex={-1}>
+        <Link ref={categoryCueRef} className="hero-category-cue" href="#ropa" tabIndex={-1} aria-hidden="true">
           Continuar a las categorías
           <ArrowDown aria-hidden="true" size={16} strokeWidth={1.8} />
         </Link>
