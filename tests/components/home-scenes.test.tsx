@@ -228,7 +228,7 @@ describe('home commerce presentation', () => {
     const emptyState = section?.querySelector('.collection-empty') as HTMLElement
     expect(within(emptyState).getByRole('heading', { name: 'La ropa viene en camino.' })).toBeInTheDocument()
     expect(within(emptyState).getByText('Estamos preparando esta selección para ti.')).toBeInTheDocument()
-    expect(within(section as HTMLElement).queryByRole('article')).not.toBeInTheDocument()
+    expect(within(section as HTMLElement).queryByRole('link', { name: /^Ver producto / })).not.toBeInTheDocument()
     expect(within(section as HTMLElement).queryByText(/₡/)).not.toBeInTheDocument()
     expect(within(section as HTMLElement).queryByRole('link', { name: 'Ver toda la ropa' })).not.toBeInTheDocument()
   })
@@ -278,7 +278,7 @@ describe('home commerce presentation', () => {
     expect(rail).not.toContainElement(categoryLink)
   })
 
-  it('renders exactly the supplied Accesorios ProductCard articles and category action', () => {
+  it('renders exactly the supplied Accesorios ProductCard links and category action', () => {
     const products = [
       { ...product('uno', 'Accesorio Uno'), images: [{ src: '/uno.png', alt: 'Accesorio Uno en uso' }] },
       product('dos', 'Accesorio Dos'),
@@ -298,11 +298,14 @@ describe('home commerce presentation', () => {
     const section = container.querySelector('section#accesorios') as HTMLElement
     const rail = section.querySelector('.collection-product-rail') as HTMLElement
     const cardWrappers = rail.querySelectorAll('.collection-product-card[data-reveal]')
-    const cards = within(rail).getAllByRole('article')
+    const cards = within(rail).getAllByRole('link', { name: /^Ver producto / })
     expect(cards).toHaveLength(products.length)
+    expect(cards.map((card) => card.getAttribute('href'))).toEqual(['/catalogo/uno', '/catalogo/dos'])
+    expect(cards.every((card) => card.classList.contains('product-card'))).toBe(true)
+    expect(cards.every((card) => card.querySelector('a, button, input, select, textarea') === null)).toBe(true)
     expect(cardWrappers).toHaveLength(products.length)
     expect(rail.querySelector('.collection-product-card-featured')).not.toBeInTheDocument()
-    expect(Array.from(cardWrappers).every((wrapper) => wrapper.querySelector(':scope > article.product-card'))).toBe(true)
+    expect(Array.from(cardWrappers).every((wrapper) => wrapper.querySelector(':scope > a.product-card'))).toBe(true)
     expect(within(rail).getByRole('heading', { name: 'Accesorio Uno' })).toBeInTheDocument()
     expect(within(rail).getByRole('heading', { name: 'Accesorio Dos' })).toBeInTheDocument()
     expect(within(section).queryByText('Más detalles muy pronto.')).not.toBeInTheDocument()

@@ -134,9 +134,17 @@ describe('HomePage', () => {
     const ropa = container.querySelector('section#ropa') as HTMLElement
     const accesorios = container.querySelector('section#accesorios') as HTMLElement
 
-    expect(within(ropa).queryByRole('article')).not.toBeInTheDocument()
+    expect(within(ropa).queryByRole('link', { name: /^Ver producto / })).not.toBeInTheDocument()
     expect(within(ropa).getByRole('heading', { name: 'Estamos preparando esta selección.' })).toBeInTheDocument()
-    expect(within(accesorios).getAllByRole('article')).toHaveLength(3)
+    const productCards = within(accesorios).getAllByRole('link', { name: /^Ver producto / })
+    expect(productCards).toHaveLength(3)
+    expect(productCards.map((card) => card.getAttribute('href'))).toEqual([
+      '/catalogo/botella-real',
+      '/catalogo/bolso-real',
+      '/catalogo/gorra-real',
+    ])
+    expect(productCards.every((card) => card.classList.contains('product-card'))).toBe(true)
+    expect(productCards.every((card) => card.querySelector('a, button, input, select, textarea') === null)).toBe(true)
     expect(within(accesorios).getAllByRole('heading', { level: 3 }).map((heading) => heading.textContent)).toEqual([
       'Botella Real',
       'Bolso Real',
@@ -156,8 +164,23 @@ describe('HomePage', () => {
     const ropa = container.querySelector('section#ropa') as HTMLElement
     const accesorios = container.querySelector('section#accesorios') as HTMLElement
 
-    expect(within(ropa).getAllByRole('article')).toHaveLength(4)
-    expect(within(accesorios).getAllByRole('article')).toHaveLength(4)
+    const ropaCards = within(ropa).getAllByRole('link', { name: /^Ver producto / })
+    const accesoriosCards = within(accesorios).getAllByRole('link', { name: /^Ver producto / })
+    expect(ropaCards).toHaveLength(4)
+    expect(accesoriosCards).toHaveLength(4)
+    expect(ropaCards.map((card) => card.getAttribute('href'))).toEqual([
+      '/catalogo/ropa-4',
+      '/catalogo/ropa-0',
+      '/catalogo/ropa-1',
+      '/catalogo/ropa-2',
+    ])
+    expect(accesoriosCards.map((card) => card.getAttribute('href'))).toEqual([
+      '/catalogo/accesorio-3',
+      '/catalogo/accesorio-0',
+      '/catalogo/accesorio-1',
+      '/catalogo/accesorio-2',
+    ])
+    expect([...ropaCards, ...accesoriosCards].every((card) => card.classList.contains('product-card'))).toBe(true)
     expect(within(ropa).getAllByRole('heading', { level: 3 }).map((heading) => heading.textContent)).toEqual([
       'Ropa 4',
       'Ropa 0',
