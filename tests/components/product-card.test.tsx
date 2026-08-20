@@ -98,4 +98,11 @@ describe('ProductCard', () => {
     expect(globalsCss).toMatch(/\.product-card:hover \.product-image\s*\{[^}]*transform:\s*scale\(1\.025\)/)
     expect(globalsCss).not.toMatch(/\.product-card:focus-within/)
   })
+
+  it('stacks mobile product copy so 200% text keeps the full card width', () => {
+    const mobileCss = globalsCss.match(/@media \(max-width: 560px\)\s*\{([\s\S]*?)\n\}/)?.[1] ?? ''
+
+    expect(mobileCss).toMatch(/\.product-copy\s*\{[^}]*grid-template-columns:\s*minmax\(0,\s*1fr\)/)
+    expect(mobileCss).toMatch(/\.product-prices\s*\{[^}]*align-items:\s*flex-start/)
+  })
 })

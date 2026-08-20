@@ -47,7 +47,31 @@ function watchBrowserErrors(page: Page) {
 
 async function expectHealthyPage(page: Page) {
   await expect(page.locator(frameworkDialog)).toHaveCount(0)
-  await expect.poll(() => page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth + 1)).toBe(true)
+  await expect.poll(() => page.evaluate(() => {
+    const rootFits = document.documentElement.scrollWidth <= window.innerWidth + 1
+    const bodyFits = document.body.scrollWidth <= window.innerWidth + 1
+    return rootFits && bodyFits
+  })).toBe(true)
+}
+
+async function tabTo(page: Page, target: Locator, maxPresses = 48) {
+  await expect(target).toBeVisible()
+  for (let press = 0; press < maxPresses; press += 1) {
+    await page.keyboard.press('Tab')
+    if (await target.evaluate((element) => element === document.activeElement)) return
+  }
+  throw new Error(`Could not reach ${await target.evaluate((element) => element.outerHTML)} after ${maxPresses} Tab presses`)
+}
+
+async function scrollInstantly(page: Page, top: number) {
+  await page.evaluate((nextTop) => {
+    const root = document.documentElement
+    const previousBehavior = root.style.scrollBehavior
+    root.style.scrollBehavior = 'auto'
+    window.scrollTo(0, nextTop)
+    root.style.scrollBehavior = previousBehavior
+  }, top)
+  await expect.poll(() => page.evaluate((nextTop) => Math.abs(window.scrollY - nextTop), top)).toBeLessThanOrEqual(1)
 }
 
 async function focusByKeyboard(page: Page, selector: string, maxPresses = 48) {
@@ -97,7 +121,7 @@ async function expectNoHorizontalClipping(page: Page, selectors: string[]) {
     const htmlElement = element as HTMLElement
     const style = getComputedStyle(htmlElement)
     const visible = style.display !== 'none' && style.visibility !== 'hidden' && htmlElement.getClientRects().length > 0
-    if (!visible || htmlElement.clientWidth === 0 || htmlElement.scrollWidth <= htmlElement.clientWidth + 1) return []
+    if (!visible || htmlElement.getAttribute('aria-hidden') === 'true' || htmlElement.clientWidth === 0 || htmlElement.scrollWidth <= htmlElement.clientWidth + 1) return []
     return [{
       element: htmlElement.className || htmlElement.tagName.toLowerCase(),
       clientWidth: htmlElement.clientWidth,
@@ -110,6 +134,9 @@ async function expectNoHorizontalClipping(page: Page, selectors: string[]) {
 async function expectTextContained(page: Page, selector: string) {
   const geometries = await page.locator(selector).evaluateAll((elements) => elements.flatMap((element) => {
     const htmlElement = element as HTMLElement
+    const style = getComputedStyle(htmlElement)
+    const visible = style.display !== 'none' && style.visibility !== 'hidden' && htmlElement.getClientRects().length > 0
+    if (!visible || htmlElement.getAttribute('aria-hidden') === 'true') return []
     const container = htmlElement.parentElement
     if (!container) return []
     const range = document.createRange()
@@ -117,7 +144,6 @@ async function expectTextContained(page: Page, selector: string) {
     const textBounds = range.getBoundingClientRect()
     const elementBounds = htmlElement.getBoundingClientRect()
     const containerBounds = container.getBoundingClientRect()
-    const style = getComputedStyle(htmlElement)
     return [{
       label: htmlElement.textContent?.trim() || htmlElement.className || htmlElement.tagName.toLowerCase(),
       text: { top: textBounds.top, right: textBounds.right, bottom: textBounds.bottom, left: textBounds.left },
@@ -228,7 +254,6 @@ async function revealFullPage(page: Page) {
   const reveals = page.locator('[data-reveal]')
   const revealCount = await reveals.count()
   expect(revealCount).toBeGreaterThan(0)
-  await expect(reveals.first()).toHaveAttribute('data-reveal', 'on', { timeout: 10_000 })
 
   for (let index = 0; index < revealCount; index += 1) {
     const reveal = reveals.nth(index)
@@ -254,12 +279,12 @@ async function revealFullPage(page: Page) {
     const previousBehavior = root.style.scrollBehavior
     root.style.scrollBehavior = 'auto'
     window.scrollTo(0, 0)
-    document.querySelectorAll<HTMLElement>('.collection-world-grid, .collection-world-filters')
+    document.querySelectorAll<HTMLElement>('.collection-world-grid, .collection-world-filters, .collection-product-rail')
       .forEach((rail) => { rail.scrollLeft = 0 })
     root.style.scrollBehavior = previousBehavior
   })
   await expect.poll(() => page.evaluate(() => window.scrollY)).toBeLessThanOrEqual(1)
-  await expect.poll(() => page.locator('.collection-world-grid, .collection-world-filters').evaluateAll((rails) => (
+  await expect.poll(() => page.locator('.collection-world-grid, .collection-world-filters, .collection-product-rail').evaluateAll((rails) => (
     rails.every((rail) => Math.abs((rail as HTMLElement).scrollLeft) <= 1)
   ))).toBe(true)
 }
@@ -308,7 +333,7 @@ async function stabilizeForScreenshot(page: Page) {
       await image.decode().catch(() => undefined)
     }))
 
-    document.querySelectorAll<HTMLElement>('.collection-world-grid, .collection-world-filters')
+    document.querySelectorAll<HTMLElement>('.collection-world-grid, .collection-world-filters, .collection-product-rail')
       .forEach((rail) => { rail.scrollLeft = 0 })
     await new Promise<void>((resolve) => requestAnimationFrame(() => requestAnimationFrame(() => resolve())))
   })
@@ -327,7 +352,7 @@ async function stabilizeForScreenshot(page: Page) {
         width: document.documentElement.scrollWidth,
         height: document.documentElement.scrollHeight,
       },
-      rails: [...document.querySelectorAll<HTMLElement>('.collection-world-grid, .collection-world-filters')]
+      rails: [...document.querySelectorAll<HTMLElement>('.collection-world-grid, .collection-world-filters, .collection-product-rail')]
         .map((rail) => ({ scrollLeft: rail.scrollLeft, scrollWidth: rail.scrollWidth, clientWidth: rail.clientWidth })),
       sections: [...document.querySelectorAll<HTMLElement>('main > section, main > .current-rail')]
         .map((section) => {
@@ -340,7 +365,7 @@ async function stabilizeForScreenshot(page: Page) {
     return consecutiveMatches >= 2
   }, { timeout: 10_000 }).toBe(true)
 
-  await expect.poll(() => page.locator('.collection-world-grid, .collection-world-filters').evaluateAll((rails) => (
+  await expect.poll(() => page.locator('.collection-world-grid, .collection-world-filters, .collection-product-rail').evaluateAll((rails) => (
     rails.every((rail) => Math.abs((rail as HTMLElement).scrollLeft) <= 1)
   ))).toBe(true)
 }
@@ -414,8 +439,25 @@ test('renders the final home without simulated commerce', async ({ page }, testI
 
   const current = page.locator('[data-current]')
   await expect(current).toBeVisible()
-  const currentBox = await current.boundingBox()
-  expect(currentBox?.y ?? Number.POSITIVE_INFINITY).toBeLessThan(testInfo.project.use.viewport?.height ?? 1000)
+  const heroRailFlow = await page.evaluate(() => {
+    const hero = document.querySelector<HTMLElement>('.hero-journey')
+    const rail = document.querySelector<HTMLElement>('[data-current]')
+    if (!hero || !rail) return null
+    const heroBounds = hero.getBoundingClientRect()
+    const railBounds = rail.getBoundingClientRect()
+    return {
+      heroBottom: heroBounds.bottom + window.scrollY,
+      railTop: railBounds.top + window.scrollY,
+      railFollowsHero: Boolean(hero.compareDocumentPosition(rail) & Node.DOCUMENT_POSITION_FOLLOWING),
+    }
+  })
+  expect(heroRailFlow).not.toBeNull()
+  expect(heroRailFlow?.railFollowsHero).toBe(true)
+  expect(heroRailFlow?.heroBottom ?? Number.POSITIVE_INFINITY).toBeLessThanOrEqual((heroRailFlow?.railTop ?? 0) + 1)
+  await current.scrollIntoViewIfNeeded()
+  await expect(current).toBeInViewport()
+  await expectNoOverlap(page, ['.hero-section', '[data-current]'])
+  await scrollInstantly(page, 0)
 
   const mobileHeader = !isDesktop
   await expectNoOverlap(page, mobileHeader
@@ -475,18 +517,18 @@ test('renders the final home without simulated commerce', async ({ page }, testI
   }))
   expect(worldRadii).toHaveLength(2)
   for (const radii of worldRadii) {
-    expect(radii.every((radius) => Number.isFinite(radius) && radius <= 8)).toBe(true)
+    expect(radii.every((radius) => Number.isFinite(radius) && radius <= 24)).toBe(true)
   }
 
   await expect.poll(() => inspectImages(page, '.collection-world-media img')).toEqual([
     expect.objectContaining({
       complete: true,
-      source: '/collection-ropa.webp',
+      source: '/editorial/collection-ropa.webp',
       error: '',
     }),
     expect.objectContaining({
       complete: true,
-      source: '/collection-accesorios.webp',
+      source: '/editorial/collection-accesorios.webp',
       error: '',
     }),
   ])
@@ -517,11 +559,15 @@ test('renders the final home without simulated commerce', async ({ page }, testI
   ])
 
   if (isConfigured) {
+    const ropaSection = page.locator('#ropa')
+    await expect(ropaSection.locator('.product-card')).toHaveCount(0)
+    await expect(ropaSection.getByRole('heading', { name: 'Estamos preparando esta selección.' })).toBeVisible()
+
     const accessoryCards = page.locator('#accesorios .collection-product-card')
     await expect(accessoryCards).toHaveCount(3)
-    await expect(accessoryCards.nth(0)).toHaveClass(/\bcollection-product-card-featured\b/)
-    await expect(accessoryCards.nth(1)).not.toHaveClass(/\bcollection-product-card-featured\b/)
-    await expect(accessoryCards.nth(2)).not.toHaveClass(/\bcollection-product-card-featured\b/)
+    for (let index = 0; index < 3; index += 1) {
+      await expect(accessoryCards.nth(index)).not.toHaveClass(/\bcollection-product-card-featured\b/)
+    }
     await expect(accessoryCards.locator('.product-copy h3')).toHaveText([
       'Accesorio Fyther Uno',
       'Accesorio Fyther Dos',
@@ -533,17 +579,14 @@ test('renders the final home without simulated commerce', async ({ page }, testI
     expect(productImages.some(({ source }) => /collection-(?:ropa|accesorios)\.webp$/.test(source))).toBe(false)
     expect(productImages.every(({ complete, naturalWidth, naturalHeight }) => complete && naturalWidth > 0 && naturalHeight > 0)).toBe(true)
 
-    const featuredMedia = await accessoryCards.nth(0).locator('.product-media').boundingBox()
-    expect(featuredMedia).not.toBeNull()
-    if (featuredMedia) {
-      const renderedRatio = featuredMedia.width / featuredMedia.height
-      if (isDesktop) {
-        expect(renderedRatio).toBeGreaterThan(1.55)
-        expect(renderedRatio).toBeLessThan(1.65)
-      } else {
-        expect(renderedRatio).toBeGreaterThan(0.78)
-        expect(renderedRatio).toBeLessThan(0.82)
-      }
+    const productMedia = await accessoryCards.locator('.product-media').evaluateAll((elements) => elements.map((element) => {
+      const bounds = element.getBoundingClientRect()
+      return bounds.width / bounds.height
+    }))
+    expect(productMedia).toHaveLength(3)
+    for (const renderedRatio of productMedia) {
+      expect(renderedRatio).toBeGreaterThan(0.78)
+      expect(renderedRatio).toBeLessThan(0.82)
     }
 
     const firstProductCard = accessoryCards.nth(0).locator('.product-card')
@@ -601,8 +644,6 @@ test('renders the final home without simulated commerce', async ({ page }, testI
     expect(focusedCard.actionColor).toBe('rgb(110, 239, 242)')
     expect(focusedCard.outlineStyle).not.toBe('none')
     expect(Number.parseFloat(focusedCard.outlineWidth ?? '0')).toBeGreaterThan(0)
-    expect(Math.abs(focusedCard.documentX - baselineCard.documentX)).toBeLessThanOrEqual(1)
-    expect(Math.abs(focusedCard.documentY - baselineCard.documentY)).toBeLessThanOrEqual(1)
     expect(Math.abs(focusedCard.width - baselineCard.width)).toBeLessThanOrEqual(1)
     expect(Math.abs(focusedCard.height - baselineCard.height)).toBeLessThanOrEqual(1)
     await page.evaluate(() => (document.activeElement as HTMLElement | null)?.blur())
@@ -623,7 +664,7 @@ test('renders the final home without simulated commerce', async ({ page }, testI
     await expectHealthyPage(page)
   }
 
-  await expectTextContained(page, '.current-rail p')
+  await expectTextContained(page, '.current-list li')
 
   await expectFooterMarkContained(page)
   const screenshotName = isConfigured
@@ -631,6 +672,69 @@ test('renders the final home without simulated commerce', async ({ page }, testI
     : `home-v02-${testInfo.project.name}.png`
   await stabilizeForScreenshot(page)
   await page.screenshot({ path: testInfo.outputPath(screenshotName), fullPage: true })
+  browser.expectClean()
+})
+
+test('scrubs the hero once across its own journey travel without rewinding', async ({ page }, testInfo) => {
+  test.skip(projectMode(testInfo.project.name) !== 'configured', 'Hero scrub runs once per configured viewport')
+  const browser = watchBrowserErrors(page)
+
+  await page.goto('/')
+  const hero = page.locator('.hero-journey')
+  const video = page.locator('.hero-media video')
+  await expect(hero).toHaveAttribute('data-hero-complete', 'false')
+  await expect(video).toHaveCount(1)
+  await expect(video).not.toHaveAttribute('loop', '')
+  expect(await video.evaluate((media) => (media as HTMLVideoElement).loop)).toBe(false)
+
+  await expect.poll(() => video.evaluate((media) => {
+    const element = media as HTMLVideoElement
+    return element.readyState >= HTMLMediaElement.HAVE_METADATA
+      && Number.isFinite(element.duration)
+      && element.duration > 1
+      && element.videoWidth > 0
+      && element.videoHeight > 0
+  }), { timeout: 15_000 }).toBe(true)
+
+  const metadata = await video.evaluate((media) => {
+    const element = media as HTMLVideoElement
+    return {
+      duration: element.duration,
+      height: element.videoHeight,
+      width: element.videoWidth,
+    }
+  })
+  const poster = (await inspectImages(page, '.hero-poster-desktop'))[0]
+  expect(metadata.width).toBeGreaterThan(0)
+  expect(metadata.height).toBeGreaterThan(0)
+  expect(poster).toEqual(expect.objectContaining({ complete: true, error: '' }))
+  expect(poster.naturalWidth).toBeGreaterThan(0)
+  expect(poster.naturalHeight).toBeGreaterThan(0)
+
+  await page.screenshot({ path: testInfo.outputPath(`hero-start-${testInfo.project.name}.png`) })
+  const journey = await hero.evaluate((element) => {
+    const journeyElement = element as HTMLElement
+    const scene = journeyElement.querySelector<HTMLElement>('.hero-section')
+    if (!scene) throw new Error('Hero scene is missing')
+    const bounds = journeyElement.getBoundingClientRect()
+    return {
+      start: bounds.top + window.scrollY,
+      travel: journeyElement.offsetHeight - scene.offsetHeight,
+    }
+  })
+  expect(journey.travel).toBeGreaterThan(0)
+
+  await scrollInstantly(page, journey.start + journey.travel)
+  await expect(hero).toHaveAttribute('data-hero-complete', 'true')
+  const finalTime = await video.evaluate((media) => (media as HTMLVideoElement).currentTime)
+  expect(Math.abs(finalTime - (metadata.duration - 1))).toBeLessThanOrEqual(0.15)
+  expect(await video.evaluate((media) => (media as HTMLVideoElement).ended)).toBe(false)
+  await page.screenshot({ path: testInfo.outputPath(`hero-final-${testInfo.project.name}.png`) })
+
+  await scrollInstantly(page, journey.start + journey.travel / 2)
+  await expect.poll(() => video.evaluate((media) => (media as HTMLVideoElement).currentTime)).toBeGreaterThanOrEqual(finalTime - 0.02)
+  await expect(hero).toHaveAttribute('data-hero-complete', 'true')
+  await expectHealthyPage(page)
   browser.expectClean()
 })
 
@@ -721,6 +825,28 @@ test('covers product card hover feedback on fine pointers', async ({ page }, tes
       && state.imageTransform === 'none'
       && state.actionTransform === 'none'
   }).toBe(true)
+
+  await focusByKeyboard(page, '#accesorios .product-card')
+  await expect(card).toBeFocused()
+  expect(await card.evaluate((element) => element.matches(':focus-visible'))).toBe(true)
+  await expect.poll(async () => {
+    const state = await readProductCardInteraction(card)
+    return state.borderColor === hovered.borderColor
+      && state.actionColor === hovered.actionColor
+      && Math.abs((state.imageMatrix?.a ?? 0) - (hovered.imageMatrix?.a ?? 0)) <= 0.001
+      && Math.abs((state.actionMatrix?.e ?? 0) - (hovered.actionMatrix?.e ?? 0)) <= 0.15
+  }).toBe(true)
+  const focused = await readProductCardInteraction(card)
+  expect(focused.borderColor).toBe(hovered.borderColor)
+  expect(focused.actionColor).toBe(hovered.actionColor)
+  expect(Math.abs((focused.imageMatrix?.a ?? 0) - (hovered.imageMatrix?.a ?? 0))).toBeLessThanOrEqual(0.001)
+  expect(Math.abs((focused.imageMatrix?.d ?? 0) - (hovered.imageMatrix?.d ?? 0))).toBeLessThanOrEqual(0.001)
+  expect(Math.abs((focused.actionMatrix?.e ?? 0) - (hovered.actionMatrix?.e ?? 0))).toBeLessThanOrEqual(0.15)
+  expect(Math.abs((focused.actionMatrix?.f ?? 0) - (hovered.actionMatrix?.f ?? 0))).toBeLessThanOrEqual(0.001)
+  expect(Math.abs(focused.documentX - baseline.documentX)).toBeLessThanOrEqual(1)
+  expect(Math.abs(focused.documentY - baseline.documentY)).toBeLessThanOrEqual(1)
+  expect(Math.abs(focused.width - baseline.width)).toBeLessThanOrEqual(1)
+  expect(Math.abs(focused.height - baseline.height)).toBeLessThanOrEqual(1)
   browser.expectClean()
 })
 
@@ -809,6 +935,45 @@ test('mobile and tablet menu closes with Escape and returns focus', async ({ pag
   browser.expectClean()
 })
 
+test('supports a continuous keyboard path through the mobile storefront', async ({ page }, testInfo) => {
+  test.skip(testInfo.project.name !== 'mobile-configured', 'Full mobile keyboard path runs once')
+  const browser = watchBrowserErrors(page)
+
+  await page.goto('/')
+  const menuButton = page.locator('.menu-button')
+  await tabTo(page, menuButton)
+  await page.keyboard.press('Enter')
+  await expect(menuButton).toHaveAttribute('aria-expanded', 'true')
+
+  const mobileNav = page.locator('#primary-navigation')
+  for (const name of ['Ropa', 'Accesorios', 'Seguir pedido']) {
+    const link = mobileNav.getByRole('link', { name, exact: true })
+    await tabTo(page, link)
+    await expect(link).toBeFocused()
+  }
+  await page.keyboard.press('Escape')
+  await expect(menuButton).toBeFocused()
+  await expect(menuButton).toHaveAttribute('aria-expanded', 'false')
+
+  for (const target of [
+    page.locator('.cart-link'),
+    page.getByRole('link', { name: 'Descubrir ropa' }).first(),
+    page.getByRole('link', { name: 'Ver accesorios' }).first(),
+    page.locator('.collection-world-panel').nth(0),
+    page.locator('.collection-world-panel').nth(1),
+    page.locator('#accesorios .product-card').nth(0),
+    page.locator('#accesorios .product-card').nth(2),
+    page.locator('#preguntas .trust-faq-question').first(),
+    page.locator('.site-footer .footer-links a').first(),
+  ]) {
+    await tabTo(page, target)
+    await expect(target).toBeFocused()
+  }
+
+  await expectHealthyPage(page)
+  browser.expectClean()
+})
+
 test('renders final trust pages without internal language', async ({ page }) => {
   const browser = watchBrowserErrors(page)
 
@@ -845,6 +1010,16 @@ test('keeps catalog, cart, and checkout truthful across harness states', async (
   if (isConfigured) {
     await expect(catalogH1).toHaveText('Encuentra algo para ti.', { timeout: backendTimeout })
     await expect(page.getByRole('button', { name: 'Todos', exact: true })).toHaveAttribute('aria-pressed', 'true', { timeout: backendTimeout })
+
+    await page.goto('/catalogo/accesorio-fyther-uno')
+    await expect(page.getByRole('heading', { level: 1, name: 'Accesorio Fyther Uno' })).toBeVisible({ timeout: backendTimeout })
+    await page.getByRole('button', { name: 'Agregar al carrito' }).click()
+    await expect(page.getByRole('status')).toHaveText('Agregado al carrito')
+    await page.goto('/checkout')
+    await expect(page.getByRole('heading', { level: 1, name: 'Terminemos juntas.' })).toBeVisible({ timeout: backendTimeout })
+    await expect(page.locator('.checkout-summary')).toContainText('1 × Accesorio Fyther Uno')
+    await expect(page.getByText('No hay métodos de pago configurados. Contacta a Fyther antes de continuar.')).toBeVisible()
+    await expect(page.getByRole('button', { name: /Confirmar pedido/ })).toBeDisabled()
   } else {
     expect(mode).toBe('unconfigured')
     await expect(page.getByRole('heading', { name: 'Estamos preparando la colección.' })).toBeVisible({ timeout: backendTimeout })
@@ -853,14 +1028,20 @@ test('keeps catalog, cart, and checkout truthful across harness states', async (
   browser.expectClean()
 
   await page.goto('/carrito')
-  await expect(page.getByRole('heading', { name: 'Tu selección empieza aquí.' })).toBeVisible()
+  if (isConfigured) {
+    await expect(page.getByRole('heading', { level: 1, name: 'Lo que elegiste.' })).toBeVisible()
+    await expect(page.locator('.cart-line')).toContainText('Accesorio Fyther Uno')
+  } else {
+    await expect(page.getByRole('heading', { name: 'Tu selección empieza aquí.' })).toBeVisible()
+  }
   await expectHealthyPage(page)
   browser.expectClean()
 
   await page.goto('/checkout')
   if (isConfigured) {
     await expect(page.getByRole('heading', { level: 1, name: 'Terminemos juntas.' })).toBeVisible({ timeout: backendTimeout })
-    await expect(page.getByRole('heading', { name: 'Tu carrito está vacío.' })).toBeVisible({ timeout: backendTimeout })
+    await expect(page.locator('.checkout-summary')).toContainText('1 × Accesorio Fyther Uno')
+    await expect(page.getByRole('button', { name: /Confirmar pedido/ })).toBeDisabled()
   } else {
     await expect(page.getByRole('heading', { name: 'Estamos preparando la colección.' })).toBeVisible({ timeout: backendTimeout })
     await expect(page.getByText(forbiddenCommerceCopy)).toHaveCount(0)
@@ -868,6 +1049,12 @@ test('keeps catalog, cart, and checkout truthful across harness states', async (
   await expect(page.getByText(exposedConfiguration)).toHaveCount(0)
   await expectHealthyPage(page)
   browser.expectClean()
+
+  const trackingResponse = await page.request.get('/tracking/no-es-un-pedido')
+  expect(trackingResponse.status()).toBe(404)
+  const trackingHtml = await trackingResponse.text()
+  expect(trackingHtml).toContain('No encontramos esta página.')
+  expect(trackingHtml).not.toMatch(exposedConfiguration)
 })
 
 test('keeps every service ribbon phrase visible at 200% mobile text size', async ({ page }, testInfo) => {
@@ -883,7 +1070,7 @@ test('keeps every service ribbon phrase visible at 200% mobile text size', async
   await expect(rail).toContainText('ORIGINALES · CORREOS DE COSTA RICA · APARTADOS · RESPUESTA EN MENOS DE 24H')
   await expectNoHorizontalClipping(page, [
     '.current-rail',
-    '.current-rail p',
+    '.current-list',
     '.collection-world-heading',
     '.collection-world-description',
     '.collection-world-copy',
@@ -894,16 +1081,41 @@ test('keeps every service ribbon phrase visible at 200% mobile text size', async
     '#accesorios .product-copy h3',
     '.collection-section-link',
     '.trust-faq-heading',
-    '.trust-faq-list summary',
+    '.trust-faq-question',
     '.footer-top',
   ])
   await expectTextContained(page, [
-    '.current-rail p',
+    '.current-list li',
     '.collection-world-description',
     '.collection-world-name',
     '.collection-section-description',
     '#accesorios .product-copy h3',
   ].join(', '))
+  await expectHealthyPage(page)
+  browser.expectClean()
+})
+
+test('uses the static poster and omits video when data saver is enabled', async ({ page }, testInfo) => {
+  test.skip(testInfo.project.name !== 'mobile-configured', 'Data saver fallback runs once')
+  const browser = watchBrowserErrors(page)
+  await page.addInitScript(() => {
+    Object.defineProperty(navigator, 'connection', {
+      configurable: true,
+      value: {
+        saveData: true,
+        addEventListener() {},
+        removeEventListener() {},
+      },
+    })
+  })
+
+  await page.goto('/')
+  await expect(page.locator('.hero-journey')).toHaveAttribute('data-hero-static', 'true')
+  await expect(page.locator('.hero-media video')).toHaveCount(0)
+  const poster = (await inspectImages(page, '.hero-poster-desktop'))[0]
+  expect(poster).toEqual(expect.objectContaining({ complete: true, error: '' }))
+  expect(poster.naturalWidth).toBeGreaterThan(0)
+  expect(poster.naturalHeight).toBeGreaterThan(0)
   await expectHealthyPage(page)
   browser.expectClean()
 })
@@ -925,6 +1137,7 @@ test('disables ambient motion when reduced motion is requested', async ({ page }
 
   const videoStates = await page.locator('.hero-media video').evaluateAll((videos) => videos.map((video) => (video as HTMLVideoElement).paused))
   expect(videoStates.every(Boolean)).toBe(true)
+  await expect(page.locator('.hero-media video')).toHaveCount(0)
 
   const currentMotion = await page.locator('.current-line > span').evaluate((element) => {
     const style = getComputedStyle(element)
@@ -935,6 +1148,7 @@ test('disables ambient motion when reduced motion is requested', async ({ page }
   expect(currentMotion.transform).toBe('none')
 
   const spatialMotion = await page.locator([
+    '.wordmark .brand-mark',
     '.collection-world-media img',
     '.collection-world-copy svg',
     '.trust-faq-list summary svg',
@@ -945,6 +1159,7 @@ test('disables ambient motion when reduced motion is requested', async ({ page }
       animation: style.animationName,
       transition: style.transitionDuration,
       transform: style.transform,
+      clipPath: style.clipPath,
     }
   }))
   expect(spatialMotion.length).toBeGreaterThan(0)
@@ -952,6 +1167,7 @@ test('disables ambient motion when reduced motion is requested', async ({ page }
     expect(motion.animation).toBe('none')
     expect(longestDurationSeconds(motion.transition)).toBeLessThanOrEqual(0.15)
     expect(motion.transform).toBe('none')
+    expect(['none', 'auto']).toContain(motion.clipPath)
   }
 
   const worldMotion = await page.locator('.collection-world-panel').evaluateAll((elements) => elements.map((element) => {

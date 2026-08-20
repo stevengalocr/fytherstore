@@ -20,7 +20,7 @@ function installDesktopMediaQuery() {
   const listeners = new Set<(event: MediaQueryListEvent) => void>()
   const mediaQuery = {
     get matches() { return matches },
-    media: '(min-width: 768px)',
+    media: '(min-width: 769px)',
     onchange: null,
     addListener: vi.fn(),
     removeListener: vi.fn(),
@@ -70,6 +70,18 @@ describe('Header', () => {
     expect(globalsCss.slice(0, mobileCssStart)).not.toContain('body[data-menu-open]')
     expect(mobileCss).toMatch(/body\[data-menu-open\]\s*\{[^}]*overflow:\s*hidden/)
     expect(mobileCss).toMatch(/\.catalog-hero,[\s\S]*\.policy-page\s*\{[^}]*padding-top:\s*92px/)
+  })
+
+  it('keeps the 768px mobile logo centered while the scrolled header scales', () => {
+    const tabletCss = globalsCss.match(/@media \(width: 768px\)\s*\{([\s\S]*?)\n\}/)?.[1] ?? ''
+
+    expect(tabletCss).toMatch(/\.wordmark \.brand-mark\s*\{[^}]*transform-origin:\s*center/)
+  })
+
+  it('removes the logo scale and its transition under reduced motion', () => {
+    const reducedMotionCss = globalsCss.match(/@media \(prefers-reduced-motion: reduce\)\s*\{([\s\S]*)\}\s*$/)?.[1] ?? ''
+
+    expect(reducedMotionCss).toMatch(/\.wordmark \.brand-mark\s*\{[^}]*transform:\s*none !important;[^}]*transition:\s*none !important/)
   })
 
   it('gives footer links full touch targets', () => {
@@ -207,6 +219,7 @@ describe('Header', () => {
     render(<Header />)
 
     await user.click(screen.getByRole('button', { name: 'Abrir menú' }))
+    expect(window.matchMedia).toHaveBeenCalledWith('(min-width: 769px)')
 
     act(() => desktopMedia.setDesktop(true))
 
