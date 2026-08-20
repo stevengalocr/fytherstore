@@ -33,6 +33,8 @@ Los activos editoriales derivados se preparan desde sus fuentes con:
 node scripts/prepare-fyther-assets.mjs
 ```
 
+En un clon limpio, las fuentes ignoradas de `.superpowers/generated-assets` pueden no existir. El comando regenera las marcas y posters desde las fuentes públicas disponibles, y conserva las salidas editoriales comprometidas únicamente después de validar su formato y dimensiones; si falta también una salida válida, termina con un error claro.
+
 El hero usa el video local como recorrido controlado por scroll. Con movimiento reducido o ahorro de datos, omite el video y muestra el poster estático sin conservar el tramo de scrub.
 
 ## Vercel
@@ -56,4 +58,4 @@ npm audit --audit-level=high
 npm run test:e2e
 ```
 
-La especificación aprobada está en `docs/superpowers/specs/2026-08-08-fyther-store-v1-design.md` y el contrato visual en `design-system/fyther-store/MASTER.md`.
+La especificación aprobada está en `docs/superpowers/specs/2026-08-14-fyther-soft-performance-redesign-design.md` y el contrato visual en `design-system/fyther-store/MASTER.md`.

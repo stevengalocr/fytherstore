@@ -1,4 +1,4 @@
-import { mkdir } from 'node:fs/promises'
+import { access, mkdir, readFile } from 'node:fs/promises'
 import { dirname, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import sharp from 'sharp'
@@ -19,6 +19,50 @@ export async function prepareRaster(input, output, width, height, position = 'ce
     .resize({ width, height, fit: 'cover', position })
     .webp(WEBP_OPTIONS)
     .toFile(output)
+}
+
+async function fileExists(path) {
+  try {
+    await access(path)
+    return true
+  } catch {
+    return false
+  }
+}
+
+async function isValidPreparedRaster(output, width, height) {
+  try {
+    const metadata = await sharp(await readFile(output)).metadata()
+    return metadata.format === 'webp'
+      && metadata.width === width
+      && metadata.height === height
+  } catch {
+    return false
+  }
+}
+
+export async function prepareOptionalEditorialAsset({
+  input,
+  output,
+  width,
+  height,
+  position = 'centre',
+  label,
+  warn = console.warn,
+}) {
+  if (await fileExists(input)) {
+    await prepareRaster(input, output, width, height, position)
+    return 'generated'
+  }
+
+  if (await isValidPreparedRaster(output, width, height)) {
+    warn(`[fyther-assets] source unavailable; retained validated output ${label}`)
+    return 'retained'
+  }
+
+  throw new Error(
+    `[fyther-assets] source unavailable and committed output is missing or invalid: ${label}`,
+  )
 }
 
 async function prepareHeroPoster(input, output, width, height) {
@@ -147,30 +191,34 @@ async function main() {
       1200,
       1500,
     ),
-    prepareRaster(
-      resolve(generatedPath, 'collection-ropa.png'),
-      resolve(publicPath, 'editorial/collection-ropa.webp'),
-      1600,
-      2000,
-    ),
-    prepareRaster(
-      resolve(generatedPath, 'collection-accesorios.png'),
-      resolve(publicPath, 'editorial/collection-accesorios.webp'),
-      1600,
-      2000,
-    ),
-    prepareRaster(
-      resolve(generatedPath, 'community-movement.png'),
-      resolve(publicPath, 'editorial/community-movement.webp'),
-      2000,
-      1200,
-    ),
-    prepareRaster(
-      resolve(generatedPath, 'footer-movement.png'),
-      resolve(publicPath, 'editorial/footer-movement.webp'),
-      1800,
-      900,
-    ),
+    prepareOptionalEditorialAsset({
+      input: resolve(generatedPath, 'collection-ropa.png'),
+      output: resolve(publicPath, 'editorial/collection-ropa.webp'),
+      width: 1600,
+      height: 2000,
+      label: 'public/editorial/collection-ropa.webp',
+    }),
+    prepareOptionalEditorialAsset({
+      input: resolve(generatedPath, 'collection-accesorios.png'),
+      output: resolve(publicPath, 'editorial/collection-accesorios.webp'),
+      width: 1600,
+      height: 2000,
+      label: 'public/editorial/collection-accesorios.webp',
+    }),
+    prepareOptionalEditorialAsset({
+      input: resolve(generatedPath, 'community-movement.png'),
+      output: resolve(publicPath, 'editorial/community-movement.webp'),
+      width: 2000,
+      height: 1200,
+      label: 'public/editorial/community-movement.webp',
+    }),
+    prepareOptionalEditorialAsset({
+      input: resolve(generatedPath, 'footer-movement.png'),
+      output: resolve(publicPath, 'editorial/footer-movement.webp'),
+      width: 1800,
+      height: 900,
+      label: 'public/editorial/footer-movement.webp',
+    }),
   ])
 }
 
