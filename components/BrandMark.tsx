@@ -12,7 +12,7 @@ export default function BrandMark({
   sizes?: string
 }) {
   const image = variant === 'primary'
-    ? { src: '/brand/fyther-mark-header.webp', width: 640, height: 640 }
+    ? { src: '/brand/fyther-wordmark-header.webp', width: 576, height: 384 }
     : { src: '/brand/fyther-mark-footer.webp', width: 960, height: 960 }
 
   return (

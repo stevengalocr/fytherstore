@@ -58,12 +58,14 @@ describe('Header', () => {
     vi.unstubAllGlobals()
   })
 
-  it('keeps the capsule at its stable 52px height', () => {
+  it('gives the logo a calm 64px capsule without absolute cropping', () => {
     const headerInnerCss = globalsCss.match(/\.header-inner\s*\{([^}]*)\}/)?.[1] ?? ''
+    const headerLogoCss = globalsCss.match(/\.wordmark \.brand-mark img\s*\{([^}]*)\}/)?.[1] ?? ''
 
-    expect(headerInnerCss).toContain('min-height: 52px')
-    expect(headerInnerCss).toMatch(/padding:\s*0 12px|padding-inline:\s*12px/)
-    expect(headerInnerCss).not.toMatch(/padding:\s*12px(?:;|$)/)
+    expect(headerInnerCss).toContain('min-height: 64px')
+    expect(headerInnerCss).toMatch(/padding:\s*4px 16px|padding-inline:\s*16px/)
+    expect(headerLogoCss).toContain('position: static')
+    expect(headerLogoCss).toContain('object-fit: contain')
   })
 
   it('scopes menu locking to mobile and clears fixed-header route content', () => {
@@ -251,10 +253,10 @@ describe('Header', () => {
 
   it('shows editorial movement media and the exact service promises', () => {
     render(<Footer />)
-    const editorialImage = screen.getByRole('img', { name: /movimiento/i })
+    const editorialImage = screen.getByRole('img', { name: /amigas/i })
 
     expect(decodeURIComponent(editorialImage.getAttribute('src') ?? '')).toContain(
-      '/editorial/footer-movement.webp',
+      '/editorial/footer-community-v2.webp',
     )
     expect(
       within(screen.getByRole('list', { name: 'Servicio Fyther' }))

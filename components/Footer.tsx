@@ -8,10 +8,10 @@ export default function Footer() {
       <div className="footer-top">
         <div className="footer-media">
           <Image
-            src="/editorial/footer-movement.webp"
-            alt="Dos mujeres descansan juntas después de una sesión de movimiento"
-            width={1800}
-            height={900}
+            src="/editorial/footer-community-v2.webp"
+            alt="Tres amigas comparten un momento después de entrenar"
+            width={1920}
+            height={1080}
             sizes="(max-width: 767px) calc(100vw - 32px), 56vw"
           />
         </div>

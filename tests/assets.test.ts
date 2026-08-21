@@ -27,6 +27,13 @@ const assets: AssetContract[] = [
     maxBytes: 500_000,
   },
   {
+    path: 'public/brand/fyther-wordmark-header.webp',
+    width: 576,
+    height: 384,
+    hasAlpha: true,
+    maxBytes: 300_000,
+  },
+  {
     path: 'public/editorial/hero-poster-desktop.webp',
     width: 2400,
     height: 1350,
@@ -35,6 +42,20 @@ const assets: AssetContract[] = [
   },
   {
     path: 'public/editorial/hero-poster-mobile.webp',
+    width: 1200,
+    height: 1500,
+    hasAlpha: false,
+    maxBytes: 700_000,
+  },
+  {
+    path: 'public/editorial/hero-open-suitcase.webp',
+    width: 1920,
+    height: 1080,
+    hasAlpha: false,
+    maxBytes: 700_000,
+  },
+  {
+    path: 'public/editorial/hero-open-suitcase-mobile.webp',
     width: 1200,
     height: 1500,
     hasAlpha: false,
@@ -65,6 +86,13 @@ const assets: AssetContract[] = [
     path: 'public/editorial/footer-movement.webp',
     width: 1800,
     height: 900,
+    hasAlpha: false,
+    maxBytes: 700_000,
+  },
+  {
+    path: 'public/editorial/footer-community-v2.webp',
+    width: 1920,
+    height: 1080,
     hasAlpha: false,
     maxBytes: 700_000,
   },

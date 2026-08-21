@@ -5,13 +5,6 @@ const exposedConfiguration = /BilBildin|modo live|configuraci[oó]n|configurad[o
 const frameworkDialog = '[data-nextjs-dialog]'
 const backendTimeout = 15_000
 
-type VideoFrameSample = {
-  luminances: number[]
-  meanLuminance: number
-  luminanceVariance: number
-  opaqueSamples: number
-}
-
 type FocusTraversal = {
   encountered: Set<string>
   initialIdentity: string | null
@@ -137,97 +130,6 @@ async function tabTo(page: Page, target: Locator, traversal = createFocusTravers
     if (await target.evaluate((element) => element === document.activeElement)) return focus
   }
   throw new Error(`Could not reach ${await target.evaluate((element) => element.outerHTML)} after ${maxPresses} Tab presses`)
-}
-
-async function settleAndSampleVideoFrame(video: Locator): Promise<VideoFrameSample> {
-  return video.evaluate(async (media) => {
-    const element = media as HTMLVideoElement
-    const frameVideo = element as HTMLVideoElement & {
-      cancelVideoFrameCallback?: (handle: number) => void
-      requestVideoFrameCallback?: (callback: () => void) => number
-    }
-
-    const waitForSeek = async () => {
-      if (!element.seeking) return
-      await new Promise<void>((resolve, reject) => {
-        const timeout = window.setTimeout(() => {
-          element.removeEventListener('seeked', onSeeked)
-          reject(new Error(`Video seek did not settle at ${element.currentTime.toFixed(3)}s`))
-        }, 5_000)
-        const onSeeked = () => {
-          window.clearTimeout(timeout)
-          resolve()
-        }
-        element.addEventListener('seeked', onSeeked, { once: true })
-        if (!element.seeking) {
-          element.removeEventListener('seeked', onSeeked)
-          window.clearTimeout(timeout)
-          resolve()
-        }
-      })
-    }
-
-    const waitForPaint = async () => {
-      await new Promise<void>((resolve) => {
-        let complete = false
-        let frameHandle: number | undefined
-        let timeout: number | undefined
-        const finish = () => {
-          if (complete) return
-          complete = true
-          if (timeout !== undefined) window.clearTimeout(timeout)
-          resolve()
-        }
-        const animationFrameFallback = () => {
-          window.requestAnimationFrame(() => window.requestAnimationFrame(finish))
-        }
-
-        if (typeof frameVideo.requestVideoFrameCallback === 'function') {
-          frameHandle = frameVideo.requestVideoFrameCallback(finish)
-          timeout = window.setTimeout(() => {
-            if (frameHandle !== undefined) frameVideo.cancelVideoFrameCallback?.(frameHandle)
-            animationFrameFallback()
-          }, 1_000)
-        } else {
-          animationFrameFallback()
-        }
-      })
-    }
-
-    await waitForSeek()
-    await waitForPaint()
-    if (element.seeking) {
-      await waitForSeek()
-      await waitForPaint()
-    }
-
-    const canvas = document.createElement('canvas')
-    canvas.width = 32
-    canvas.height = 18
-    const context = canvas.getContext('2d', { alpha: true, willReadFrequently: true })
-    if (!context) throw new Error('Could not create video frame sampling canvas')
-    context.drawImage(element, 0, 0, canvas.width, canvas.height)
-    const pixels = context.getImageData(0, 0, canvas.width, canvas.height).data
-    const luminances: number[] = []
-    let opaqueSamples = 0
-    for (let y = 1; y < canvas.height; y += 3) {
-      for (let x = 1; x < canvas.width; x += 4) {
-        const offset = (y * canvas.width + x) * 4
-        const red = pixels[offset]
-        const green = pixels[offset + 1]
-        const blue = pixels[offset + 2]
-        const alpha = pixels[offset + 3]
-        if (alpha > 0) opaqueSamples += 1
-        luminances.push((0.2126 * red) + (0.7152 * green) + (0.0722 * blue))
-      }
-    }
-    const meanLuminance = luminances.reduce((total, value) => total + value, 0) / luminances.length
-    const luminanceVariance = luminances.reduce((total, value) => (
-      total + ((value - meanLuminance) ** 2)
-    ), 0) / luminances.length
-
-    return { luminances, meanLuminance, luminanceVariance, opaqueSamples }
-  })
 }
 
 async function scrollInstantly(page: Page, top: number) {
@@ -657,23 +559,18 @@ test('renders the final home without simulated commerce', async ({ page }, testI
   })
   expect(worldBoxes.every(Boolean)).toBe(true)
   const [firstWorld, secondWorld] = worldBoxes
-  if (isConfigured && isDesktop && firstWorld && secondWorld) {
+  if (isConfigured && firstWorld && secondWorld) {
     expect(worldGridLayout.display).toBe('grid')
     expect(Math.abs(firstWorld.y - secondWorld.y)).toBeLessThanOrEqual(1)
     expect(firstWorld.x + firstWorld.width).toBeLessThanOrEqual(secondWorld.x + 1)
-  } else if (isConfigured && !isDesktop && firstWorld && secondWorld) {
     const worldGridBox = await page.locator('.collection-world-grid').boundingBox()
     expect(worldGridBox).not.toBeNull()
-    expect(worldGridLayout.display).toBe('flex')
-    expect(Math.abs(firstWorld.y - secondWorld.y)).toBeLessThanOrEqual(1)
-    expect(firstWorld.x + firstWorld.width).toBeLessThanOrEqual(secondWorld.x + 1)
     if (worldGridBox) {
       expect(firstWorld.x).toBeGreaterThanOrEqual(worldGridBox.x - 1)
-      expect(secondWorld.x).toBeLessThan(worldGridBox.x + worldGridBox.width)
+      expect(secondWorld.x + secondWorld.width).toBeLessThanOrEqual(worldGridBox.x + worldGridBox.width + 1)
     }
-    expect(worldGridLayout.scrollWidth).toBeGreaterThan(worldGridLayout.clientWidth)
-    expect(['auto', 'scroll']).toContain(worldGridLayout.overflowX)
-    expect(worldGridLayout.scrollSnapType).toContain('mandatory')
+    expect(worldGridLayout.scrollWidth).toBeLessThanOrEqual(worldGridLayout.clientWidth + 1)
+    expect(worldGridLayout.scrollSnapType).not.toContain('mandatory')
   }
 
   const worldRadii = await page.locator('.collection-world-media').evaluateAll((elements) => elements.map((element) => {
@@ -870,88 +767,49 @@ test('categories, products, FAQ, and footer work without JavaScript', async ({ p
   await page.screenshot({ path: testInfo.outputPath('home-no-javascript.png'), fullPage: true })
 })
 
-test('scrubs the hero once across its own journey travel without rewinding', async ({ page }, testInfo) => {
-  test.skip(projectMode(testInfo.project.name) !== 'configured', 'Hero scrub runs once per configured viewport')
+test('uses a static responsive hero and keeps both category worlds compact', async ({ page }, testInfo) => {
+  test.skip(projectMode(testInfo.project.name) !== 'configured', 'Static hero runs once per configured viewport')
   const browser = watchBrowserErrors(page)
 
   await page.goto('/')
   const hero = page.locator('.hero-journey')
-  const video = page.locator('.hero-media video')
-  await expect(hero).toHaveAttribute('data-hero-complete', 'false')
-  await expect(video).toHaveCount(1)
-  await expect(video).not.toHaveAttribute('loop', '')
-  expect(await video.evaluate((media) => (media as HTMLVideoElement).loop)).toBe(false)
+  const still = page.locator('.hero-still-frame img')
+  await expect(hero).toHaveAttribute('data-hero-static', 'true')
+  await expect(page.locator('.hero-media video')).toHaveCount(0)
+  await expect(still).toBeVisible()
+  const stillImage = await still.evaluate((image) => ({
+    currentSrc: (image as HTMLImageElement).currentSrc,
+    naturalHeight: (image as HTMLImageElement).naturalHeight,
+    naturalWidth: (image as HTMLImageElement).naturalWidth,
+  }))
+  expect(stillImage.naturalWidth).toBeGreaterThan(0)
+  expect(stillImage.naturalHeight).toBeGreaterThan(0)
+  expect(stillImage.currentSrc).toContain(
+    testInfo.project.name === 'mobile-configured'
+      ? 'hero-open-suitcase-mobile.webp'
+      : 'hero-open-suitcase.webp',
+  )
 
-  await expect.poll(() => video.evaluate((media) => {
-    const element = media as HTMLVideoElement
-    return element.readyState >= HTMLMediaElement.HAVE_METADATA
-      && Number.isFinite(element.duration)
-      && element.duration > 1
-      && element.videoWidth > 0
-      && element.videoHeight > 0
-  }), { timeout: 15_000 }).toBe(true)
-
-  const metadata = await video.evaluate((media) => {
-    const element = media as HTMLVideoElement
-    return {
-      duration: element.duration,
-      height: element.videoHeight,
-      width: element.videoWidth,
-    }
-  })
-  expect(metadata.width).toBeGreaterThan(0)
-  expect(metadata.height).toBeGreaterThan(0)
-
-  const startFrame = await settleAndSampleVideoFrame(video)
-  expect(startFrame.opaqueSamples).toBe(startFrame.luminances.length)
-  expect(startFrame.meanLuminance).toBeGreaterThan(8)
-  expect(startFrame.luminanceVariance).toBeGreaterThan(40)
-
-  await page.screenshot({ path: testInfo.outputPath(`hero-start-${testInfo.project.name}.png`) })
-  const journey = await hero.evaluate((element) => {
-    const journeyElement = element as HTMLElement
-    const scene = journeyElement.querySelector<HTMLElement>('.hero-section')
+  const heroLayout = await hero.evaluate((element) => {
+    const scene = element.querySelector<HTMLElement>('.hero-section')
     if (!scene) throw new Error('Hero scene is missing')
-    const bounds = journeyElement.getBoundingClientRect()
     return {
-      start: bounds.top + window.scrollY,
-      travel: journeyElement.offsetHeight - scene.offsetHeight,
+      position: getComputedStyle(scene).position,
+      travel: (element as HTMLElement).offsetHeight - scene.offsetHeight,
     }
   })
-  expect(journey.travel).toBeGreaterThan(0)
+  expect(heroLayout.position).toBe('relative')
+  expect(Math.abs(heroLayout.travel)).toBeLessThanOrEqual(1)
 
-  if (testInfo.project.name === 'mobile-configured') {
-    const viewportHeight = page.viewportSize()?.height ?? 0
-    expect(journey.travel / viewportHeight).toBeGreaterThan(0.32)
-    expect(journey.travel / viewportHeight).toBeLessThan(0.4)
-    await scrollInstantly(page, journey.start + journey.travel * 0.6)
-    await expect(hero).toHaveAttribute('data-hero-complete', 'false')
-    await expect.poll(() => hero.evaluate((element) => {
-      const progress = Number.parseFloat((element as HTMLElement).style.getPropertyValue('--hero-progress'))
-      return progress > 0.55 && progress < 0.65
-    })).toBe(true)
-  }
-
-  await scrollInstantly(page, journey.start + journey.travel)
-  await expect(hero).toHaveAttribute('data-hero-complete', 'true')
-  const finalFrame = await settleAndSampleVideoFrame(video)
-  expect(finalFrame.opaqueSamples).toBe(finalFrame.luminances.length)
-  expect(finalFrame.meanLuminance).toBeGreaterThan(8)
-  expect(finalFrame.luminanceVariance).toBeGreaterThan(40)
-  expect(finalFrame.luminances).toHaveLength(startFrame.luminances.length)
-  const frameDifference = finalFrame.luminances.reduce((total, luminance, index) => (
-    total + Math.abs(luminance - startFrame.luminances[index])
-  ), 0) / finalFrame.luminances.length
-  expect(frameDifference).toBeGreaterThan(12)
-
-  const finalTime = await video.evaluate((media) => (media as HTMLVideoElement).currentTime)
-  expect(Math.abs(finalTime - (metadata.duration - 1))).toBeLessThanOrEqual(0.15)
-  expect(await video.evaluate((media) => (media as HTMLVideoElement).ended)).toBe(false)
-  await page.screenshot({ path: testInfo.outputPath(`hero-final-${testInfo.project.name}.png`) })
-
-  await scrollInstantly(page, journey.start + journey.travel / 2)
-  await expect.poll(() => video.evaluate((media) => (media as HTMLVideoElement).currentTime)).toBeGreaterThanOrEqual(finalTime - 0.02)
-  await expect(hero).toHaveAttribute('data-hero-complete', 'true')
+  const worlds = page.locator('.collection-worlds')
+  await worlds.scrollIntoViewIfNeeded()
+  await expect(worlds.locator('.collection-world-panel')).toHaveCount(2)
+  const worldTops = await worlds.locator('.collection-world-panel').evaluateAll((panels) => (
+    panels.map((panel) => panel.getBoundingClientRect().top)
+  ))
+  expect(Math.abs(worldTops[0] - worldTops[1])).toBeLessThanOrEqual(2)
+  expect((await worlds.boundingBox())?.height ?? Infinity).toBeLessThan((page.viewportSize()?.height ?? 900) * 1.05)
+  await page.screenshot({ path: testInfo.outputPath(`hero-static-${testInfo.project.name}.png`) })
   await expectHealthyPage(page)
   browser.expectClean()
 })
@@ -1372,7 +1230,7 @@ test('keeps every service ribbon phrase visible at 200% mobile text size', async
   browser.expectClean()
 })
 
-test('uses the static poster and omits video when data saver is enabled', async ({ page }, testInfo) => {
+test('keeps the static hero intact when data saver is enabled', async ({ page }, testInfo) => {
   test.skip(testInfo.project.name !== 'mobile-configured', 'Data saver fallback runs once')
   const browser = watchBrowserErrors(page)
   await page.addInitScript(() => {
@@ -1389,7 +1247,7 @@ test('uses the static poster and omits video when data saver is enabled', async 
   await page.goto('/')
   await expect(page.locator('.hero-journey')).toHaveAttribute('data-hero-static', 'true')
   await expect(page.locator('.hero-media video')).toHaveCount(0)
-  const poster = (await inspectImages(page, '.hero-poster-desktop'))[0]
+  const poster = (await inspectImages(page, '.hero-still-frame img'))[0]
   expect(poster).toEqual(expect.objectContaining({ complete: true, error: '' }))
   expect(poster.naturalWidth).toBeGreaterThan(0)
   expect(poster.naturalHeight).toBeGreaterThan(0)
@@ -1412,8 +1270,6 @@ test('disables ambient motion when reduced motion is requested', async ({ page }
     expect(longestDurationSeconds(motion.transitionDuration)).toBeLessThanOrEqual(0.15)
   }
 
-  const videoStates = await page.locator('.hero-media video').evaluateAll((videos) => videos.map((video) => (video as HTMLVideoElement).paused))
-  expect(videoStates.every(Boolean)).toBe(true)
   await expect(page.locator('.hero-media video')).toHaveCount(0)
 
   const currentMotion = await page.locator('.current-line > span').evaluate((element) => {

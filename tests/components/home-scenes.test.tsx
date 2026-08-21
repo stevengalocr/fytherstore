@@ -344,14 +344,19 @@ describe('home commerce presentation', () => {
     )
   })
 
-  it('defines a four-three-two grid, 72 percent native snap rail, and complementary category radii', () => {
+  it('defines compact category worlds, a four-three-two product grid, and a native mobile rail', () => {
     const mobileCss = globalsCss.match(/@media \(max-width: 767px\)\s*\{([\s\S]*?)\n\}/)?.[1] ?? ''
+    const smallMobileCss = globalsCss.match(/@media \(max-width: 560px\)\s*\{([\s\S]*?)\n\}/)?.[1] ?? ''
 
     expect(globalsCss).toMatch(/\.collection-product-rail\s*\{[^}]*display:\s*grid;[^}]*grid-template-columns:\s*repeat\(4,/)
     expect(globalsCss).toMatch(/@media \(max-width:\s*1240px\)[\s\S]*?\.collection-product-rail\s*\{[^}]*grid-template-columns:\s*repeat\(3,/)
     expect(globalsCss).toMatch(/@media \(max-width:\s*900px\)[\s\S]*?\.collection-product-rail\s*\{[^}]*grid-template-columns:\s*repeat\(2,/)
     expect(globalsCss).toMatch(/@media \(max-width:\s*560px\)[\s\S]*?\.collection-product-rail\s*\{[^}]*display:\s*flex;[^}]*overflow-x:\s*auto;[^}]*scroll-snap-type:\s*inline mandatory/)
     expect(globalsCss).toMatch(/@media \(max-width:\s*560px\)[\s\S]*?\.collection-product-card\s*\{[^}]*flex:\s*0 0 72%;[^}]*scroll-snap-align:\s*start/)
+    expect(globalsCss).toMatch(/\.collection-world-media\s*\{[^}]*aspect-ratio:\s*16\s*\/\s*10/)
+    expect(globalsCss).not.toMatch(/@media \(max-width:\s*1024px\)[\s\S]*?\.collection-world-grid\s*\{[^}]*display:\s*flex/)
+    expect(smallMobileCss).toMatch(/\.collection-world-grid\s*\{[^}]*gap:\s*0\.75rem/)
+    expect(smallMobileCss).toMatch(/\.collection-world-copy\s*\{[^}]*display:\s*grid;[^}]*grid-template-columns:\s*minmax\(0, 1fr\) auto/)
     expect(globalsCss).toMatch(/\.collection-world-panel:first-child \.collection-world-media\s*\{[^}]*border-radius:\s*var\(--radius-editorial\) var\(--radius-editorial-tight\) var\(--radius-editorial\) var\(--radius-editorial\)/)
     expect(globalsCss).toMatch(/\.collection-world-panel:last-child \.collection-world-media\s*\{[^}]*border-radius:\s*var\(--radius-editorial-tight\) var\(--radius-editorial\) var\(--radius-editorial\) var\(--radius-editorial\)/)
     expect(mobileCss).toMatch(/\.collection-world-panel:first-child \.collection-world-media,[\s\S]*?\.collection-world-panel:last-child \.collection-world-media\s*\{[^}]*border-radius:\s*var\(--radius-editorial\)/)

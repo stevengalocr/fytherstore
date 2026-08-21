@@ -7,9 +7,9 @@ describe('BrandMark', () => {
     const { container } = render(<BrandMark />)
     const image = screen.getByRole('img', { name: 'Fyther Store' })
 
-    expect(decodeURIComponent(image.getAttribute('src') ?? '')).toContain('/brand/fyther-mark-header.webp')
-    expect(image).toHaveAttribute('width', '640')
-    expect(image).toHaveAttribute('height', '640')
+    expect(decodeURIComponent(image.getAttribute('src') ?? '')).toContain('/brand/fyther-wordmark-header.webp')
+    expect(image).toHaveAttribute('width', '576')
+    expect(image).toHaveAttribute('height', '384')
     expect(container.querySelector('.brand-mark')?.textContent).toBe('')
   })
 
