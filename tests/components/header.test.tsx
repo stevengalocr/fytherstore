@@ -260,10 +260,12 @@ describe('Header', () => {
 
   it('shows editorial movement media and the exact service promises', () => {
     render(<Footer />)
-    const editorialImage = screen.getByRole('img', { name: /amigas/i })
+    const editorialImage = screen.getByRole('img', {
+      name: 'Prendas, calzado y accesorios deportivos preparados para entrenar',
+    })
 
     expect(decodeURIComponent(editorialImage.getAttribute('src') ?? '')).toContain(
-      '/editorial/footer-community-v2.webp',
+      '/editorial/footer-product-campaign-v3.webp',
     )
     expect(
       within(screen.getByRole('list', { name: 'Servicio Fyther' }))

@@ -23,12 +23,16 @@ describe('HeroMedia', () => {
     expect(container.querySelector('.hero-category-cue')).not.toBeInTheDocument()
     expect(picture?.querySelector('source')).toHaveAttribute(
       'srcset',
-      '/editorial/hero-open-suitcase-branded-mobile.webp',
+      '/editorial/hero-product-campaign-v3-mobile.webp',
     )
     expect(decodeURIComponent(picture?.querySelector('img')?.getAttribute('src') ?? '')).toContain(
-      '/editorial/hero-open-suitcase-branded.webp',
+      '/editorial/hero-product-campaign-v3.webp',
     )
-    expect(screen.getByRole('img', { name: /maletín fyther abierto/i })).toBeInTheDocument()
+    expect(
+      screen.getByRole('img', {
+        name: 'Maleta Fyther abierta con prendas, calzado y accesorios deportivos',
+      }),
+    ).toBeInTheDocument()
   })
 
   it('keeps the primary actions first in the keyboard path', async () => {

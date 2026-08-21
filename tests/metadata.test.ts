@@ -12,7 +12,7 @@ describe('storefront metadata source', () => {
   })
 
   it('uses the desktop editorial poster for OpenGraph metadata', () => {
-    expect(layoutSource).toContain("url: '/editorial/hero-open-suitcase-branded.webp'")
+    expect(layoutSource).toContain("url: '/editorial/hero-product-campaign-v3.webp'")
     expect(layoutSource).toContain('width: 1920')
     expect(layoutSource).toContain('height: 1080')
     expect(layoutSource).toContain("alt: 'Fyther Store, ropa y accesorios deportivos elegidos con intención'")
