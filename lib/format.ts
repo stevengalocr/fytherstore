@@ -9,7 +9,3 @@ const crc = new Intl.NumberFormat('es-CR', {
 export function formatMoney(money: Money): string {
   return crc.format(money.amount)
 }
-
-export function fmt(amount: number): string {
-  return formatMoney({ amount, currency: 'CRC' })
-}

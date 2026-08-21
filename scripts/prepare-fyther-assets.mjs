@@ -10,7 +10,7 @@ async function ensureOutputDirectory(output) {
   await mkdir(dirname(output), { recursive: true })
 }
 
-export async function prepareRaster(input, output, width, height, position = 'centre') {
+async function prepareRaster(input, output, width, height, position = 'centre') {
   await ensureOutputDirectory(output)
 
   await sharp(input)
@@ -105,7 +105,7 @@ function smoothstep(value) {
   return clamped * clamped * (3 - 2 * clamped)
 }
 
-export async function prepareTransparentMark(input, output, size) {
+async function prepareTransparentMark(input, output, size) {
   const { data, info } = await sharp(input)
     .removeAlpha()
     .raw()

@@ -21,7 +21,7 @@ export const metadata: Metadata = {
     description: 'Accesorios originales y nuevas selecciones en camino para acompañar tu movimiento.',
     locale: 'es_CR',
     type: 'website',
-    images: [{ url: '/editorial/hero-open-suitcase.webp', width: 1920, height: 1080, alt: 'Fyther Store, ropa y accesorios deportivos elegidos con intención' }],
+    images: [{ url: '/editorial/hero-open-suitcase-branded.webp', width: 1920, height: 1080, alt: 'Fyther Store, ropa y accesorios deportivos elegidos con intención' }],
   },
 }
 

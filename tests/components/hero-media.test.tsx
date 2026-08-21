@@ -23,10 +23,10 @@ describe('HeroMedia', () => {
     expect(container.querySelector('.hero-category-cue')).not.toBeInTheDocument()
     expect(picture?.querySelector('source')).toHaveAttribute(
       'srcset',
-      '/editorial/hero-open-suitcase-mobile.webp',
+      '/editorial/hero-open-suitcase-branded-mobile.webp',
     )
     expect(decodeURIComponent(picture?.querySelector('img')?.getAttribute('src') ?? '')).toContain(
-      '/editorial/hero-open-suitcase.webp',
+      '/editorial/hero-open-suitcase-branded.webp',
     )
     expect(screen.getByRole('img', { name: /maletín fyther abierto/i })).toBeInTheDocument()
   })

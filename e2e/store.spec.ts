@@ -786,8 +786,8 @@ test('uses a static responsive hero and keeps both category worlds compact', asy
   expect(stillImage.naturalHeight).toBeGreaterThan(0)
   expect(stillImage.currentSrc).toContain(
     testInfo.project.name === 'mobile-configured'
-      ? 'hero-open-suitcase-mobile.webp'
-      : 'hero-open-suitcase.webp',
+      ? 'hero-open-suitcase-branded-mobile.webp'
+      : 'hero-open-suitcase-branded.webp',
   )
 
   const heroLayout = await hero.evaluate((element) => {
@@ -810,6 +810,38 @@ test('uses a static responsive hero and keeps both category worlds compact', asy
   expect(Math.abs(worldTops[0] - worldTops[1])).toBeLessThanOrEqual(2)
   expect((await worlds.boundingBox())?.height ?? Infinity).toBeLessThan((page.viewportSize()?.height ?? 900) * 1.05)
   await page.screenshot({ path: testInfo.outputPath(`hero-static-${testInfo.project.name}.png`) })
+  await expectHealthyPage(page)
+  browser.expectClean()
+})
+
+test('keeps the mobile footer compact and touch-friendly', async ({ page }, testInfo) => {
+  test.skip(testInfo.project.name !== 'mobile-configured', 'Mobile footer runs only in mobile-configured')
+  const browser = watchBrowserErrors(page)
+
+  await page.goto('/')
+  const footer = page.locator('.site-footer')
+  await footer.scrollIntoViewIfNeeded()
+  await expect(footer).toBeInViewport()
+  await expect(footer.getByRole('navigation', { name: 'Explorar Fyther' })).toBeVisible()
+  await expect(footer.getByRole('link', { name: 'fytherstore@gmail.com' })).toBeVisible()
+
+  const footerLayout = await footer.evaluate((element) => {
+    const trust = element.querySelector<HTMLElement>('.footer-trust')
+    const logo = element.querySelector<HTMLImageElement>('.footer-wordmark img')
+    const links = Array.from(element.querySelectorAll<HTMLElement>('a'))
+    return {
+      logoSource: logo?.currentSrc || logo?.src || '',
+      trustColumns: trust ? getComputedStyle(trust).gridTemplateColumns.split(' ').length : 0,
+      linkHeights: links.map((link) => link.getBoundingClientRect().height),
+      documentFits: document.documentElement.scrollWidth <= window.innerWidth + 1,
+    }
+  })
+
+  expect(footerLayout.logoSource).toContain('fyther-wordmark-header.webp')
+  expect(footerLayout.trustColumns).toBe(2)
+  expect(footerLayout.linkHeights.every((height) => height >= 47.5)).toBe(true)
+  expect(footerLayout.documentFits).toBe(true)
+  await page.screenshot({ path: testInfo.outputPath('mobile-footer-polished.png') })
   await expectHealthyPage(page)
   browser.expectClean()
 })

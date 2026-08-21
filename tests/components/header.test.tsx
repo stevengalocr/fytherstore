@@ -14,6 +14,7 @@ const globalsCss = readFileSync(resolve(process.cwd(), 'app/globals.css'), 'utf8
 const mobileCssStart = globalsCss.indexOf('@media (max-width: 767px)')
 const mobileCssEnd = globalsCss.indexOf('@media (max-width: 560px)')
 const mobileCss = globalsCss.slice(mobileCssStart, mobileCssEnd)
+const compactMobileCss = globalsCss.slice(mobileCssEnd)
 
 function installDesktopMediaQuery() {
   let matches = false
@@ -86,11 +87,12 @@ describe('Header', () => {
     expect(reducedMotionCss).toMatch(/\.wordmark \.brand-mark\s*\{[^}]*transform:\s*none !important;[^}]*transition:\s*none !important/)
   })
 
-  it('gives footer links full touch targets', () => {
+  it('gives footer links full touch targets on mobile', () => {
     const footerLinksCss = globalsCss.match(/\.footer-links a\s*\{([^}]*)\}/)?.[1] ?? ''
 
     expect(footerLinksCss).toContain('min-height: 44px')
     expect(footerLinksCss).toContain('align-items: center')
+    expect(compactMobileCss).toMatch(/\.footer-links a\s*\{[^}]*min-height:\s*48px/)
   })
 
   it('renders the official mark and primary store navigation', () => {
@@ -235,6 +237,7 @@ describe('Header', () => {
   it('keeps all store, service, legal, and contact links in the footer', () => {
     render(<Footer />)
 
+    expect(screen.getByRole('navigation', { name: 'Explorar Fyther' })).toBeInTheDocument()
     const storeLinks = screen.getByText('Tienda').parentElement?.querySelectorAll('a') ?? []
     expect(Array.from(storeLinks).map((link) => [link.textContent, link.getAttribute('href')])).toEqual([
       ['Ropa', '/catalogo?categoria=Ropa'],
@@ -248,6 +251,10 @@ describe('Header', () => {
     expect(screen.getByRole('link', { name: 'fytherstore@gmail.com' })).toHaveAttribute(
       'href',
       'mailto:fytherstore@gmail.com',
+    )
+    expect(screen.getByRole('link', { name: 'Fyther Store, inicio' }).querySelector('img')).toHaveAttribute(
+      'src',
+      expect.stringContaining('fyther-wordmark-header.webp'),
     )
   })
 
@@ -275,5 +282,14 @@ describe('Header', () => {
 
     expect(footerMediaCss).toContain('border-radius: var(--radius-editorial)')
     expect(footerMediaCss).toContain('overflow: hidden')
+  })
+
+  it('keeps the mobile footer compact, readable, and balanced', () => {
+    expect(mobileCss).toMatch(/\.footer-top\s*\{[^}]*gap:\s*1\.75rem/)
+    expect(mobileCss).toMatch(/\.footer-media\s*\{[^}]*aspect-ratio:\s*16\s*\/\s*9/)
+    expect(compactMobileCss).toMatch(/\.footer-trust\s*\{[^}]*grid-template-columns:\s*repeat\(2,\s*minmax\(0,\s*1fr\)\)/)
+    expect(compactMobileCss).toMatch(/\.footer-trust li\s*\{[^}]*font-size:\s*0\.875rem/)
+    expect(compactMobileCss).toMatch(/\.footer-contact a\s*\{[^}]*min-height:\s*48px;[^}]*overflow-wrap:\s*anywhere/)
+    expect(compactMobileCss).toMatch(/\.footer-bottom\s*\{[^}]*margin-top:\s*1\.75rem/)
   })
 })

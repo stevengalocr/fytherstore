@@ -1,5 +1,6 @@
 import Image from 'next/image'
 import Link from 'next/link'
+import { Mail } from 'lucide-react'
 import BrandMark from '@/components/BrandMark'
 
 export default function Footer() {
@@ -18,7 +19,7 @@ export default function Footer() {
         <div className="footer-content">
           <div className="footer-brand">
             <Link href="/" className="footer-wordmark" aria-label="Fyther Store, inicio">
-              <BrandMark decorative variant="alternate" sizes="176px" />
+              <BrandMark decorative sizes="148px" />
             </Link>
             <p>Muévete a tu manera.</p>
           </div>
@@ -28,24 +29,27 @@ export default function Footer() {
             <li>Sinpe y apartados</li>
             <li>Respuesta en menos de 24 horas</li>
           </ul>
-          <div className="footer-links" aria-label="Enlaces del pie de página">
-            <div>
-              <strong>Tienda</strong>
+          <nav className="footer-links" aria-label="Explorar Fyther">
+            <div aria-labelledby="footer-store-heading">
+              <strong id="footer-store-heading">Tienda</strong>
               <Link href="/catalogo?categoria=Ropa">Ropa</Link>
               <Link href="/catalogo?categoria=Accesorios">Accesorios</Link>
               <Link href="/carrito">Carrito</Link>
               <Link href="/envios-apartados">Seguir pedido</Link>
             </div>
-            <div>
-              <strong>Información</strong>
+            <div aria-labelledby="footer-info-heading">
+              <strong id="footer-info-heading">Información</strong>
               <Link href="/envios-apartados">Envíos y apartados</Link>
               <Link href="/privacidad">Privacidad</Link>
               <Link href="/terminos">Términos</Link>
             </div>
-            <div>
-              <strong>Contacto</strong>
-              <a href="mailto:fytherstore@gmail.com">fytherstore@gmail.com</a>
-            </div>
+          </nav>
+          <div className="footer-contact">
+            <strong>Contacto</strong>
+            <a href="mailto:fytherstore@gmail.com">
+              <Mail size={18} strokeWidth={1.8} aria-hidden="true" />
+              <span>fytherstore@gmail.com</span>
+            </a>
           </div>
         </div>
       </div>

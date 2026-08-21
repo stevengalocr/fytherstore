@@ -1,5 +1,5 @@
 export type CommerceMode = 'unconfigured' | 'live'
-export type CurrencyCode = 'CRC'
+type CurrencyCode = 'CRC'
 export type Availability = 'in_stock' | 'out_of_stock' | 'unavailable'
 
 export interface Money {
@@ -42,7 +42,7 @@ export interface CommerceProduct {
 
 export type PaymentMethod = 'sinpe' | 'link' | 'cash'
 
-export interface CheckoutLine {
+interface CheckoutLine {
   productId: string
   variantId: string | null
   name: string
@@ -75,7 +75,7 @@ export interface CheckoutResult {
 
 export type OrderStatus = 'pending' | 'preparing' | 'shipped' | 'delivered' | 'cancelled'
 
-export interface CommerceOrderLine {
+interface CommerceOrderLine {
   id: string
   name: string
   image: string | null
@@ -84,7 +84,7 @@ export interface CommerceOrderLine {
   subtotal: Money
 }
 
-export interface CommerceTrackingEvent {
+interface CommerceTrackingEvent {
   id: string
   status: OrderStatus
   title: string

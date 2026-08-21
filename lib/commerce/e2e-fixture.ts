@@ -19,7 +19,7 @@ type FixtureGlobal = typeof globalThis & {
   __FYTHER_E2E_COMMERCE_STATE__?: FixtureState
 }
 
-export type FixtureCheckoutMethod = {
+type FixtureCheckoutMethod = {
   id: PaymentMethod
   label: string
   description: string
@@ -105,7 +105,7 @@ const fixtureProducts: CommerceProduct[] = [
   },
 ]
 
-export const e2eFixtureCommerce = {
+const e2eFixtureCommerce = {
   async getProducts(): Promise<CommerceProduct[]> {
     return [...fixtureProducts]
   },

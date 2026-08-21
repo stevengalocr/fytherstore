@@ -13,10 +13,10 @@ export default function HeroMedia() {
       <div className="hero-section hero-scene">
         <div className="hero-media">
           <picture className="hero-still-frame">
-            <source media="(max-width: 767px)" srcSet="/editorial/hero-open-suitcase-mobile.webp" />
+            <source media="(max-width: 767px)" srcSet="/editorial/hero-open-suitcase-branded-mobile.webp" />
             <Image
-              src="/editorial/hero-open-suitcase.webp"
-              alt="Maletín Fyther abierto con una selección de ropa y accesorios deportivos"
+              src="/editorial/hero-open-suitcase-branded.webp"
+              alt="Maletín Fyther abierto con su emblema y una selección de ropa y accesorios deportivos"
               fill
               priority
               sizes="100vw"
