@@ -13,7 +13,7 @@ export default function Footer() {
             alt="Prendas, calzado y accesorios deportivos preparados para entrenar"
             width={1920}
             height={1080}
-            sizes="(max-width: 767px) calc(100vw - 32px), 56vw"
+            sizes="(max-width: 900px) calc(100vw - 32px), (min-width: 1440px) 650px, calc(56vw - 48px)"
           />
         </div>
         <div className="footer-content">

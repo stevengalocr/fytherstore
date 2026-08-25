@@ -8,12 +8,17 @@ import MotionTrack from '@/components/site/MotionTrack'
 import EditorialStory from '@/components/site/EditorialStory'
 
 const globalsCss = readFileSync(resolve(process.cwd(), 'app/globals.css'), 'utf8')
+const heroMediaSource = readFileSync(resolve(process.cwd(), 'components/site/HeroMedia.tsx'), 'utf8')
 
 describe('HeroMedia', () => {
   it('renders a single static, art-directed hero without video or scroll controls', () => {
     const { container } = render(<HeroMedia />)
     const journey = container.querySelector('.hero-journey')
     const picture = container.querySelector('.hero-still-frame')
+    const mobileSource = picture?.querySelector('source')
+    const heroImage = screen.getByRole('img', {
+      name: 'Maleta Fyther abierta con prendas, calzado y accesorios deportivos',
+    })
 
     expect(journey).toHaveAttribute('id', 'descubrir')
     expect(journey).toHaveAttribute('data-scene', 'hero')
@@ -21,18 +26,31 @@ describe('HeroMedia', () => {
     expect(journey).toHaveClass('hero-journey-static')
     expect(container.querySelector('video')).not.toBeInTheDocument()
     expect(container.querySelector('.hero-category-cue')).not.toBeInTheDocument()
-    expect(picture?.querySelector('source')).toHaveAttribute(
-      'srcset',
-      '/editorial/hero-product-campaign-v3-mobile.webp',
+    expect(mobileSource).toHaveAttribute('media', '(max-width: 767px)')
+    expect(mobileSource).toHaveAttribute('sizes', '100vw')
+    expect(mobileSource?.getAttribute('srcset')).toContain(
+      '/_next/image?url=%2Feditorial%2Fhero-product-campaign-v3-mobile.webp',
     )
-    expect(decodeURIComponent(picture?.querySelector('img')?.getAttribute('src') ?? '')).toContain(
-      '/editorial/hero-product-campaign-v3.webp',
+    expect(heroImage.getAttribute('srcset')).toContain(
+      '/_next/image?url=%2Feditorial%2Fhero-product-campaign-v3.webp',
     )
-    expect(
-      screen.getByRole('img', {
-        name: 'Maleta Fyther abierta con prendas, calzado y accesorios deportivos',
-      }),
-    ).toBeInTheDocument()
+    expect(heroImage).toHaveAttribute('fetchpriority', 'high')
+    expect(heroImage).toHaveAttribute('sizes', '100vw')
+    expect(heroImage).toHaveStyle({
+      position: 'absolute',
+      width: '100%',
+      height: '100%',
+      top: '0px',
+      right: '0px',
+      bottom: '0px',
+      left: '0px',
+    })
+  })
+
+  it('avoids an unconditional Next Image priority preload for art direction', () => {
+    expect(heroMediaSource).toContain("import { getImageProps } from 'next/image'")
+    expect(heroMediaSource).not.toMatch(/<Image\b/)
+    expect(heroMediaSource).not.toMatch(/\bpriority(?:=|\s|\/>)/)
   })
 
   it('keeps the primary actions first in the keyboard path', async () => {
