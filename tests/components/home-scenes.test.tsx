@@ -67,6 +67,32 @@ describe('home scene contracts', () => {
     expect(rail.querySelector('img')).not.toBeInTheDocument()
   })
 
+  it('defines a compact, responsive sales rail without obsolete editorial styles', () => {
+    expect(globalsCss).toMatch(/\.sales-rail\s*\{[^}]*min-height:\s*112px;[^}]*overflow:\s*hidden/)
+    expect(globalsCss).toMatch(/\.sales-rail-content\s*\{[^}]*min-width:\s*0;[^}]*display:\s*grid/)
+    expect(globalsCss).toMatch(/\.sales-rail-copy\s*\{[^}]*min-width:\s*0;[^}]*display:\s*grid/)
+    expect(globalsCss).toMatch(/\.sales-rail-cta\s*\{[^}]*min-height:\s*44px;[^}]*border-radius:\s*var\(--radius-control\)/)
+    expect(globalsCss).toMatch(/\.sales-rail-cta:focus-visible\s*\{[^}]*outline:\s*2px solid var\(--color-cyan\);[^}]*outline-offset:/)
+    expect(globalsCss).toMatch(/@media \(max-width:\s*767px\)[\s\S]*?\.sales-rail\s*\{[^}]*min-height:\s*144px/)
+    expect(globalsCss).toMatch(/@media \(max-width:\s*767px\)[\s\S]*?\.sales-rail-copy\s*\{[^}]*grid-template-columns:\s*1fr/)
+    expect(globalsCss).toMatch(/@media \(max-width:\s*560px\)[\s\S]*?\.sales-rail-content\s*\{[^}]*grid-template-columns:\s*1fr/)
+    expect(globalsCss).toMatch(/@media \(max-width:\s*560px\)[\s\S]*?\.sales-rail-cta\s*\{[^}]*width:\s*100%/)
+    expect(globalsCss).not.toContain('.editorial-story')
+  })
+
+  it('keeps the ticker contained and honors both motion preferences', () => {
+    expect(globalsCss).toMatch(/\.sales-ticker\s*\{[^}]*width:\s*100%;[^}]*overflow:\s*hidden/)
+    expect(globalsCss).toMatch(/\.sales-ticker-track\s*\{[^}]*width:\s*max-content/)
+    expect(globalsCss).toMatch(/\.sales-ticker-group\s*\{[^}]*flex-shrink:\s*0/)
+    expect(globalsCss).toMatch(/\.sales-ticker-item\s*\{[^}]*font-size:\s*(?:0\.7[2-9]|0\.8)rem/)
+    expect(globalsCss).toMatch(/\.sales-ticker-item::before\s*\{[^}]*background:\s*var\(--color-cyan\)/)
+    expect(globalsCss).toMatch(/\.sales-ticker-item:nth-child\(even\)::before\s*\{[^}]*background:\s*var\(--color-pink\)/)
+    expect(globalsCss).toMatch(/@media \(prefers-reduced-motion:\s*no-preference\)[\s\S]*?\.sales-ticker-track\s*\{[^}]*animation:\s*sales-ticker-scroll\s+28s\s+linear\s+infinite/)
+    expect(globalsCss).toMatch(/\.sales-rail:hover \.sales-ticker-track,\s*\.sales-rail:focus-within \.sales-ticker-track\s*\{[^}]*animation-play-state:\s*paused/)
+    expect(globalsCss).toMatch(/@media \(prefers-reduced-motion:\s*reduce\)[\s\S]*?\.sales-ticker-track\s*\{[^}]*animation:\s*none\s*!important;[^}]*transform:\s*none\s*!important/)
+    expect(globalsCss).toMatch(/@media \(prefers-reduced-motion:\s*reduce\)[\s\S]*?\.sales-ticker-group:nth-child\(2\)\s*\{[^}]*display:\s*none/)
+  })
+
   it('uses five native disclosures for the factual service FAQ', async () => {
     const user = userEvent.setup()
     const { container } = render(<TrustFaq />)
