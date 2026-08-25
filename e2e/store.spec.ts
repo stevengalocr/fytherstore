@@ -1003,7 +1003,7 @@ test('selects efficient footer image candidates across desktop widths', async ({
     await page.goto('/')
 
     const footer = page.locator('.site-footer')
-    const footerImage = footer.locator('.footer-media img')
+    const footerImage = footer.locator('.footer-backdrop img')
     await footerImage.scrollIntoViewIfNeeded()
     await expect(footer).toBeVisible()
     await expect(footerImage).toBeInViewport()

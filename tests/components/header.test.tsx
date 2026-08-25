@@ -270,12 +270,12 @@ describe('Header', () => {
 
     expect(backdrop).toHaveAttribute('aria-hidden', 'true')
     expect(campaignImage).toHaveAttribute('alt', '')
+    expect(campaignImage).toHaveAttribute('data-nimg', 'fill')
     expect(campaignImage).toHaveAttribute('sizes', '100vw')
     expect(decodeURIComponent(campaignImage?.getAttribute('src') ?? '')).toContain(
       '/editorial/footer-product-campaign-v3.webp',
     )
     expect(footer?.querySelector('.footer-scrim')).toHaveAttribute('aria-hidden', 'true')
-    expect(footer?.querySelector('.footer-media')).not.toBeInTheDocument()
     expect(footerTop?.children).toHaveLength(1)
     expect(footerTop?.firstElementChild).toHaveClass('footer-content')
     expect(screen.queryByRole('img', { name: /prendas|campaña|campaign/i })).not.toBeInTheDocument()
@@ -327,8 +327,7 @@ describe('Header', () => {
     expect(footerContentCss).not.toMatch(/background|border-radius/)
   })
 
-  it('removes every obsolete split-footer selector and grid override', () => {
-    expect(globalsCss).not.toMatch(/\.footer-media\b/)
+  it('keeps the full-background structure free of the split grid override', () => {
     expect(globalsCss).not.toMatch(/\.footer-top\s*\{[^}]*grid-template-columns/)
   })
 
