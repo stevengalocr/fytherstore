@@ -237,6 +237,7 @@ describe('Header', () => {
   it('keeps all store, service, legal, and contact links in the footer', () => {
     render(<Footer />)
 
+    expect(screen.getByText('Muévete a tu manera.')).toBeInTheDocument()
     expect(screen.getByRole('navigation', { name: 'Explorar Fyther' })).toBeInTheDocument()
     const storeLinks = screen.getByText('Tienda').parentElement?.querySelectorAll('a') ?? []
     expect(Array.from(storeLinks).map((link) => [link.textContent, link.getAttribute('href')])).toEqual([
@@ -256,19 +257,33 @@ describe('Header', () => {
       'src',
       expect.stringContaining('fyther-wordmark-header.webp'),
     )
+    expect(screen.getByText(/© \d{4} Fyther Store/)).toBeInTheDocument()
+    expect(screen.getByText('Costa Rica')).toBeInTheDocument()
   })
 
-  it('shows editorial movement media and the exact service promises', () => {
-    render(<Footer />)
-    const editorialImage = screen.getByRole('img', {
-      name: 'Prendas, calzado y accesorios deportivos preparados para entrenar',
-    })
+  it('renders the campaign as a decorative full-footer backdrop', () => {
+    const { container } = render(<Footer />)
+    const footer = container.querySelector('.site-footer')
+    const backdrop = footer?.querySelector('.footer-backdrop')
+    const campaignImage = backdrop?.querySelector('img')
+    const footerTop = footer?.querySelector('.footer-top')
 
-    expect(decodeURIComponent(editorialImage.getAttribute('src') ?? '')).toContain(
+    expect(backdrop).toHaveAttribute('aria-hidden', 'true')
+    expect(campaignImage).toHaveAttribute('alt', '')
+    expect(campaignImage).toHaveAttribute('sizes', '100vw')
+    expect(decodeURIComponent(campaignImage?.getAttribute('src') ?? '')).toContain(
       '/editorial/footer-product-campaign-v3.webp',
     )
-    expect(editorialImage).toHaveAttribute('width', '1920')
-    expect(editorialImage).toHaveAttribute('height', '1080')
+    expect(footer?.querySelector('.footer-scrim')).toHaveAttribute('aria-hidden', 'true')
+    expect(footer?.querySelector('.footer-media')).not.toBeInTheDocument()
+    expect(footerTop?.children).toHaveLength(1)
+    expect(footerTop?.firstElementChild).toHaveClass('footer-content')
+    expect(screen.queryByRole('img', { name: /prendas|campaña|campaign/i })).not.toBeInTheDocument()
+  })
+
+  it('keeps the exact footer service promises', () => {
+    render(<Footer />)
+
     expect(
       within(screen.getByRole('list', { name: 'Servicio Fyther' }))
         .getAllByRole('listitem')
@@ -281,16 +296,48 @@ describe('Header', () => {
     ])
   })
 
-  it('uses the editorial radius for the footer media without changing link touch targets', () => {
-    const footerMediaCss = globalsCss.match(/\.footer-media\s*\{([^}]*)\}/)?.[1] ?? ''
+  it('uses the campaign as a stacked full-background composition', () => {
+    const siteFooterCss = globalsCss.match(/\.site-footer\s*\{([^}]*)\}/)?.[1] ?? ''
+    const footerBackdropCss = globalsCss.match(/\.footer-backdrop\s*\{([^}]*)\}/)?.[1] ?? ''
+    const footerBackdropImageCss = globalsCss.match(/\.footer-backdrop img\s*\{([^}]*)\}/)?.[1] ?? ''
+    const footerScrimCss = globalsCss.match(/\.footer-scrim\s*\{([^}]*)\}/)?.[1] ?? ''
+    const footerTopBottomCss = globalsCss.match(/\.footer-top, \.footer-bottom\s*\{([^}]*)\}/)?.[1] ?? ''
+    const footerContentCss = globalsCss.match(/\.footer-content\s*\{([^}]*)\}/)?.[1] ?? ''
 
-    expect(footerMediaCss).toContain('border-radius: var(--radius-editorial)')
-    expect(footerMediaCss).toContain('overflow: hidden')
+    expect(siteFooterCss).toContain('position: relative')
+    expect(siteFooterCss).toContain('overflow: hidden')
+    expect(siteFooterCss).toContain('isolation: isolate')
+    expect(siteFooterCss).toContain('background: var(--color-night-raised)')
+    expect(siteFooterCss).toContain('min-height: 520px')
+    expect(footerBackdropCss).toMatch(/position:\s*absolute/)
+    expect(footerBackdropCss).toMatch(/inset:\s*0/)
+    expect(footerBackdropCss).toMatch(/z-index:\s*0/)
+    expect(footerBackdropImageCss).toContain('width: 100%')
+    expect(footerBackdropImageCss).toContain('height: 100%')
+    expect(footerBackdropImageCss).toContain('object-fit: cover')
+    expect(footerBackdropImageCss).toMatch(/object-position:\s*[^;]+/)
+    expect(footerScrimCss).toMatch(/position:\s*absolute/)
+    expect(footerScrimCss).toMatch(/inset:\s*0/)
+    expect(footerScrimCss).toMatch(/z-index:\s*1/)
+    expect(footerScrimCss).toContain('linear-gradient')
+    expect(footerTopBottomCss).toContain('position: relative')
+    expect(footerTopBottomCss).toContain('z-index: 2')
+    expect(footerContentCss).toContain('width: min(100%, 620px)')
+    expect(footerContentCss).toContain('margin-left: auto')
+    expect(footerContentCss).not.toMatch(/background|border-radius/)
   })
 
-  it('keeps the mobile footer compact, readable, and balanced', () => {
-    expect(mobileCss).toMatch(/\.footer-top\s*\{[^}]*gap:\s*1\.75rem/)
-    expect(mobileCss).toMatch(/\.footer-media\s*\{[^}]*aspect-ratio:\s*16\s*\/\s*9/)
+  it('removes every obsolete split-footer selector and grid override', () => {
+    expect(globalsCss).not.toMatch(/\.footer-media\b/)
+    expect(globalsCss).not.toMatch(/\.footer-top\s*\{[^}]*grid-template-columns/)
+  })
+
+  it('keeps the mobile footer readable in one flow without horizontal overflow', () => {
+    expect(mobileCss).toMatch(/\.site-footer\s*\{[^}]*min-height:\s*0/)
+    expect(mobileCss).toMatch(/\.footer-backdrop img\s*\{[^}]*object-position:\s*[^}]+/)
+    expect(mobileCss).toMatch(/\.footer-scrim\s*\{[^}]*linear-gradient\(180deg/)
+    expect(mobileCss).toMatch(/\.footer-top\s*\{[^}]*display:\s*block/)
+    expect(mobileCss).toMatch(/\.footer-content\s*\{[^}]*width:\s*100%;[^}]*margin-left:\s*0/)
     expect(compactMobileCss).toMatch(/\.footer-trust\s*\{[^}]*grid-template-columns:\s*repeat\(2,\s*minmax\(0,\s*1fr\)\)/)
     expect(compactMobileCss).toMatch(/\.footer-trust li\s*\{[^}]*font-size:\s*0\.875rem/)
     expect(compactMobileCss).toMatch(/\.footer-contact a\s*\{[^}]*min-height:\s*48px;[^}]*overflow-wrap:\s*anywhere/)

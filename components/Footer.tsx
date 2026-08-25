@@ -6,16 +6,16 @@ import BrandMark from '@/components/BrandMark'
 export default function Footer() {
   return (
     <footer className="site-footer">
+      <div className="footer-backdrop" aria-hidden="true">
+        <Image
+          src="/editorial/footer-product-campaign-v3.webp"
+          alt=""
+          fill
+          sizes="100vw"
+        />
+      </div>
+      <div className="footer-scrim" aria-hidden="true" />
       <div className="footer-top">
-        <div className="footer-media">
-          <Image
-            src="/editorial/footer-product-campaign-v3.webp"
-            alt="Prendas, calzado y accesorios deportivos preparados para entrenar"
-            width={1920}
-            height={1080}
-            sizes="(max-width: 767px) calc(100vw - 32px), (max-width: 900px) calc(95vw - 392px), (max-width: 1271px) calc(53.2vw - 18px), 650px"
-          />
-        </div>
         <div className="footer-content">
           <div className="footer-brand">
             <Link href="/" className="footer-wordmark" aria-label="Fyther Store, inicio">
