@@ -91,27 +91,6 @@ const assets: AssetContract[] = [
     maxBytes: 700_000,
   },
   {
-    path: 'public/editorial/community-movement.webp',
-    width: 2000,
-    height: 1200,
-    hasAlpha: false,
-    maxBytes: 700_000,
-  },
-  {
-    path: 'public/editorial/footer-movement.webp',
-    width: 1800,
-    height: 900,
-    hasAlpha: false,
-    maxBytes: 700_000,
-  },
-  {
-    path: 'public/editorial/footer-community-v2.webp',
-    width: 1920,
-    height: 1080,
-    hasAlpha: false,
-    maxBytes: 700_000,
-  },
-  {
     path: 'public/editorial/footer-product-campaign-v3.webp',
     width: 1920,
     height: 1080,

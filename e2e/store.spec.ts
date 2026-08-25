@@ -703,7 +703,9 @@ test('renders the final home without simulated commerce', async ({ page }, testI
     '.commerce-state-copy',
     '.collection-section-intro',
     '.collection-empty',
-    '.editorial-story-copy',
+    '.sales-rail-content',
+    '.sales-rail-copy',
+    '.sales-rail-cta',
     '.trust-faq-heading',
     '.trust-faq-list summary',
     '.footer-top',
@@ -805,7 +807,7 @@ test('renders the final home without simulated commerce', async ({ page }, testI
       '.current-rail',
       '.collection-worlds',
       '#ropa.collection-section',
-      '.editorial-story',
+      '.sales-rail',
       '#accesorios.collection-section',
       '#preguntas',
       '.site-footer',
@@ -907,10 +909,38 @@ test('uses a static responsive hero and keeps both category worlds compact', asy
   const salesRail = page.locator('.sales-rail')
   await salesRail.scrollIntoViewIfNeeded()
   await expect(salesRail).toBeVisible()
+  await expect(salesRail.getByRole('heading', {
+    name: 'Tu próximo favorito ya está aquí.',
+    exact: true,
+  })).toBeVisible()
+  const salesRailCta = salesRail.getByRole('link', { name: 'Ver la colección', exact: true })
+  await expect(salesRailCta).toBeVisible()
+  await expect(salesRailCta).toHaveAttribute('href', '/catalogo')
   const salesRailBox = await salesRail.boundingBox()
   expect(salesRailBox).not.toBeNull()
   if (salesRailBox) {
     expect(salesRailBox.height).toBeLessThan(viewport.width >= 768 ? 144 : 192)
+  }
+  const salesRailGeometry = await salesRail.evaluate((element) => {
+    const toRect = (target: Element) => {
+      const rect = target.getBoundingClientRect()
+      return { top: rect.top, right: rect.right, bottom: rect.bottom, left: rect.left }
+    }
+    const selectors = ['.sales-rail-content', '.sales-rail-copy', '.sales-rail-cta']
+    return {
+      rail: toRect(element),
+      children: selectors.map((selector) => {
+        const child = element.querySelector(selector)
+        if (!child) throw new Error(`Missing sales rail element: ${selector}`)
+        return { selector, rect: toRect(child) }
+      }),
+    }
+  })
+  for (const child of salesRailGeometry.children) {
+    expect(child.rect.top, `${child.selector} top clips outside sales rail`).toBeGreaterThanOrEqual(salesRailGeometry.rail.top - 1)
+    expect(child.rect.left, `${child.selector} left clips outside sales rail`).toBeGreaterThanOrEqual(salesRailGeometry.rail.left - 1)
+    expect(child.rect.right, `${child.selector} right clips outside sales rail`).toBeLessThanOrEqual(salesRailGeometry.rail.right + 1)
+    expect(child.rect.bottom, `${child.selector} bottom clips outside sales rail`).toBeLessThanOrEqual(salesRailGeometry.rail.bottom + 1)
   }
 
   const worlds = page.locator('.collection-worlds')
@@ -925,6 +955,9 @@ test('uses a static responsive hero and keeps both category worlds compact', asy
   const footer = page.locator('.site-footer')
   const footerImage = footer.locator('.footer-backdrop img')
   await footer.scrollIntoViewIfNeeded()
+  await expect(footer.getByRole('navigation', { name: 'Explorar Fyther' })).toBeVisible()
+  await expect(footer.locator('.footer-contact')).toBeVisible()
+  await expect(footer.getByRole('link', { name: 'fytherstore@gmail.com', exact: true })).toBeVisible()
   await expect(footerImage).toBeVisible()
   await expect.poll(() => footerImage.evaluate((image) => (
     (image as HTMLImageElement).complete && (image as HTMLImageElement).naturalWidth > 0
@@ -970,6 +1003,7 @@ test('keeps product-only campaign content intact at 320px', async ({ page }, tes
   const footerImage = footer.locator('.footer-backdrop img')
   await footer.scrollIntoViewIfNeeded()
   await expect(footer.getByRole('navigation', { name: 'Explorar Fyther' })).toBeVisible()
+  await expect(footer.locator('.footer-contact')).toBeVisible()
   await expect(footer.getByRole('link', { name: 'fytherstore@gmail.com', exact: true })).toBeVisible()
   await expect(footerImage).toBeVisible()
   await expect.poll(() => footerImage.evaluate((image) => (
@@ -1029,10 +1063,18 @@ test('keeps the mobile footer compact and touch-friendly', async ({ page }, test
 
   await page.goto('/')
   const footer = page.locator('.site-footer')
+  const footerImage = footer.locator('.footer-backdrop img')
   await footer.scrollIntoViewIfNeeded()
   await expect(footer).toBeInViewport()
   await expect(footer.getByRole('navigation', { name: 'Explorar Fyther' })).toBeVisible()
-  await expect(footer.getByRole('link', { name: 'fytherstore@gmail.com' })).toBeVisible()
+  await expect(footer.locator('.footer-contact')).toBeVisible()
+  await expect(footer.getByRole('link', { name: 'fytherstore@gmail.com', exact: true })).toBeVisible()
+  await expect(footerImage).toBeVisible()
+  await expect.poll(() => footerImage.evaluate((image) => (
+    (image as HTMLImageElement).complete && (image as HTMLImageElement).naturalWidth > 0
+  ))).toBe(true)
+  expect(imageAssetPath(await footerImage.evaluate((image) => (image as HTMLImageElement).currentSrc)))
+    .toBe('/editorial/footer-product-campaign-v3.webp')
 
   const footerLayout = await footer.evaluate((element) => {
     const trust = element.querySelector<HTMLElement>('.footer-trust')
@@ -1050,6 +1092,7 @@ test('keeps the mobile footer compact and touch-friendly', async ({ page }, test
   expect(footerLayout.trustColumns).toBe(2)
   expect(footerLayout.linkHeights.every((height) => height >= 47.5)).toBe(true)
   expect(footerLayout.documentFits).toBe(true)
+  await expectFooterLinksHitTestable(page, footer)
   await page.screenshot({ path: testInfo.outputPath('mobile-footer-polished.png') })
   await expectHealthyPage(page)
   browser.expectClean()
@@ -1512,6 +1555,12 @@ test('disables ambient motion when reduced motion is requested', async ({ page }
   }
 
   await expect(page.locator('.hero-media video')).toHaveCount(0)
+
+  const tickerTrack = page.locator('.sales-ticker-track')
+  const tickerGroups = tickerTrack.locator('.sales-ticker-group')
+  await expect(tickerGroups).toHaveCount(2)
+  expect(await tickerTrack.evaluate((element) => getComputedStyle(element).animationName)).toBe('none')
+  expect(await tickerGroups.nth(1).evaluate((element) => getComputedStyle(element).display)).toBe('none')
 
   const currentMotion = await page.locator('.current-line > span').evaluate((element) => {
     const style = getComputedStyle(element)
