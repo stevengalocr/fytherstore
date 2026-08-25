@@ -2,6 +2,7 @@ import { expect, test, type Locator, type Page, type Request } from '@playwright
 
 const forbiddenCommerceCopy = /BilBildin|modo live|configuraci[oó]n|configurad[oa]s?|modo demo|productos de demostraci[oó]n|simulaci[oó]n|Motion Tee|Training Layer|Daily Bag|Recovery Cap/i
 const exposedConfiguration = /BilBildin|modo live|configuraci[oó]n|configurad[oa]s?|Supabase|service_role|\bkey\b|endpoint|\bdemo\b|simulaci/i
+const humanOrientedImageName = /amigas|mujeres|personas|modelo|rostro|mujer/i
 const frameworkDialog = '[data-nextjs-dialog]'
 const backendTimeout = 15_000
 
@@ -830,6 +831,7 @@ test('uses a static responsive hero and keeps both category worlds compact', asy
   expect(imageAssetPath(stillImage.currentSrc)).toBe(expectedHeroAsset)
   expect(heroRequests.filter((source) => source === expectedHeroAsset).length).toBeGreaterThan(0)
   expect(heroRequests.filter((source) => source === unexpectedHeroAsset)).toHaveLength(0)
+  await expect(page.getByRole('img', { name: humanOrientedImageName })).toHaveCount(0)
 
   const heroLayout = await hero.evaluate((element) => {
     const scene = element.querySelector<HTMLElement>('.hero-section')
@@ -841,6 +843,7 @@ test('uses a static responsive hero and keeps both category worlds compact', asy
   })
   expect(heroLayout.position).toBe('relative')
   expect(Math.abs(heroLayout.travel)).toBeLessThanOrEqual(1)
+  await hero.screenshot({ path: testInfo.outputPath(`hero-static-${testInfo.project.name}.png`) })
 
   const worlds = page.locator('.collection-worlds')
   await worlds.scrollIntoViewIfNeeded()
@@ -850,7 +853,70 @@ test('uses a static responsive hero and keeps both category worlds compact', asy
   ))
   expect(Math.abs(worldTops[0] - worldTops[1])).toBeLessThanOrEqual(2)
   expect((await worlds.boundingBox())?.height ?? Infinity).toBeLessThan((page.viewportSize()?.height ?? 900) * 1.05)
-  await page.screenshot({ path: testInfo.outputPath(`hero-static-${testInfo.project.name}.png`) })
+
+  const footer = page.locator('.site-footer')
+  const footerImage = footer.getByRole('img', {
+    name: 'Prendas, calzado y accesorios deportivos preparados para entrenar',
+    exact: true,
+  })
+  await footer.scrollIntoViewIfNeeded()
+  await expect(footerImage).toBeVisible()
+  await expect.poll(() => footerImage.evaluate((image) => (
+    (image as HTMLImageElement).complete && (image as HTMLImageElement).naturalWidth > 0
+  ))).toBe(true)
+  expect(imageAssetPath(await footerImage.evaluate((image) => (image as HTMLImageElement).currentSrc)))
+    .toBe('/editorial/footer-product-campaign-v3.webp')
+  const viewport = page.viewportSize()
+  if (!viewport) throw new Error('Configured project viewport is missing')
+  await footer.screenshot({
+    path: testInfo.outputPath(`footer-campaign-${viewport.width}x${viewport.height}-${testInfo.project.name}.png`),
+  })
+  await expectHealthyPage(page)
+  browser.expectClean()
+})
+
+test('keeps product-only campaign content intact at 320px', async ({ page }, testInfo) => {
+  test.skip(testInfo.project.name !== 'desktop-configured', 'The narrow override runs once in desktop Chromium')
+  const browser = watchBrowserErrors(page)
+  await page.setViewportSize({ width: 320, height: 568 })
+
+  await page.goto('/')
+  const hero = page.locator('.hero-journey')
+  const heroProductImage = hero.getByRole('img', {
+    name: 'Maleta Fyther abierta con prendas, calzado y accesorios deportivos',
+    exact: true,
+  })
+  await expect(heroProductImage).toBeVisible()
+  const heroImage = await heroProductImage.evaluate((image) => ({
+    currentSrc: (image as HTMLImageElement).currentSrc,
+    naturalHeight: (image as HTMLImageElement).naturalHeight,
+    naturalWidth: (image as HTMLImageElement).naturalWidth,
+  }))
+  expect(heroImage.naturalWidth).toBeGreaterThan(0)
+  expect(heroImage.naturalHeight).toBeGreaterThan(0)
+  expect(imageAssetPath(heroImage.currentSrc)).toBe('/editorial/hero-product-campaign-v3-mobile.webp')
+  await expect(hero.getByRole('heading', { name: 'Muévete a tu manera.', exact: true })).toBeVisible()
+  await expect(hero.getByRole('link', { name: 'Descubrir ropa', exact: true })).toBeVisible()
+  await expect(hero.getByRole('link', { name: 'Ver accesorios', exact: true })).toBeVisible()
+  await expect(page.getByRole('img', { name: humanOrientedImageName })).toHaveCount(0)
+  await hero.screenshot({ path: testInfo.outputPath('hero-campaign-320x568-desktop-configured.png') })
+
+  const footer = page.locator('.site-footer')
+  const footerImage = footer.getByRole('img', {
+    name: 'Prendas, calzado y accesorios deportivos preparados para entrenar',
+    exact: true,
+  })
+  await footer.scrollIntoViewIfNeeded()
+  await expect(footer.getByRole('navigation', { name: 'Explorar Fyther' })).toBeVisible()
+  await expect(footer.getByRole('link', { name: 'fytherstore@gmail.com', exact: true })).toBeVisible()
+  await expect(footerImage).toBeVisible()
+  await expect.poll(() => footerImage.evaluate((image) => (
+    (image as HTMLImageElement).complete && (image as HTMLImageElement).naturalWidth > 0
+  ))).toBe(true)
+  expect(imageAssetPath(await footerImage.evaluate((image) => (image as HTMLImageElement).currentSrc)))
+    .toBe('/editorial/footer-product-campaign-v3.webp')
+  await footer.screenshot({ path: testInfo.outputPath('footer-campaign-320x568-desktop-configured.png') })
+
   await expectHealthyPage(page)
   browser.expectClean()
 })
