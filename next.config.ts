@@ -35,7 +35,13 @@ export function resolveRemoteImagePatterns(env: ImageEnv): RemoteImagePattern[] 
   }]
 }
 
+export function resolveDevIndicators(env: Record<string, string | undefined>): false | undefined {
+  return env.FYTHER_E2E_COMMERCE_FIXTURE === 'live' ? false : undefined
+}
+
+const devIndicators = resolveDevIndicators(process.env)
 const nextConfig: NextConfig = {
+  ...(devIndicators === undefined ? {} : { devIndicators }),
   images: {
     remotePatterns: resolveRemoteImagePatterns(process.env),
   },

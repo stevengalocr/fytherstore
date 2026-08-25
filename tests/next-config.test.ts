@@ -61,3 +61,35 @@ describe('Next image origin configuration', () => {
     }])
   })
 })
+
+describe('Next development indicators', () => {
+  afterEach(() => {
+    vi.unstubAllEnvs()
+    vi.resetModules()
+  })
+
+  it('disables development indicators for the live E2E fixture', async () => {
+    const configModule = await import('../next.config')
+    const resolveDevIndicators = (configModule as unknown as {
+      resolveDevIndicators?: (env: Record<string, string | undefined>) => false | undefined
+    }).resolveDevIndicators
+
+    expect(resolveDevIndicators).toEqual(expect.any(Function))
+    if (!resolveDevIndicators) return
+    expect(resolveDevIndicators({ FYTHER_E2E_COMMERCE_FIXTURE: 'live' })).toBe(false)
+  })
+
+  it.each([
+    ['an absent fixture', undefined],
+    ['an ordinary fixture value', 'preview'],
+  ])('preserves the Next.js default for %s', async (_label, value) => {
+    const configModule = await import('../next.config')
+    const resolveDevIndicators = (configModule as unknown as {
+      resolveDevIndicators?: (env: Record<string, string | undefined>) => false | undefined
+    }).resolveDevIndicators
+
+    expect(resolveDevIndicators).toEqual(expect.any(Function))
+    if (!resolveDevIndicators) return
+    expect(resolveDevIndicators({ FYTHER_E2E_COMMERCE_FIXTURE: value })).toBeUndefined()
+  })
+})

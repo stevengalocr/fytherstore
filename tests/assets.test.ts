@@ -1,4 +1,5 @@
-import { statSync } from 'node:fs'
+import { createHash } from 'node:crypto'
+import { readFileSync, statSync } from 'node:fs'
 import { resolve } from 'node:path'
 import sharp from 'sharp'
 import { describe, expect, it } from 'vitest'
@@ -119,6 +120,21 @@ const assets: AssetContract[] = [
   },
 ]
 
+const approvedCampaignAssets = [
+  {
+    path: 'public/editorial/hero-product-campaign-v3.webp',
+    sha256: '4147f2cb146fadf91fbbeca9941f83ff25038f61ca322d6216711e1ac71e86d5',
+  },
+  {
+    path: 'public/editorial/hero-product-campaign-v3-mobile.webp',
+    sha256: '3bcfa081864a031e72734052633330f615ab66440811891b26fed9f7f5318cdb',
+  },
+  {
+    path: 'public/editorial/footer-product-campaign-v3.webp',
+    sha256: 'babe72c697ad4a38427c4dbbe8301e2ede3053cf823825b7d4078a7ceb93bae3',
+  },
+]
+
 describe('Fyther image asset contract', () => {
   it.each(assets)('$path matches its delivery contract', async (asset) => {
     const file = resolve(process.cwd(), asset.path)
@@ -129,5 +145,10 @@ describe('Fyther image asset contract', () => {
     expect(metadata.height).toBe(asset.height)
     expect(metadata.hasAlpha).toBe(asset.hasAlpha)
     expect(statSync(file).size).toBeLessThan(asset.maxBytes)
+  })
+
+  it.each(approvedCampaignAssets)('$path matches its approved product-only SHA-256', (asset) => {
+    const contents = readFileSync(resolve(process.cwd(), asset.path))
+    expect(createHash('sha256').update(contents).digest('hex')).toBe(asset.sha256)
   })
 })

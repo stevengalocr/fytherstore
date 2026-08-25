@@ -2,7 +2,6 @@ import { expect, test, type Locator, type Page, type Request } from '@playwright
 
 const forbiddenCommerceCopy = /BilBildin|modo live|configuraci[oó]n|configurad[oa]s?|modo demo|productos de demostraci[oó]n|simulaci[oó]n|Motion Tee|Training Layer|Daily Bag|Recovery Cap/i
 const exposedConfiguration = /BilBildin|modo live|configuraci[oó]n|configurad[oa]s?|Supabase|service_role|\bkey\b|endpoint|\bdemo\b|simulaci/i
-const humanOrientedImageName = /amigas|mujeres|personas|modelo|rostro|mujer/i
 const frameworkDialog = '[data-nextjs-dialog]'
 const backendTimeout = 15_000
 
@@ -91,6 +90,62 @@ async function expectHealthyPage(page: Page) {
     const bodyFits = document.body.scrollWidth <= window.innerWidth + 1
     return rootFits && bodyFits
   })).toBe(true)
+}
+
+async function expectFooterLinksHitTestable(page: Page, footer: Locator) {
+  const links = footer.getByRole('link')
+  for (let index = 0; index < await links.count(); index += 1) {
+    const link = links.nth(index)
+    if (!await link.isVisible()) continue
+    const targetTop = await link.evaluate((element) => {
+      const rect = element.getBoundingClientRect()
+      const centeredTop = window.scrollY + rect.top - (window.innerHeight - rect.height) / 2
+      return Math.min(Math.max(centeredTop, 0), document.documentElement.scrollHeight - window.innerHeight)
+    })
+    await scrollInstantly(page, targetTop)
+    const state = await link.evaluate((element) => {
+      const linkRect = element.getBoundingClientRect()
+      const headerRect = document.querySelector<HTMLElement>('.site-header')?.getBoundingClientRect()
+      const center = {
+        x: linkRect.left + linkRect.width / 2,
+        y: linkRect.top + linkRect.height / 2,
+      }
+      const hit = document.elementFromPoint(center.x, center.y)
+      return {
+        centerCoveredByHeader: Boolean(headerRect
+          && center.x >= headerRect.left
+          && center.x <= headerRect.right
+          && center.y >= headerRect.top
+          && center.y <= headerRect.bottom),
+        centerInViewport: center.x >= 0
+          && center.x <= window.innerWidth
+          && center.y >= 0
+          && center.y <= window.innerHeight,
+        hitTestable: Boolean(hit && (hit === element || element.contains(hit))),
+        label: element.getAttribute('aria-label') || element.textContent?.trim() || element.tagName,
+      }
+    })
+
+    expect(state.centerInViewport, `${state.label} center is outside the viewport`).toBe(true)
+    expect(state.centerCoveredByHeader, `${state.label} center is covered by the fixed header`).toBe(false)
+    expect(state.hitTestable, `${state.label} center does not hit the link`).toBe(true)
+  }
+
+  await expectHealthyPage(page)
+}
+
+async function captureFooterScreenshot(page: Page, footer: Locator, path: string) {
+  await page.evaluate(() => {
+    const style = document.createElement('style')
+    style.id = 'e2e-footer-screenshot-only'
+    style.textContent = '.site-header { visibility: hidden !important; }'
+    document.head.append(style)
+  })
+  try {
+    await footer.screenshot({ path })
+  } finally {
+    await page.evaluate(() => document.getElementById('e2e-footer-screenshot-only')?.remove())
+  }
 }
 
 function createFocusTraversal(): FocusTraversal {
@@ -811,7 +866,10 @@ test('uses a static responsive hero and keeps both category worlds compact', asy
 
   await page.goto('/')
   const hero = page.locator('.hero-journey')
-  const still = page.locator('.hero-still-frame img')
+  const still = hero.getByRole('img', {
+    name: 'Maleta Fyther abierta con prendas, calzado y accesorios deportivos',
+    exact: true,
+  })
   await expect(hero).toHaveAttribute('data-hero-static', 'true')
   await expect(page.locator('.hero-media video')).toHaveCount(0)
   await expect(still).toBeVisible()
@@ -829,9 +887,8 @@ test('uses a static responsive hero and keeps both category worlds compact', asy
     ? '/editorial/hero-product-campaign-v3.webp'
     : '/editorial/hero-product-campaign-v3-mobile.webp'
   expect(imageAssetPath(stillImage.currentSrc)).toBe(expectedHeroAsset)
-  expect(heroRequests.filter((source) => source === expectedHeroAsset).length).toBeGreaterThan(0)
-  expect(heroRequests.filter((source) => source === unexpectedHeroAsset)).toHaveLength(0)
-  await expect(page.getByRole('img', { name: humanOrientedImageName })).toHaveCount(0)
+  expect([...new Set(heroRequests)]).toEqual([expectedHeroAsset])
+  expect(heroRequests).not.toContain(unexpectedHeroAsset)
 
   const heroLayout = await hero.evaluate((element) => {
     const scene = element.querySelector<HTMLElement>('.hero-section')
@@ -868,9 +925,12 @@ test('uses a static responsive hero and keeps both category worlds compact', asy
     .toBe('/editorial/footer-product-campaign-v3.webp')
   const viewport = page.viewportSize()
   if (!viewport) throw new Error('Configured project viewport is missing')
-  await footer.screenshot({
-    path: testInfo.outputPath(`footer-campaign-${viewport.width}x${viewport.height}-${testInfo.project.name}.png`),
-  })
+  await expectFooterLinksHitTestable(page, footer)
+  await captureFooterScreenshot(
+    page,
+    footer,
+    testInfo.outputPath(`footer-campaign-${viewport.width}x${viewport.height}-${testInfo.project.name}.png`),
+  )
   await expectHealthyPage(page)
   browser.expectClean()
 })
@@ -898,7 +958,6 @@ test('keeps product-only campaign content intact at 320px', async ({ page }, tes
   await expect(hero.getByRole('heading', { name: 'Muévete a tu manera.', exact: true })).toBeVisible()
   await expect(hero.getByRole('link', { name: 'Descubrir ropa', exact: true })).toBeVisible()
   await expect(hero.getByRole('link', { name: 'Ver accesorios', exact: true })).toBeVisible()
-  await expect(page.getByRole('img', { name: humanOrientedImageName })).toHaveCount(0)
   await hero.screenshot({ path: testInfo.outputPath('hero-campaign-320x568-desktop-configured.png') })
 
   const footer = page.locator('.site-footer')
@@ -915,7 +974,12 @@ test('keeps product-only campaign content intact at 320px', async ({ page }, tes
   ))).toBe(true)
   expect(imageAssetPath(await footerImage.evaluate((image) => (image as HTMLImageElement).currentSrc)))
     .toBe('/editorial/footer-product-campaign-v3.webp')
-  await footer.screenshot({ path: testInfo.outputPath('footer-campaign-320x568-desktop-configured.png') })
+  await expectFooterLinksHitTestable(page, footer)
+  await captureFooterScreenshot(
+    page,
+    footer,
+    testInfo.outputPath('footer-campaign-320x568-desktop-configured.png'),
+  )
 
   await expectHealthyPage(page)
   browser.expectClean()
