@@ -5,7 +5,7 @@ import userEvent from '@testing-library/user-event'
 import { describe, expect, it } from 'vitest'
 import HeroMedia from '@/components/site/HeroMedia'
 import MotionTrack from '@/components/site/MotionTrack'
-import EditorialStory from '@/components/site/EditorialStory'
+import SalesRail from '@/components/site/SalesRail'
 
 const globalsCss = readFileSync(resolve(process.cwd(), 'app/globals.css'), 'utf8')
 
@@ -86,7 +86,7 @@ describe('HeroMedia', () => {
   })
 
   it('provides the Fyther brand-section anchor', () => {
-    const { container } = render(<EditorialStory />)
-    expect(container.querySelector('.editorial-story')).toHaveAttribute('id', 'fyther')
+    const { container } = render(<SalesRail />)
+    expect(container.querySelector('#fyther.sales-rail')).toBeInTheDocument()
   })
 })
