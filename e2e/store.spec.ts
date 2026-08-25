@@ -902,6 +902,17 @@ test('uses a static responsive hero and keeps both category worlds compact', asy
   expect(Math.abs(heroLayout.travel)).toBeLessThanOrEqual(1)
   await hero.screenshot({ path: testInfo.outputPath(`hero-static-${testInfo.project.name}.png`) })
 
+  const viewport = page.viewportSize()
+  if (!viewport) throw new Error('Configured project viewport is missing')
+  const salesRail = page.locator('.sales-rail')
+  await salesRail.scrollIntoViewIfNeeded()
+  await expect(salesRail).toBeVisible()
+  const salesRailBox = await salesRail.boundingBox()
+  expect(salesRailBox).not.toBeNull()
+  if (salesRailBox) {
+    expect(salesRailBox.height).toBeLessThan(viewport.width >= 768 ? 144 : 192)
+  }
+
   const worlds = page.locator('.collection-worlds')
   await worlds.scrollIntoViewIfNeeded()
   await expect(worlds.locator('.collection-world-panel')).toHaveCount(2)
@@ -923,8 +934,6 @@ test('uses a static responsive hero and keeps both category worlds compact', asy
   ))).toBe(true)
   expect(imageAssetPath(await footerImage.evaluate((image) => (image as HTMLImageElement).currentSrc)))
     .toBe('/editorial/footer-product-campaign-v3.webp')
-  const viewport = page.viewportSize()
-  if (!viewport) throw new Error('Configured project viewport is missing')
   await expectFooterLinksHitTestable(page, footer)
   await captureFooterScreenshot(
     page,

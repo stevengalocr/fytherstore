@@ -88,6 +88,7 @@ describe('home scene contracts', () => {
     expect(globalsCss).toMatch(/\.sales-ticker-item::before\s*\{[^}]*background:\s*var\(--color-cyan\)/)
     expect(globalsCss).toMatch(/\.sales-ticker-item:nth-child\(even\)::before\s*\{[^}]*background:\s*var\(--color-pink\)/)
     expect(globalsCss).toMatch(/@media \(prefers-reduced-motion:\s*no-preference\)[\s\S]*?\.sales-ticker-track\s*\{[^}]*animation:\s*sales-ticker-scroll\s+28s\s+linear\s+infinite/)
+    expect(globalsCss).toMatch(/@keyframes\s+sales-ticker-scroll\s*\{\s*to\s*\{[^}]*transform:\s*translate3d\(-50%,\s*0,\s*0\);[^}]*\}\s*\}/)
     expect(globalsCss).toMatch(/\.sales-rail:hover \.sales-ticker-track,\s*\.sales-rail:focus-within \.sales-ticker-track\s*\{[^}]*animation-play-state:\s*paused/)
     expect(globalsCss).toMatch(/@media \(prefers-reduced-motion:\s*reduce\)[\s\S]*?\.sales-ticker-track\s*\{[^}]*animation:\s*none\s*!important;[^}]*transform:\s*none\s*!important/)
     expect(globalsCss).toMatch(/@media \(prefers-reduced-motion:\s*reduce\)[\s\S]*?\.sales-ticker-group:nth-child\(2\)\s*\{[^}]*display:\s*none/)
