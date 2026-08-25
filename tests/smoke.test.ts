@@ -125,8 +125,8 @@ describe('Task 5 flagship home styling', () => {
     expect(globalsCss).toMatch(/\.current-rail p span\s*\{[^}]*padding-inline:[^}]*color:\s*var\(--color-pink\)/)
   })
 
-  it('keeps editorial media restrained and presents a centered one-column FAQ', () => {
-    expect(globalsCss).toMatch(/\.editorial-story-media\s*\{[^}]*border-radius:\s*8px/)
+  it('visually bounds the sales rail and presents a centered one-column FAQ', () => {
+    expect(globalsCss).toMatch(/\.sales-rail\s*\{[^}]*border-block:\s*1px solid rgba\(234,\s*251,\s*251,\s*0\.16\);[^}]*background:\s*var\(--color-night-raised\)/)
     expect(globalsCss).toMatch(/\.trust-faq-layout\s*\{[^}]*display:\s*block/)
     expect(globalsCss).toMatch(/\.trust-faq-heading\s*\{[^}]*text-align:\s*center/)
     expect(globalsCss).toMatch(/\.trust-faq-list\s*\{[^}]*width:\s*min\(100%,\s*900px\);[^}]*margin-inline:\s*auto;[^}]*display:\s*grid/)

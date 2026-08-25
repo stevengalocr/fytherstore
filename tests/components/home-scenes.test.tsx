@@ -67,7 +67,7 @@ describe('home scene contracts', () => {
     expect(rail.querySelector('img')).not.toBeInTheDocument()
   })
 
-  it('defines a compact, responsive sales rail without obsolete editorial styles', () => {
+  it('defines a compact, responsive sales rail', () => {
     expect(globalsCss).toMatch(/\.sales-rail\s*\{[^}]*min-height:\s*112px;[^}]*overflow:\s*hidden/)
     expect(globalsCss).toMatch(/\.sales-rail-content\s*\{[^}]*min-width:\s*0;[^}]*display:\s*grid/)
     expect(globalsCss).toMatch(/\.sales-rail-copy\s*\{[^}]*min-width:\s*0;[^}]*display:\s*grid/)
@@ -77,7 +77,6 @@ describe('home scene contracts', () => {
     expect(globalsCss).toMatch(/@media \(max-width:\s*767px\)[\s\S]*?\.sales-rail-copy\s*\{[^}]*grid-template-columns:\s*1fr/)
     expect(globalsCss).toMatch(/@media \(max-width:\s*560px\)[\s\S]*?\.sales-rail-content\s*\{[^}]*grid-template-columns:\s*1fr/)
     expect(globalsCss).toMatch(/@media \(max-width:\s*560px\)[\s\S]*?\.sales-rail-cta\s*\{[^}]*width:\s*100%/)
-    expect(globalsCss).not.toContain('.editorial-story')
   })
 
   it('keeps the ticker contained and honors both motion preferences', () => {
