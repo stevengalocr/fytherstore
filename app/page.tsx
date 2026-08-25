@@ -4,7 +4,7 @@ import MotionTrack from '@/components/site/MotionTrack'
 import CollectionWorlds from '@/components/site/CollectionWorlds'
 import CollectionSection from '@/components/site/CollectionSection'
 import CommerceState from '@/components/commerce/CommerceState'
-import EditorialStory from '@/components/site/EditorialStory'
+import SalesRail from '@/components/site/SalesRail'
 import TrustFaq from '@/components/site/TrustFaq'
 import type { CommerceProduct } from '@/lib/commerce/types'
 import { selectAccessoryTags, selectHomeProducts, splitProductsByWorld } from '@/lib/home-selection'
@@ -51,7 +51,7 @@ export default async function HomePage() {
           emptyCopy="Muy pronto encontrarás prendas elegidas para moverte a tu manera."
         />
       )}
-      <EditorialStory />
+      <SalesRail />
       {!commerceUnavailable && (
         <CollectionSection
           id="accesorios"

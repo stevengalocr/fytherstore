@@ -5,8 +5,8 @@ import userEvent from '@testing-library/user-event'
 import { describe, expect, it } from 'vitest'
 import CollectionSection from '@/components/site/CollectionSection'
 import CollectionWorlds from '@/components/site/CollectionWorlds'
-import EditorialStory from '@/components/site/EditorialStory'
 import MotionTrack from '@/components/site/MotionTrack'
+import SalesRail from '@/components/site/SalesRail'
 import TrustFaq from '@/components/site/TrustFaq'
 import type { CommerceProduct } from '@/lib/commerce/types'
 
@@ -33,20 +33,38 @@ function product(id: string, name: string): CommerceProduct {
 }
 
 describe('home scene contracts', () => {
-  it('uses EditorialStory as a pure transition into the Fyther point of view', () => {
-    const { container } = render(<EditorialStory />)
+  it('renders the compact Fyther sales rail without imagery', () => {
+    const { container } = render(<SalesRail />)
 
-    const story = container.querySelector('.editorial-story') as HTMLElement
-    const media = story.querySelector('.editorial-story-media') as HTMLElement
-    expect(story).toHaveAttribute('id', 'fyther')
-    expect(story).not.toHaveClass('container')
-    expect(media.querySelector('.editorial-story-copy')).not.toBeInTheDocument()
-    const storyImage = screen.getByRole('img', { name: 'Mujer entrenando en un espacio de luz cyan y rosa' })
-    expect(decodeURIComponent(storyImage.getAttribute('src') ?? '')).toContain('/editorial/community-movement.webp')
-    expect(screen.getByText('A TU MANERA')).toBeInTheDocument()
-    expect(screen.getByRole('heading', { name: 'Tu rutina también vive en los detalles.' })).toBeInTheDocument()
-    expect(screen.getByText('Lo que eliges para moverte puede sentirse cercano, útil y muy tuyo.')).toBeInTheDocument()
-    expect(screen.queryByRole('link', { name: 'Ver la colección' })).not.toBeInTheDocument()
+    const rail = container.querySelector('section.sales-rail') as HTMLElement
+    expect(rail).toHaveAttribute('id', 'fyther')
+    expect(rail).toHaveAttribute('data-reveal')
+    expect(rail).toHaveAttribute('aria-labelledby', 'sales-rail-title')
+    expect(within(rail).getByRole('heading', { level: 2, name: 'Tu próximo favorito ya está aquí.' })).toHaveAttribute(
+      'id',
+      'sales-rail-title',
+    )
+    expect(within(rail).getByText('Prendas y accesorios originales, con SINPE y opción de apartado.')).toBeInTheDocument()
+
+    const cta = within(rail).getByRole('link', { name: 'Ver la colección' })
+    expect(cta).toHaveAttribute('href', '/catalogo')
+    expect(cta).toHaveClass('sales-rail-cta')
+    expect(cta.querySelector('svg.lucide-arrow-up-right')).toHaveAttribute('aria-hidden', 'true')
+
+    const ticker = rail.querySelector('.sales-ticker') as HTMLElement
+    expect(ticker).toHaveAttribute('aria-hidden', 'true')
+    const track = ticker.querySelector('.sales-ticker-track') as HTMLElement
+    const groups = track.querySelectorAll(':scope > .sales-ticker-group')
+    expect(groups).toHaveLength(2)
+    for (const group of groups) {
+      expect(Array.from(group.children, (item) => item.textContent)).toEqual([
+        'Productos originales',
+        'SINPE',
+        'Apartados',
+        'Correos de Costa Rica',
+      ])
+    }
+    expect(rail.querySelector('img')).not.toBeInTheDocument()
   })
 
   it('uses five native disclosures for the factual service FAQ', async () => {
