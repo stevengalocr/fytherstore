@@ -48,6 +48,20 @@ const assets: AssetContract[] = [
     maxBytes: 700_000,
   },
   {
+    path: 'public/editorial/hero-open-suitcase-branded.webp',
+    width: 1920,
+    height: 1080,
+    hasAlpha: false,
+    maxBytes: 700_000,
+  },
+  {
+    path: 'public/editorial/hero-open-suitcase-branded-mobile.webp',
+    width: 1200,
+    height: 1500,
+    hasAlpha: false,
+    maxBytes: 700_000,
+  },
+  {
     path: 'public/editorial/hero-product-campaign-v3.webp',
     width: 1920,
     height: 1080,
