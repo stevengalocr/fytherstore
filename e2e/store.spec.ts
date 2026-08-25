@@ -923,10 +923,7 @@ test('uses a static responsive hero and keeps both category worlds compact', asy
   expect((await worlds.boundingBox())?.height ?? Infinity).toBeLessThan((page.viewportSize()?.height ?? 900) * 1.05)
 
   const footer = page.locator('.site-footer')
-  const footerImage = footer.getByRole('img', {
-    name: 'Prendas, calzado y accesorios deportivos preparados para entrenar',
-    exact: true,
-  })
+  const footerImage = footer.locator('.footer-backdrop img')
   await footer.scrollIntoViewIfNeeded()
   await expect(footerImage).toBeVisible()
   await expect.poll(() => footerImage.evaluate((image) => (
@@ -970,10 +967,7 @@ test('keeps product-only campaign content intact at 320px', async ({ page }, tes
   await hero.screenshot({ path: testInfo.outputPath('hero-campaign-320x568-desktop-configured.png') })
 
   const footer = page.locator('.site-footer')
-  const footerImage = footer.getByRole('img', {
-    name: 'Prendas, calzado y accesorios deportivos preparados para entrenar',
-    exact: true,
-  })
+  const footerImage = footer.locator('.footer-backdrop img')
   await footer.scrollIntoViewIfNeeded()
   await expect(footer.getByRole('navigation', { name: 'Explorar Fyther' })).toBeVisible()
   await expect(footer.getByRole('link', { name: 'fytherstore@gmail.com', exact: true })).toBeVisible()

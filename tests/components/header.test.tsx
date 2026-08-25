@@ -270,7 +270,15 @@ describe('Header', () => {
 
     expect(backdrop).toHaveAttribute('aria-hidden', 'true')
     expect(campaignImage).toHaveAttribute('alt', '')
-    expect(campaignImage).toHaveAttribute('data-nimg', 'fill')
+    expect(campaignImage).toHaveStyle({
+      position: 'absolute',
+      width: '100%',
+      height: '100%',
+      top: '0',
+      right: '0',
+      bottom: '0',
+      left: '0',
+    })
     expect(campaignImage).toHaveAttribute('sizes', '100vw')
     expect(decodeURIComponent(campaignImage?.getAttribute('src') ?? '')).toContain(
       '/editorial/footer-product-campaign-v3.webp',
