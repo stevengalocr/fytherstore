@@ -17,6 +17,38 @@ function projectMode(projectName: string) {
   throw new Error(`Unknown E2E project mode: ${projectName}`)
 }
 
+function decodeImageUrl(value: string) {
+  let decoded = value
+  for (let attempt = 0; attempt < 2; attempt += 1) {
+    try {
+      const next = decodeURIComponent(decoded)
+      if (next === decoded) break
+      decoded = next
+    } catch {
+      break
+    }
+  }
+  return decoded
+}
+
+function imageAssetPath(requestUrl: string) {
+  try {
+    const url = new URL(requestUrl)
+    return decodeImageUrl(url.searchParams.get('url') ?? url.pathname)
+  } catch {
+    return decodeImageUrl(requestUrl)
+  }
+}
+
+function optimizedImageWidth(sourceUrl: string) {
+  try {
+    const width = Number.parseInt(new URL(sourceUrl).searchParams.get('w') ?? '', 10)
+    return Number.isFinite(width) && width > 0 ? width : null
+  } catch {
+    return null
+  }
+}
+
 function isBenignAbort(request: Request, errorText: string) {
   const aborted = /ERR_ABORTED|NS_BINDING_ABORTED|cancelled|canceled/i.test(errorText)
   const url = new URL(request.url())
@@ -770,6 +802,11 @@ test('categories, products, FAQ, and footer work without JavaScript', async ({ p
 test('uses a static responsive hero and keeps both category worlds compact', async ({ page }, testInfo) => {
   test.skip(projectMode(testInfo.project.name) !== 'configured', 'Static hero runs once per configured viewport')
   const browser = watchBrowserErrors(page)
+  const heroRequests: string[] = []
+  page.on('request', (request) => {
+    const source = imageAssetPath(request.url())
+    if (source.includes('hero-product-campaign-v3')) heroRequests.push(source)
+  })
 
   await page.goto('/')
   const hero = page.locator('.hero-journey')
@@ -784,11 +821,15 @@ test('uses a static responsive hero and keeps both category worlds compact', asy
   }))
   expect(stillImage.naturalWidth).toBeGreaterThan(0)
   expect(stillImage.naturalHeight).toBeGreaterThan(0)
-  expect(stillImage.currentSrc).toContain(
-    testInfo.project.name === 'mobile-configured'
-      ? 'hero-open-suitcase-branded-mobile.webp'
-      : 'hero-open-suitcase-branded.webp',
-  )
+  const expectedHeroAsset = testInfo.project.name === 'mobile-configured'
+    ? '/editorial/hero-product-campaign-v3-mobile.webp'
+    : '/editorial/hero-product-campaign-v3.webp'
+  const unexpectedHeroAsset = testInfo.project.name === 'mobile-configured'
+    ? '/editorial/hero-product-campaign-v3.webp'
+    : '/editorial/hero-product-campaign-v3-mobile.webp'
+  expect(imageAssetPath(stillImage.currentSrc)).toBe(expectedHeroAsset)
+  expect(heroRequests.filter((source) => source === expectedHeroAsset).length).toBeGreaterThan(0)
+  expect(heroRequests.filter((source) => source === unexpectedHeroAsset)).toHaveLength(0)
 
   const heroLayout = await hero.evaluate((element) => {
     const scene = element.querySelector<HTMLElement>('.hero-section')
@@ -811,6 +852,41 @@ test('uses a static responsive hero and keeps both category worlds compact', asy
   expect((await worlds.boundingBox())?.height ?? Infinity).toBeLessThan((page.viewportSize()?.height ?? 900) * 1.05)
   await page.screenshot({ path: testInfo.outputPath(`hero-static-${testInfo.project.name}.png`) })
   await expectHealthyPage(page)
+  browser.expectClean()
+})
+
+test('selects efficient footer image candidates across desktop widths', async ({ page }, testInfo) => {
+  test.skip(testInfo.project.name !== 'desktop-configured', 'Responsive footer candidates run once in Chromium')
+  const browser = watchBrowserErrors(page)
+
+  for (const width of [768, 800, 900, 1272, 1440]) {
+    await page.setViewportSize({ width, height: 900 })
+    await page.goto('/')
+
+    const footer = page.locator('.site-footer')
+    const footerImage = footer.locator('.footer-media img')
+    await footerImage.scrollIntoViewIfNeeded()
+    await expect(footer).toBeVisible()
+    await expect(footerImage).toBeInViewport()
+    await expect.poll(() => footerImage.evaluate((image) => (
+      (image as HTMLImageElement).complete && (image as HTMLImageElement).naturalWidth > 0
+    ))).toBe(true)
+
+    const metrics = await footerImage.evaluate((image) => ({
+      currentSrc: (image as HTMLImageElement).currentSrc,
+      devicePixelRatio: window.devicePixelRatio,
+      documentFits: document.documentElement.scrollWidth <= window.innerWidth + 1,
+      renderedWidth: image.getBoundingClientRect().width,
+    }))
+    const candidateWidth = optimizedImageWidth(metrics.currentSrc)
+    const targetWidth = metrics.renderedWidth * metrics.devicePixelRatio
+
+    expect(candidateWidth, `optimized candidate at ${width}px`).not.toBeNull()
+    expect(candidateWidth ?? 0, `candidate undersized at ${width}px`).toBeGreaterThanOrEqual(targetWidth * 0.9)
+    expect(candidateWidth ?? Infinity, `candidate oversized at ${width}px`).toBeLessThanOrEqual(targetWidth * 1.6 + 1)
+    expect(metrics.documentFits, `horizontal overflow at ${width}px`).toBe(true)
+  }
+
   browser.expectClean()
 })
 

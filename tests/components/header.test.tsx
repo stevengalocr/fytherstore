@@ -267,10 +267,8 @@ describe('Header', () => {
     expect(decodeURIComponent(editorialImage.getAttribute('src') ?? '')).toContain(
       '/editorial/footer-product-campaign-v3.webp',
     )
-    expect(editorialImage).toHaveAttribute(
-      'sizes',
-      '(max-width: 900px) calc(100vw - 32px), (min-width: 1440px) 650px, calc(56vw - 48px)',
-    )
+    expect(editorialImage).toHaveAttribute('width', '1920')
+    expect(editorialImage).toHaveAttribute('height', '1080')
     expect(
       within(screen.getByRole('list', { name: 'Servicio Fyther' }))
         .getAllByRole('listitem')

@@ -8,7 +8,6 @@ import MotionTrack from '@/components/site/MotionTrack'
 import EditorialStory from '@/components/site/EditorialStory'
 
 const globalsCss = readFileSync(resolve(process.cwd(), 'app/globals.css'), 'utf8')
-const heroMediaSource = readFileSync(resolve(process.cwd(), 'components/site/HeroMedia.tsx'), 'utf8')
 
 describe('HeroMedia', () => {
   it('renders a single static, art-directed hero without video or scroll controls', () => {
@@ -45,12 +44,6 @@ describe('HeroMedia', () => {
       bottom: '0px',
       left: '0px',
     })
-  })
-
-  it('avoids an unconditional Next Image priority preload for art direction', () => {
-    expect(heroMediaSource).toContain("import { getImageProps } from 'next/image'")
-    expect(heroMediaSource).not.toMatch(/<Image\b/)
-    expect(heroMediaSource).not.toMatch(/\bpriority(?:=|\s|\/>)/)
   })
 
   it('keeps the primary actions first in the keyboard path', async () => {
