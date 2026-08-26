@@ -196,7 +196,7 @@ html[data-reveal-enhanced='true'] .collection-product-card:nth-child(3)[data-rev
 
 .sales-rail { position: relative; min-height: 112px; overflow: hidden; display: flex; flex-direction: column; justify-content: space-between; border-block: 1px solid rgba(234, 251, 251, 0.16); background: var(--color-night-raised); color: var(--color-ice); isolation: isolate; }
 .sales-rail-content { min-width: 0; min-height: 76px; padding-block: 0.7rem; display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: center; gap: clamp(1.25rem, 3vw, 3rem); }
-.sales-rail-copy { min-width: 0; display: grid; grid-template-columns: minmax(260px, 0.85fr) minmax(300px, 1.15fr); align-items: center; gap: clamp(1.25rem, 4vw, 4rem); }
+.sales-rail-copy { min-width: 0; display: grid; grid-template-columns: minmax(0, 0.85fr) minmax(0, 1.15fr); align-items: center; gap: clamp(1.25rem, 4vw, 4rem); }
 .sales-rail-copy h2 { min-width: 0; margin: 0; font-family: var(--font-display), sans-serif; font-size: 1.5rem; line-height: 1.05; text-wrap: balance; }
 .sales-rail-copy p { min-width: 0; max-width: 52ch; margin: 0; color: var(--color-mist); font-size: 0.8rem; line-height: 1.45; overflow-wrap: anywhere; }
 .sales-rail-cta { min-height: 44px; padding: 0.65rem 1rem; border: 1px solid rgba(110, 239, 242, 0.7); border-radius: var(--radius-control); display: inline-flex; align-items: center; justify-content: center; gap: 0.5rem; background: rgba(110, 239, 242, 0.08); color: var(--color-ice); font-size: 0.78rem; font-weight: 800; line-height: 1; white-space: nowrap; transition: background-color 180ms var(--ease-out), border-color 180ms var(--ease-out), color 180ms var(--ease-out), transform 140ms var(--ease-out); }
