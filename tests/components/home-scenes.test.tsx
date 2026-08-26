@@ -91,6 +91,9 @@ describe('home scene contracts', () => {
     expect(globalsCss).toMatch(/\.sales-rail:hover \.sales-ticker-track,\s*\.sales-rail:focus-within \.sales-ticker-track\s*\{[^}]*animation-play-state:\s*paused/)
     expect(globalsCss).toMatch(/@media \(prefers-reduced-motion:\s*reduce\)[\s\S]*?\.sales-ticker-track\s*\{[^}]*animation:\s*none\s*!important;[^}]*transform:\s*none\s*!important/)
     expect(globalsCss).toMatch(/@media \(prefers-reduced-motion:\s*reduce\)[\s\S]*?\.sales-ticker-group:nth-child\(2\)\s*\{[^}]*display:\s*none/)
+    expect(globalsCss).toMatch(/@media \(prefers-reduced-motion:\s*reduce\) and \(max-width:\s*560px\)[\s\S]*?\.sales-ticker-track\s*\{[^}]*width:\s*100%;[^}]*max-width:\s*100%/)
+    expect(globalsCss).toMatch(/@media \(prefers-reduced-motion:\s*reduce\) and \(max-width:\s*560px\)[\s\S]*?\.sales-ticker-group:first-child\s*\{[^}]*grid-template-columns:\s*repeat\(4,\s*minmax\(0,\s*1fr\)\)/)
+    expect(globalsCss).toMatch(/@media \(prefers-reduced-motion:\s*reduce\) and \(max-width:\s*560px\)[\s\S]*?\.sales-ticker-item\s*\{[^}]*white-space:\s*normal;[^}]*text-align:\s*center/)
   })
 
   it('uses five native disclosures for the factual service FAQ', async () => {

@@ -1568,6 +1568,76 @@ test('disables ambient motion when reduced motion is requested', async ({ page }
   expect(await tickerTrack.evaluate((element) => getComputedStyle(element).animationName)).toBe('none')
   expect(await tickerGroups.nth(1).evaluate((element) => getComputedStyle(element).display)).toBe('none')
 
+  if (testInfo.project.name === 'desktop-configured') {
+    for (const viewport of [
+      { width: 390, height: 844 },
+      { width: 320, height: 568 },
+    ]) {
+      await page.setViewportSize(viewport)
+      const salesRail = page.locator('.sales-rail')
+      await salesRail.scrollIntoViewIfNeeded()
+
+      const reducedTickerLayout = await salesRail.evaluate((element) => {
+        const ticker = element.querySelector<HTMLElement>('.sales-ticker')
+        const track = element.querySelector<HTMLElement>('.sales-ticker-track')
+        const groups = [...element.querySelectorAll<HTMLElement>('.sales-ticker-group')]
+        if (!ticker || !track) throw new Error('Reduced-motion ticker elements are missing')
+        const tickerRect = ticker.getBoundingClientRect()
+        const trackStyle = getComputedStyle(track)
+        const visibleItems = [...element.querySelectorAll<HTMLElement>('.sales-ticker-item')]
+          .filter((item) => {
+            const style = getComputedStyle(item)
+            const rect = item.getBoundingClientRect()
+            return style.display !== 'none' && style.visibility !== 'hidden' && rect.width > 0 && rect.height > 0
+          })
+          .map((item) => {
+            const rect = item.getBoundingClientRect()
+            return {
+              text: item.textContent?.trim() ?? '',
+              top: rect.top,
+              right: rect.right,
+              bottom: rect.bottom,
+              left: rect.left,
+              width: rect.width,
+              height: rect.height,
+            }
+          })
+
+        return {
+          ticker: {
+            top: tickerRect.top,
+            right: tickerRect.right,
+            bottom: tickerRect.bottom,
+            left: tickerRect.left,
+          },
+          visibleItems,
+          groupDisplays: groups.map((group) => getComputedStyle(group).display),
+          animationName: trackStyle.animationName,
+          transform: trackStyle.transform,
+          railHeight: element.getBoundingClientRect().height,
+          documentClientWidth: document.documentElement.clientWidth,
+          documentScrollWidth: document.documentElement.scrollWidth,
+        }
+      })
+
+      expect(reducedTickerLayout.groupDisplays[0]).not.toBe('none')
+      expect(reducedTickerLayout.groupDisplays[1]).toBe('none')
+      expect(reducedTickerLayout.animationName).toBe('none')
+      expect(reducedTickerLayout.transform).toBe('none')
+      expect(reducedTickerLayout.visibleItems).toHaveLength(4)
+      expect(reducedTickerLayout.railHeight, `SalesRail height at ${viewport.width}px`).toBeLessThan(192)
+      expect(reducedTickerLayout.documentScrollWidth).toBeLessThanOrEqual(reducedTickerLayout.documentClientWidth + 1)
+      for (const item of reducedTickerLayout.visibleItems) {
+        expect(item.width, `${item.text} width at ${viewport.width}px`).toBeGreaterThan(0)
+        expect(item.height, `${item.text} height at ${viewport.width}px`).toBeGreaterThan(0)
+        expect(item.left, `${item.text} left at ${viewport.width}px`).toBeGreaterThanOrEqual(reducedTickerLayout.ticker.left - 1)
+        expect(item.right, `${item.text} right at ${viewport.width}px`).toBeLessThanOrEqual(reducedTickerLayout.ticker.right + 1)
+        expect(item.top, `${item.text} top at ${viewport.width}px`).toBeGreaterThanOrEqual(reducedTickerLayout.ticker.top - 1)
+        expect(item.bottom, `${item.text} bottom at ${viewport.width}px`).toBeLessThanOrEqual(reducedTickerLayout.ticker.bottom + 1)
+      }
+    }
+  }
+
   const currentMotion = await page.locator('.current-line > span').evaluate((element) => {
     const style = getComputedStyle(element)
     return { animation: style.animationName, transition: style.transitionDuration, transform: style.transform }
