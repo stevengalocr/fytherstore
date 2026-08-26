@@ -40,6 +40,29 @@ function countPixels(
   return count
 }
 
+function expectNightCorners(
+  data: Buffer,
+  width: number,
+  height: number,
+  channels: number,
+  label: string,
+) {
+  expect(channels, `${label} raw channel count`).toBe(3)
+
+  const corners = [
+    { name: 'top-left', x: 0, y: 0 },
+    { name: 'top-right', x: width - 1, y: 0 },
+    { name: 'bottom-left', x: 0, y: height - 1 },
+    { name: 'bottom-right', x: width - 1, y: height - 1 },
+  ]
+
+  for (const corner of corners) {
+    const offset = (corner.y * width + corner.x) * channels
+    const rgb = Array.from(data.subarray(offset, offset + 3))
+    expect(rgb, `${label} ${corner.name} pixel`).toEqual(NIGHT_RGB)
+  }
+}
+
 function expectIconPalette(
   data: Buffer,
   width: number,
@@ -102,18 +125,7 @@ describe('Fyther icon asset contract', () => {
     await expect(stat(file).then(({ size }) => size)).resolves.toBeLessThan(asset.maxBytes)
 
     const { data, info } = await image.raw().toBuffer({ resolveWithObject: true })
-    const corners = [
-      { name: 'top-left', x: 0, y: 0 },
-      { name: 'top-right', x: asset.width - 1, y: 0 },
-      { name: 'bottom-left', x: 0, y: asset.height - 1 },
-      { name: 'bottom-right', x: asset.width - 1, y: asset.height - 1 },
-    ]
-
-    for (const corner of corners) {
-      const offset = (corner.y * info.width + corner.x) * info.channels
-      const rgb = Array.from(data.subarray(offset, offset + 3))
-      expect(rgb, `${asset.path} ${corner.name} pixel`).toEqual(NIGHT_RGB)
-    }
+    expectNightCorners(data, info.width, info.height, info.channels, asset.path)
 
     expectIconPalette(
       data,
@@ -189,8 +201,16 @@ describe('Fyther icon asset contract', () => {
         [metadata.width, metadata.height],
         `favicon frame ${frame.size}x${frame.size} payload dimensions`,
       ).toEqual([frame.size, frame.size])
+      expect(metadata.hasAlpha, `favicon frame ${frame.size}x${frame.size} payload alpha`).toBe(false)
 
       const { data, info } = await image.raw().toBuffer({ resolveWithObject: true })
+      expectNightCorners(
+        data,
+        info.width,
+        info.height,
+        info.channels,
+        `favicon frame ${frame.size}x${frame.size}`,
+      )
       expectIconPalette(
         data,
         info.width,
