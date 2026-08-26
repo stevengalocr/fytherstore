@@ -913,6 +913,10 @@ test('uses a static responsive hero and keeps both category worlds compact', asy
     name: 'Tu próximo favorito ya está aquí.',
     exact: true,
   })).toBeVisible()
+  await expect(salesRail.getByText(
+    'Prendas y accesorios originales, con SINPE y opción de apartado.',
+    { exact: true },
+  )).toBeVisible()
   const salesRailCta = salesRail.getByRole('link', { name: 'Ver la colección', exact: true })
   await expect(salesRailCta).toBeVisible()
   await expect(salesRailCta).toHaveAttribute('href', '/catalogo')
@@ -1048,6 +1052,8 @@ test('selects efficient footer image candidates across desktop widths', async ({
     const candidateWidth = optimizedImageWidth(metrics.currentSrc)
     const targetWidth = metrics.renderedWidth * metrics.devicePixelRatio
 
+    expect(imageAssetPath(metrics.currentSrc), `footer asset at ${width}px`)
+      .toBe('/editorial/footer-product-campaign-v3.webp')
     expect(candidateWidth, `optimized candidate at ${width}px`).not.toBeNull()
     expect(candidateWidth ?? 0, `candidate undersized at ${width}px`).toBeGreaterThanOrEqual(targetWidth * 0.9)
     expect(candidateWidth ?? Infinity, `candidate oversized at ${width}px`).toBeLessThanOrEqual(targetWidth * 1.6 + 1)

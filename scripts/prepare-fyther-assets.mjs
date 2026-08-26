@@ -205,20 +205,6 @@ async function main() {
       height: 2000,
       label: 'public/editorial/collection-accesorios.webp',
     }),
-    prepareOptionalEditorialAsset({
-      input: resolve(generatedPath, 'community-movement.png'),
-      output: resolve(publicPath, 'editorial/community-movement.webp'),
-      width: 2000,
-      height: 1200,
-      label: 'public/editorial/community-movement.webp',
-    }),
-    prepareOptionalEditorialAsset({
-      input: resolve(generatedPath, 'footer-movement.png'),
-      output: resolve(publicPath, 'editorial/footer-movement.webp'),
-      width: 1800,
-      height: 900,
-      label: 'public/editorial/footer-movement.webp',
-    }),
   ])
 }
 
