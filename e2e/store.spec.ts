@@ -566,6 +566,33 @@ async function readProductCardInteraction(card: Locator) {
   })
 }
 
+test('publishes the complete Fyther icon system', async ({ page, request }) => {
+  await page.goto('/')
+
+  await expect(page.locator('link[rel="icon"][href*="favicon.ico"]')).toHaveCount(1)
+  await expect(page.locator('link[rel="icon"][href*="icon.png"]')).toHaveCount(1)
+  await expect(page.locator('link[rel="apple-touch-icon"]')).toHaveCount(1)
+  await expect(page.locator('link[rel="manifest"]')).toHaveAttribute('href', /manifest\.webmanifest/)
+  await expect(page.locator('meta[name="theme-color"]')).toHaveAttribute('content', '#050608')
+
+  const routes = [
+    '/favicon.ico',
+    '/icon.png',
+    '/apple-icon.png',
+    '/manifest.webmanifest',
+    '/icons/favicon-16.png',
+    '/icons/favicon-32.png',
+    '/icons/fyther-192.png',
+    '/icons/fyther-512.png',
+    '/icons/fyther-maskable-512.png',
+  ]
+
+  for (const path of routes) {
+    const response = await request.get(path)
+    expect(response.status(), path).toBe(200)
+  }
+})
+
 test('renders the final home without simulated commerce', async ({ page }, testInfo) => {
   const browser = watchBrowserErrors(page)
   const isDesktop = testInfo.project.name.startsWith('desktop')
