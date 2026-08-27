@@ -1,4 +1,4 @@
-import type { Metadata } from 'next'
+import type { Metadata, Viewport } from 'next'
 import { Barlow_Semi_Condensed, Manrope } from 'next/font/google'
 import { CartProvider } from '@/context/CartContext'
 import Header from '@/components/Header'
@@ -11,6 +11,11 @@ const body = Manrope({ subsets: ['latin'], variable: '--font-body', display: 'sw
 
 const configuredSiteUrl = process.env.NEXT_PUBLIC_SITE_URL
 const siteUrl = configuredSiteUrl && URL.canParse(configuredSiteUrl) ? configuredSiteUrl : 'http://localhost:3000'
+
+export const viewport: Viewport = {
+  colorScheme: 'dark',
+  themeColor: '#050608',
+}
 
 export const metadata: Metadata = {
   metadataBase: new URL(siteUrl),
