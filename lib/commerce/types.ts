@@ -64,6 +64,8 @@ export interface CheckoutInput {
   customer: { name: string; email: string; phone: string }
   address: { address: string; city: string; country: string; notes: string }
   paymentMethod: PaymentMethod
+  /** Sólo el sí del comprador; la versión de términos la fija BilBildin. */
+  acceptedTerms: boolean
 }
 
 export interface CheckoutResult {
@@ -111,4 +113,6 @@ export interface ThemeConfig {
   link_url?: string
   link_instructions?: string
   cash_instructions?: string
+  /** Si el negocio lo configuró, el checkout exige aceptar sus términos. */
+  terms_url?: string
 }

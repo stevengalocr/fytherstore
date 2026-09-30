@@ -48,6 +48,26 @@ describe('readLiveOrder', () => {
     mocks.order.mockReturnValue(query)
   })
 
+  // Contrato (e): confirmación y seguimiento leen columnas enumeradas y nunca
+  // las privadas del negocio (`buyer_*`, `total_cost`, `unit_cost`,
+  // `order_tracking.changed_by`). La lista de seguimiento coincide con
+  // `COLUMNAS_PUBLICAS_SEGUIMIENTO` del CORE (sin `order_id`/`business_id`,
+  // que ya están fijados por el filtro).
+  it('reads the order, its lines and its tracking with enumerated public columns only', async () => {
+    mocks.maybeSingle.mockResolvedValue({ data: orderRow('cash'), error: null })
+
+    await readLiveOrder(orderId)
+
+    const [columns] = mocks.select.mock.calls[0] as [string]
+    const normalized = columns.replace(/\s+/g, '')
+    expect(normalized).not.toContain('*')
+    expect(normalized).not.toMatch(/buyer_|cost|changed_by/)
+    expect(normalized).toContain('items:order_items(id,product_name,product_image,quantity,unit_price,subtotal)')
+    expect(normalized).toContain('tracking:order_tracking(id,status,title,description,location,created_at)')
+    expect(mocks.eq).toHaveBeenCalledWith('id', orderId)
+    expect(mocks.eq).toHaveBeenCalledWith('business_id', 'business-1')
+  })
+
   it('returns null when the order does not exist', async () => {
     mocks.maybeSingle.mockResolvedValue({ data: null, error: null })
 

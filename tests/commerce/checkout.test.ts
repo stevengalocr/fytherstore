@@ -1,9 +1,25 @@
 import { describe, expect, it } from 'vitest'
 import {
   getEnabledPaymentMethods,
+  getTermsUrl,
   normalizeCheckoutEmail,
   validateLiveCheckoutConfig,
 } from '@/lib/commerce/checkout'
+
+describe('business terms url', () => {
+  it('returns null when the business has not configured terms', () => {
+    expect(getTermsUrl({})).toBeNull()
+    expect(getTermsUrl({ terms_url: '   ' })).toBeNull()
+  })
+
+  it('accepts absolute http(s) links and site-relative paths only', () => {
+    expect(getTermsUrl({ terms_url: ' https://fytherstore.com/terminos ' })).toBe('https://fytherstore.com/terminos')
+    expect(getTermsUrl({ terms_url: '/terminos' })).toBe('/terminos')
+    expect(getTermsUrl({ terms_url: 'javascript:alert(1)' })).toBeNull()
+    expect(getTermsUrl({ terms_url: '//evil.example' })).toBeNull()
+    expect(getTermsUrl({ terms_url: 'terminos' })).toBeNull()
+  })
+})
 
 describe('live checkout configuration', () => {
   it('rejects checkout when the business id is absent', () => {

@@ -1,3 +1,30 @@
+-- ┌────────────────────────────────────────────────────────────────────────┐
+-- │ ARCHIVO HISTÓRICO — NO ES LA FUNCIÓN QUE CORRE EN LA BASE HOY.          │
+-- └────────────────────────────────────────────────────────────────────────┘
+--
+-- Esta es la implementación original (2026-08-08) de
+-- `create_fyther_storefront_order`: una copia entera de «crear pedido» que
+-- escribía `orders`, `order_items`, `order_tracking` y descontaba stock por su
+-- cuenta. El 19 de setiembre de 2026 el CORE de BilBildin la reemplazó por una
+-- **puerta** con el mismo contrato (mismos parámetros, mismo resultado, mismos
+-- códigos lanzados) que delega en la función única `public.crear_pedido`:
+--
+--   bilbildin/supabase/migrations/20260919_crear_pedido.sql          (la función)
+--   bilbildin/supabase/migrations/20260919_puertas_viejas_delegan.sql (la puerta)
+--   bilbildin/supabase/migrations/20260924_las_puertas_viejas_se_van.sql
+--     (borra la copia `_legado_20260919` de esta implementación)
+--
+-- La puerta vigente traduce `invalid_product` → `variant_unavailable` /
+-- `product_unavailable` e `invalid_request` → `invalid_checkout_payload`, pasa
+-- `accepted_terms` a `crear_pedido` (`coalesce(…, 'false')`), y corrigió los
+-- textos de seguimiento que en la base habían quedado con la codificación rota
+-- («recibiÃ³»). **Lo que manda es el repo de BilBildin; este archivo se conserva
+-- como historia y como documentación del contrato que la tienda sigue usando.**
+-- La tabla `storefront_order_requests` que crea abajo sigue existiendo y la usa
+-- `crear_pedido` como libro de idempotencia.
+--
+-- Ver docs/integraciones/CONTRATO-DE-ALINEACION.md en el repo `bilbildin`.
+
 create table if not exists public.storefront_order_requests (
   business_id uuid not null references public.businesses(id) on delete cascade,
   idempotency_key uuid not null,

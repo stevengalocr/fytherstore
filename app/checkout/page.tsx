@@ -1,7 +1,7 @@
 import type { Metadata } from 'next'
 import { commerceMode } from '@/lib/commerce'
 import { createServiceClient, getServerBusinessId } from '@/lib/supabase-server'
-import { getEnabledPaymentMethods } from '@/lib/commerce/checkout'
+import { getEnabledPaymentMethods, getTermsUrl } from '@/lib/commerce/checkout'
 import { getE2ECommerceFixtureProvider } from '@/lib/commerce/e2e-fixture'
 import type { ThemeConfig } from '@/lib/commerce/types'
 import CheckoutClient, { type PaymentOption } from './CheckoutClient'
@@ -17,6 +17,7 @@ export default async function CheckoutPage() {
   if (fixtureProvider) return <CheckoutClient methods={fixtureProvider.checkoutMethods} />
 
   let methods: PaymentOption[] = []
+  let termsUrl: string | null = null
   try {
     const { data } = await createServiceClient().from('businesses').select('theme_config').eq('id', getServerBusinessId()).single()
     const config = (data?.theme_config ?? {}) as ThemeConfig
@@ -24,7 +25,8 @@ export default async function CheckoutPage() {
     if (enabled.includes('sinpe')) methods.push({ id: 'sinpe', label: 'SINPE Móvil', description: `Transferencia al ${config.sinpe_number}` })
     if (enabled.includes('link')) methods.push({ id: 'link', label: 'Link de pago', description: config.link_instructions || 'Recibirás las instrucciones al confirmar' })
     if (enabled.includes('cash')) methods.push({ id: 'cash', label: 'Efectivo', description: config.cash_instructions! })
+    termsUrl = getTermsUrl(config)
   } catch { methods = [] }
 
-  return <CheckoutClient methods={methods} />
+  return <CheckoutClient methods={methods} termsUrl={termsUrl} />
 }

@@ -23,6 +23,7 @@ const input: CheckoutInput = {
   customer: { name: '  Steven  ', email: ' Steven@Example.com ', phone: '8888-8888' },
   address: { address: ' San Jose ', city: 'San Jose', country: 'Costa Rica', notes: '' },
   paymentMethod: 'link',
+  acceptedTerms: false,
 }
 
 describe('createOrder', () => {
@@ -63,6 +64,7 @@ describe('createOrder', () => {
         customer: { name: 'Steven', email: 'steven@example.com', phone: '8888-8888' },
         shipping_address: { address: 'San Jose', city: 'San Jose', country: 'Costa Rica', notes: '' },
         payment_method: 'link',
+        accepted_terms: false,
       },
     })
   })
@@ -94,6 +96,54 @@ describe('createOrder', () => {
       mode: 'live',
       error: 'Una de tus prendas ya no tiene suficiente disponibilidad.',
     })
+  })
+
+  // Los ocho códigos públicos de `crear_pedido` (bilbildin/lib/errores-pedido.ts)
+  // más los dos nombres propios que la puerta `create_fyther_storefront_order`
+  // traduce para esta tienda (`variant_unavailable`, `invalid_checkout_payload`).
+  // Cada uno tiene que llegar al comprador con un texto propio: ninguno cae al
+  // mensaje genérico salvo `internal_error`, que a propósito no explica nada.
+  it.each([
+    ['store_not_active', 'Esta tienda no está aceptando pedidos en este momento.'],
+    ['product_unavailable', 'Una de tus prendas ya no está disponible. Revisa tu carrito.'],
+    ['variant_unavailable', 'Una de tus prendas ya no está disponible. Revisa tu carrito.'],
+    ['invalid_product', 'Una de tus prendas ya no está disponible. Revisa tu carrito.'],
+    ['insufficient_stock', 'Una de tus prendas ya no tiene suficiente disponibilidad.'],
+    ['purchase_limit_exceeded', 'Una de tus prendas supera la cantidad máxima por pedido. Reduce la cantidad e intenta de nuevo.'],
+    ['temporarily_unavailable', 'No pudimos confirmar el pedido en este momento. Espera unos segundos e intenta de nuevo.'],
+    ['invalid_request', 'Revisa tus datos y vuelve a intentar.'],
+    ['invalid_checkout_payload', 'Revisa tus datos y vuelve a intentar.'],
+    ['invalid_customer_details', 'Revisa tus datos y vuelve a intentar.'],
+    ['invalid_payment_method', 'El método de pago seleccionado ya no está disponible.'],
+    ['internal_error', 'No pudimos confirmar el pedido. Intenta de nuevo.'],
+  ])('translates the BilBildin code %s thrown by the gate', async (code, message) => {
+    rpc.mockResolvedValue({ data: null, error: { message: `${code} CONTEXT: PL/pgSQL function` } })
+
+    await expect(createOrder(input)).resolves.toEqual({ ok: false, mode: 'live', error: message })
+  })
+
+  it('treats a returned { code } (the crear_pedido shape) like a thrown code', async () => {
+    rpc.mockResolvedValue({ data: { code: 'purchase_limit_exceeded', error: 'detalle interno' }, error: null })
+
+    await expect(createOrder(input)).resolves.toEqual({
+      ok: false,
+      mode: 'live',
+      error: 'Una de tus prendas supera la cantidad máxima por pedido. Reduce la cantidad e intenta de nuevo.',
+    })
+  })
+
+  it('sends accepted_terms only when the customer accepted them', async () => {
+    rpc.mockResolvedValue({ data: { orderId: '55555555-5555-4555-8555-555555555555' }, error: null })
+
+    await createOrder({ ...input, acceptedTerms: true })
+    expect(rpc).toHaveBeenLastCalledWith('create_fyther_storefront_order', expect.objectContaining({
+      p_payload: expect.objectContaining({ accepted_terms: true }),
+    }))
+
+    await createOrder({ ...input, acceptedTerms: false })
+    expect(rpc).toHaveBeenLastCalledWith('create_fyther_storefront_order', expect.objectContaining({
+      p_payload: expect.objectContaining({ accepted_terms: false }),
+    }))
   })
 
   it('does not expose active commerce configuration language to customers', async () => {

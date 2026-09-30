@@ -40,6 +40,21 @@ export function getEnabledPaymentMethods(config: ThemeConfig): PaymentMethod[] {
   return methods
 }
 
+/**
+ * Términos por tienda (contrato (g)): si el negocio configuró `terms_url`, el
+ * checkout muestra la casilla, enlaza el documento y manda `accepted_terms: true`;
+ * `crear_pedido` rechaza el pedido sin ese sí. Solo se aceptan enlaces http(s)
+ * absolutos o rutas del propio sitio, para no inyectar un `href` arbitrario.
+ */
+export function getTermsUrl(config: ThemeConfig): string | null {
+  const url = config.terms_url?.trim() ?? ''
+  if (!url) return null
+  if (url.startsWith('/') && !url.startsWith('//')) return url
+  if (!URL.canParse(url)) return null
+  const protocol = new URL(url).protocol
+  return protocol === 'https:' || protocol === 'http:' ? url : null
+}
+
 export function validateLiveCheckoutConfig(env: CheckoutEnv): LiveCheckoutConfig {
   const url = env.NEXT_PUBLIC_SUPABASE_URL
   const businessId = env.NEXT_PUBLIC_BUSINESS_ID

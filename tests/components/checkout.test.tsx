@@ -212,8 +212,39 @@ describe('CheckoutClient', () => {
       customer: { name: 'Steven', email: 'steven@example.com', phone: '' },
       address: { address: 'San José, Costa Rica', city: '', country: 'Costa Rica', notes: '' },
       paymentMethod: 'sinpe',
+      acceptedTerms: false,
     })
     expect(clear).toHaveBeenCalledOnce()
+  })
+
+  it('does not show a terms checkbox when the business has no terms_url', () => {
+    render(<CheckoutClient methods={methods} />)
+
+    expect(screen.queryByRole('checkbox')).not.toBeInTheDocument()
+  })
+
+  it('requires accepting the business terms when a terms_url is configured', async () => {
+    const user = userEvent.setup()
+    vi.mocked(createOrder).mockResolvedValue({ ok: true, mode: 'live', orderId: 'order-123' })
+    render(<CheckoutClient methods={methods} termsUrl="https://fytherstore.com/terminos" />)
+
+    const link = screen.getByRole('link', { name: /términos y condiciones/i })
+    expect(link).toHaveAttribute('href', 'https://fytherstore.com/terminos')
+
+    await completeRequiredFields(user)
+    await user.click(screen.getByRole('button', { name: /confirmar pedido/i }))
+
+    const checkbox = screen.getByRole('checkbox', { name: /acepto los términos y condiciones/i })
+    expect(checkbox).toHaveAttribute('aria-invalid', 'true')
+    expect(checkbox).toHaveAccessibleDescription('Debes aceptar los términos y condiciones para continuar.')
+    expect(checkbox).toHaveFocus()
+    expect(createOrder).not.toHaveBeenCalled()
+
+    await user.click(checkbox)
+    await user.click(screen.getByRole('button', { name: /confirmar pedido/i }))
+
+    expect(createOrder).toHaveBeenCalledWith(expect.objectContaining({ acceptedTerms: true }))
+    await waitFor(() => expect(push).toHaveBeenCalledWith('/confirmacion/order-123'))
   })
 
   it('prevents reentrant submit events before React can render the pending state', async () => {

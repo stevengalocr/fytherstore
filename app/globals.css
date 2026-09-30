@@ -334,6 +334,12 @@ html[data-reveal-enhanced='true'] .collection-product-card:nth-child(3)[data-rev
 .payment-option input { width: 18px; height: 18px; accent-color: var(--color-cyan); }
 .payment-option span { display: flex; flex-direction: column; }
 .payment-option small { color: var(--color-mist); }
+.terms-consent { display: flex; align-items: flex-start; gap: 0.85rem; min-height: 44px; margin: 0 0 1.5rem; color: var(--color-ice); font-size: 0.9rem; line-height: 1.5; cursor: pointer; }
+.terms-consent input { flex: none; width: 18px; height: 18px; margin-top: 0.2rem; accent-color: var(--color-cyan); }
+.terms-consent input[aria-invalid="true"] { outline: 2px solid var(--color-pink); outline-offset: 2px; }
+.terms-consent input[aria-invalid="true"]:focus-visible { outline-color: var(--color-cyan); }
+.terms-consent a { color: var(--color-cyan); text-decoration: underline; }
+.terms-consent .field-error { margin-top: 0.35rem; }
 .payment-missing, .form-error { padding: 0.85rem 1rem; border-left: 2px solid var(--color-pink); color: var(--color-pink); }
 .form-error { margin: 0 0 1rem; }
 .checkout-submit { width: 100%; }

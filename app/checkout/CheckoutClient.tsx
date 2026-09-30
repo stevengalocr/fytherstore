@@ -21,26 +21,34 @@ type FormState = {
   notes: string
 }
 
-type RequiredField = 'name' | 'email' | 'address'
+type RequiredField = 'name' | 'email' | 'address' | 'terms'
 type FieldErrors = Partial<Record<RequiredField, string>>
 
 const fieldErrorIds: Record<RequiredField, string> = {
   name: 'checkout-name-error',
   email: 'checkout-email-error',
   address: 'checkout-address-error',
+  terms: 'checkout-terms-error',
 }
 
-export default function CheckoutClient({ methods }: { methods: PaymentOption[] }) {
+/**
+ * `termsUrl` viene de `theme_config.terms_url` del negocio en BilBildin. Si
+ * existe, la casilla es obligatoria y el pedido viaja con `accepted_terms: true`
+ * (contrato de alineación, punto g). Si no, la casilla no se muestra.
+ */
+export default function CheckoutClient({ methods, termsUrl = null }: { methods: PaymentOption[]; termsUrl?: string | null }) {
   const { items, subtotal, clear } = useCart()
   const router = useRouter()
   const [form, setForm] = useState<FormState>({ name: '', email: '', phone: '', address: '', city: '', notes: '' })
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod | null>(methods[0]?.id ?? null)
+  const [acceptedTerms, setAcceptedTerms] = useState(false)
   const [fieldErrors, setFieldErrors] = useState<FieldErrors>({})
   const [serverError, setServerError] = useState('')
   const [sending, setSending] = useState(false)
   const nameRef = useRef<HTMLInputElement>(null)
   const emailRef = useRef<HTMLInputElement>(null)
   const addressRef = useRef<HTMLInputElement>(null)
+  const termsRef = useRef<HTMLInputElement>(null)
   const inFlightRef = useRef(false)
   const idempotencyKeyRef = useRef<string | null>(null)
 
@@ -72,11 +80,12 @@ export default function CheckoutClient({ methods }: { methods: PaymentOption[] }
     const normalizedEmail = normalizeCheckoutEmail(form.email)
     if (!normalizedEmail) nextFieldErrors.email = form.email.trim() ? 'Ingresa un correo electrónico válido.' : 'Ingresa tu correo electrónico.'
     if (!form.address.trim()) nextFieldErrors.address = 'Ingresa tu dirección exacta.'
+    if (termsUrl && !acceptedTerms) nextFieldErrors.terms = 'Debes aceptar los términos y condiciones para continuar.'
     setFieldErrors(nextFieldErrors)
 
-    const firstInvalidField = (['name', 'email', 'address'] as const).find((field) => nextFieldErrors[field])
+    const firstInvalidField = (['name', 'email', 'address', 'terms'] as const).find((field) => nextFieldErrors[field])
     if (firstInvalidField) {
-      const refs = { name: nameRef, email: emailRef, address: addressRef }
+      const refs = { name: nameRef, email: emailRef, address: addressRef, terms: termsRef }
       refs[firstInvalidField].current?.focus()
       return
     }
@@ -95,6 +104,7 @@ export default function CheckoutClient({ methods }: { methods: PaymentOption[] }
       customer: { name: form.name, email: normalizedEmail, phone: form.phone },
       address: { address: form.address, city: form.city, country: 'Costa Rica', notes: form.notes },
       paymentMethod,
+      acceptedTerms: Boolean(termsUrl) && acceptedTerms,
     }
 
     try {
@@ -139,6 +149,33 @@ export default function CheckoutClient({ methods }: { methods: PaymentOption[] }
                 <label key={method.id} className="payment-option"><input type="radio" name="payment" value={method.id} checked={paymentMethod === method.id} onChange={() => { idempotencyKeyRef.current = null; setPaymentMethod(method.id) }} /><span><strong>{method.label}</strong><small>{method.description}</small></span></label>
               ))}</div> : <p className="payment-missing">No hay métodos de pago disponibles. Contacta a Fyther antes de continuar.</p>}
             </fieldset>
+
+            {termsUrl && (
+              <label className="terms-consent">
+                <input
+                  ref={termsRef}
+                  type="checkbox"
+                  checked={acceptedTerms}
+                  onChange={(event) => {
+                    idempotencyKeyRef.current = null
+                    setAcceptedTerms(event.target.checked)
+                    setServerError('')
+                    setFieldErrors((current) => {
+                      if (!current.terms) return current
+                      const next = { ...current }
+                      delete next.terms
+                      return next
+                    })
+                  }}
+                  aria-invalid={Boolean(fieldErrors.terms)}
+                  aria-describedby={fieldErrors.terms ? fieldErrorIds.terms : undefined}
+                />
+                <span>
+                  Acepto los <a href={termsUrl} target="_blank" rel="noopener noreferrer">términos y condiciones</a> de Fyther.
+                  {fieldErrors.terms && <span className="field-error" id={fieldErrorIds.terms}>{fieldErrors.terms}</span>}
+                </span>
+              </label>
+            )}
 
             {Object.keys(fieldErrors).length > 0 && <p className="form-error" role="alert">Revisa los campos marcados para continuar.</p>}
             {serverError && <p className="form-error" role="alert">{serverError}</p>}

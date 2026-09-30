@@ -7,9 +7,9 @@
 next-env.d.ts
 *.tsbuildinfo
 
-# env — nunca subir claves al repositorio
-.env
-.env*.local
+# env — nunca subir claves al repositorio (solo la plantilla sin valores)
+.env*
+!.env.example
 
 # misc
 .DS_Store

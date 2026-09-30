@@ -7,7 +7,17 @@ const migration = readFileSync(resolve(
   'supabase/migrations/202608080001_create_fyther_storefront_order.sql',
 ), 'utf8')
 
-describe('Fyther storefront order migration', () => {
+// Este archivo es la implementación ORIGINAL (2026-08-08). La función que corre
+// hoy en la base es la puerta del CORE (`bilbildin/supabase/migrations/
+// 20260919_puertas_viejas_delegan.sql`), que delega en `crear_pedido` con el
+// mismo contrato. Estas pruebas fijan el contrato y el archivo histórico.
+describe('Fyther storefront order migration (archivo histórico, mismo contrato que la puerta vigente)', () => {
+  it('declares itself superseded by the CORE gate that delegates to crear_pedido', () => {
+    expect(migration).toMatch(/ARCHIVO HIST[ÓO]RICO/)
+    expect(migration).toMatch(/20260919_puertas_viejas_delegan\.sql/)
+    expect(migration).toMatch(/public\.crear_pedido/)
+  })
+
   it('keeps the complete checkout in one security-definer transaction', () => {
     expect(migration).toMatch(/create table if not exists public\.storefront_order_requests/i)
     expect(migration).toMatch(/primary key \(business_id, idempotency_key\)/i)

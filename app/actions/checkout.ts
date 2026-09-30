@@ -8,21 +8,39 @@ import type { CheckoutInput, CheckoutResult, PaymentMethod } from '@/lib/commerc
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i
 const PAYMENT_METHODS = new Set<PaymentMethod>(['sinpe', 'link', 'cash'])
 
+/**
+ * Traduce los códigos públicos del alta de pedido de BilBildin a texto para el
+ * comprador. Son los ocho de `crear_pedido` (`bilbildin/lib/errores-pedido.ts`)
+ * más los nombres propios que la puerta `create_fyther_storefront_order`
+ * traduce para esta tienda: `invalid_product` → `variant_unavailable` /
+ * `product_unavailable`, `invalid_request` → `invalid_checkout_payload`, y
+ * `invalid_payment_method` / `invalid_customer_details`, que la puerta valida
+ * antes de delegar. La puerta **lanza** el código (llega en `error.message`);
+ * `crear_pedido` directo lo **devuelve** en `data.code`. Se aceptan las dos formas.
+ *
+ * Solo `temporarily_unavailable` invita a reintentar; `internal_error` cae a
+ * propósito al mensaje genérico, sin explicar la causa.
+ */
+const CUSTOMER_MESSAGES: ReadonlyArray<readonly [codes: readonly string[], message: string]> = [
+  [['insufficient_stock'], 'Una de tus prendas ya no tiene suficiente disponibilidad.'],
+  [['purchase_limit_exceeded'], 'Una de tus prendas supera la cantidad máxima por pedido. Reduce la cantidad e intenta de nuevo.'],
+  [['product_unavailable', 'variant_unavailable', 'invalid_product'], 'Una de tus prendas ya no está disponible. Revisa tu carrito.'],
+  [['invalid_payment_method'], 'El método de pago seleccionado ya no está disponible.'],
+  [['store_not_active'], 'Esta tienda no está aceptando pedidos en este momento.'],
+  [['temporarily_unavailable'], 'No pudimos confirmar el pedido en este momento. Espera unos segundos e intenta de nuevo.'],
+  [['invalid_customer_details', 'invalid_checkout_payload', 'invalid_request'], 'Revisa tus datos y vuelve a intentar.'],
+]
+const GENERIC_MESSAGE = 'No pudimos confirmar el pedido. Intenta de nuevo.'
+
 function customerMessage(error: unknown): string {
   const message = typeof error === 'object' && error && 'message' in error
     ? String(error.message)
     : error instanceof Error ? error.message : ''
 
-  if (message.includes('insufficient_stock')) return 'Una de tus prendas ya no tiene suficiente disponibilidad.'
-  if (message.includes('product_unavailable') || message.includes('variant_unavailable')) {
-    return 'Una de tus prendas ya no está disponible. Revisa tu carrito.'
+  for (const [codes, text] of CUSTOMER_MESSAGES) {
+    if (codes.some((code) => message.includes(code))) return text
   }
-  if (message.includes('invalid_payment_method')) return 'El método de pago seleccionado ya no está disponible.'
-  if (message.includes('store_not_active')) return 'Esta tienda no está aceptando pedidos en este momento.'
-  if (message.includes('invalid_customer_details') || message.includes('invalid_checkout_payload')) {
-    return 'Revisa tus datos y vuelve a intentar.'
-  }
-  return 'No pudimos confirmar el pedido. Intenta de nuevo.'
+  return GENERIC_MESSAGE
 }
 
 function validateInput(input: CheckoutInput): { email: string } {
@@ -92,10 +110,14 @@ export async function createOrder(input: CheckoutInput): Promise<CheckoutResult>
           notes: input.address.notes.trim(),
         },
         payment_method: input.paymentMethod,
+        // Solo viaja el sí del comprador; la versión de términos la pone BilBildin
+        // (`terms_version` sale de `theme_config`, nunca del navegador).
+        accepted_terms: input.acceptedTerms === true,
       },
     })
 
     if (error) throw error
+    if (typeof data === 'object' && data && 'code' in data) throw new Error(String(data.code))
     const orderId = typeof data === 'object' && data && 'orderId' in data ? String(data.orderId) : ''
     if (!UUID.test(orderId)) throw new Error('invalid_rpc_response')
     return { ok: true, mode: 'live', orderId }
