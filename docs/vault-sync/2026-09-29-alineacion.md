@@ -25,7 +25,7 @@ Aplicado en vault: sí
 - Pruebas: 12 traducciones, `data.code`, `accepted_terms`, columnas enumeradas del seguimiento, `getTermsUrl`, migración marcada histórica. typecheck 0 · lint 0 · test 320/320 · build 0 · knip 0.
 Aplicado en vault: sí
 
-### U06-c · `CLAUDE.md` del repo y este puente · commit (el siguiente a 0f04406) · despliegue n/a
+### U06-c · `CLAUDE.md` del repo y este puente · commit ea8ad3a · despliegue n/a
 **Pendientes.md** — cierra (k).
 **Decisiones.md** — ninguna.
 **Seguridad.md** — sin cambios.
